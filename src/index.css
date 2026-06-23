@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-plum-50: #faf5f9;
+  --color-plum-100: #f0e0ec;
+  --color-plum-200: #e0bfd8;
+  --color-plum-300: #c890b8;
+  --color-plum-400: #a85e91;
+  --color-plum-500: #8a3f73;
+  --color-plum-600: #6b3762;
+  --color-plum-700: #5b2751;
+  --color-plum-800: #4a1f42;
+  --color-plum-900: #3a1734;
+  --color-plum-950: #220d1e;
+
+  --color-gold-50: #fefbeb;
+  --color-gold-100: #fdf3c7;
+  --color-gold-200: #fbe68a;
+  --color-gold-300: #f0d264;
+  --color-gold-400: #d4af37;
+  --color-gold-500: #b8962a;
+  --color-gold-600: #9a7a1e;
+  --color-gold-700: #7c5f18;
+  --color-gold-800: #664c1a;
+  --color-gold-900: #553f1b;
+  --color-gold-950: #302309;
+}
+
+.dark {
+  color-scheme: dark;
+}
