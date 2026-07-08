@@ -1,0 +1,105 @@
+/*
+ * Global CSS — migrated from src/index.css
+ *
+ * Changes from Vite version:
+ *  - Removed Google Fonts @import (handled by next/font/google in layout.jsx)
+ *  - Font-family rules now use CSS variables (--font-inter, --font-cairo)
+ *    set by next/font in the <html> tag
+ *  - Added CLS prevention rules (line-height locks per language)
+ *  - Added CSS @keyframes for deferred hero particles
+ *  - ALL visual tokens, colors, and RTL overrides are UNCHANGED
+ */
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-plum-50: #faf5f9;
+  --color-plum-100: #f0e0ec;
+  --color-plum-200: #e0bfd8;
+  --color-plum-300: #c890b8;
+  --color-plum-400: #a85e91;
+  --color-plum-500: #8a3f73;
+  --color-plum-600: #6b3762;
+  --color-plum-700: #5b2751;
+  --color-plum-800: #4a1f42;
+  --color-plum-900: #3a1734;
+  --color-plum-950: #220d1e;
+
+  --color-gold-50: #fefbeb;
+  --color-gold-100: #fdf3c7;
+  --color-gold-200: #fbe68a;
+  --color-gold-300: #f0d264;
+  --color-gold-400: #d4af37;
+  --color-gold-500: #b8962a;
+  --color-gold-600: #9a7a1e;
+  --color-gold-700: #7c5f18;
+  --color-gold-800: #664c1a;
+  --color-gold-900: #553f1b;
+  --color-gold-950: #302309;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+/* ─── Font families ───
+ * next/font sets --font-inter and --font-cairo CSS variables on <html>.
+ * This replaces the old Google Fonts @import approach and eliminates FOUT.
+ */
+html {
+  font-family: var(--font-inter), sans-serif;
+}
+
+html[lang="ar"] {
+  font-family: var(--font-cairo), var(--font-inter), sans-serif;
+}
+
+/* ─── CLS Prevention ───
+ * Lock line-height per language to prevent layout shift during font swap.
+ * Cairo (Arabic) needs slightly more vertical space than Inter (Latin).
+ */
+html[lang="en"] body {
+  line-height: 1.5;
+}
+
+html[lang="ar"] body {
+  line-height: 1.7;
+}
+
+/* ─── RTL-specific overrides ─── */
+/* Flip chevron icons in RTL */
+html[dir="rtl"] .chevron-flip {
+  transform: scaleX(-1);
+}
+
+/* Ensure form inputs use the correct text alignment */
+html[dir="rtl"] input,
+html[dir="rtl"] textarea {
+  text-align: right;
+}
+
+html[dir="ltr"] input,
+html[dir="ltr"] textarea {
+  text-align: left;
+}
+
+/* ─── Deferred Particles (CSS animation — off main thread) ─── */
+@keyframes particle-float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate(10px, -20px) scale(1.5);
+    opacity: 0.6;
+  }
+}
+
+.deferred-particle {
+  animation-name: particle-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
