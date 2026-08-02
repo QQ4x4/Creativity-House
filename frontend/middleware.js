@@ -11,7 +11,7 @@ import { NextResponse } from 'next/server';
  *     c. Default to 'ar' (matching original fallbackLng)
  *  3. Redirect to the locale-prefixed URL
  *
- * Static assets, API routes, and Next.js internals are excluded via the matcher.
+ * Static assets, API/Sanctum proxies, and Next.js internals are excluded via the matcher.
  */
 
 const locales = ['en', 'ar'];
@@ -70,11 +70,11 @@ export function middleware(request) {
 export const config = {
   /*
    * Match all request paths EXCEPT:
-   * - api routes
+   * - api / sanctum (Laravel proxies via next.config rewrites — must NOT get /en|/ar)
    * - _next internals (static files, image optimization)
    * - public assets (favicon, icons, logo, etc.)
    */
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon\\.svg|icons\\.svg|logo\\.png|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico)$).*)',
+    '/((?!api|sanctum|_next/static|_next/image|favicon\\.svg|icons\\.svg|logo\\.png|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico)$).*)',
   ],
 };

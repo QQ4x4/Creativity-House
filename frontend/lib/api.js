@@ -233,7 +233,7 @@ function toApiError(error) {
         : status === 403
           ? 'Forbidden — insufficient permissions.'
           : status === 404
-            ? `API route not found. Ensure NEXT_PUBLIC_API_URL ends with /api.`
+            ? `API route not found (${url || 'unknown URL'}). Auth JSON routes must be under /api/*; Sanctum CSRF must be /sanctum/csrf-cookie (not under /api).`
             : status === 419
               ? 'CSRF token mismatch (419). Refresh and ensure /sanctum/csrf-cookie runs before POST.'
               : status === 422
@@ -256,29 +256,46 @@ function toApiError(error) {
 
 /**
  * Hit Sanctum CSRF endpoint before login/register/mutating auth calls.
+ *
+ * Uses a bare Axios call (NOT apiClient) so the `/api` baseURL can never
+ * prepend onto `/sanctum/csrf-cookie`.
+ *
+ * - Local:  http://localhost:8000/sanctum/csrf-cookie
+ * - Vercel: https://creativity-house.vercel.app/sanctum/csrf-cookie
+ *           → rewritten by next.config.mjs to Railway (middleware excludes /sanctum)
  */
 export async function getCsrfCookie() {
   const backend = resolveBackendUrl();
-  const csrfBase =
+  const csrfOrigin =
     backend ||
     (typeof window !== 'undefined'
       ? window.location.origin
       : resolveAbsoluteBackendUrl());
-  const tried = `${csrfBase}/sanctum/csrf-cookie`;
+  const csrfUrl = `${csrfOrigin.replace(/\/+$/, '')}/sanctum/csrf-cookie`;
 
   try {
-    // Explicit baseURL so the request interceptor does not prefix `/api`.
-    await apiClient.get('/sanctum/csrf-cookie', {
-      baseURL: csrfBase,
+    await axios.get(csrfUrl, {
+      withCredentials: true,
+      withXSRFToken: true,
+      xsrfCookieName: 'XSRF-TOKEN',
+      xsrfHeaderName: 'X-XSRF-TOKEN',
+      headers: {
+        Accept: 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      // Prevent inheriting any default baseURL
+      baseURL: undefined,
     });
   } catch (error) {
-    const apiError = toApiError(error);
+    const status = error?.response?.status || 0;
+    const detail = error?.response?.data?.message || error?.message || '';
     throw new ApiError(
-      `CSRF cookie request failed${apiError.status ? ` (${apiError.status})` : ''}. ` +
-        `Tried ${tried}. ` +
-        (apiError.message || ''),
-      apiError.status,
-      { ...apiError.data, url: tried }
+      `CSRF cookie request failed${status ? ` (${status})` : ''} at ${csrfUrl}. ${detail}`.trim(),
+      status,
+      {
+        url: csrfUrl,
+        data: error?.response?.data || null,
+      }
     );
   }
 

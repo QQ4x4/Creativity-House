@@ -13,8 +13,10 @@ const nextConfig = {
 
   /**
    * Production (Vercel): proxy Sanctum + API through this origin so XSRF cookies
-   * are first-party. Local `next dev` (NODE_ENV=development) skips rewrites and
-   * talks to http://localhost:8000 directly via NEXT_PUBLIC_* env.
+   * are first-party. Local WAMP keeps talking to localhost:8000 directly.
+   *
+   * IMPORTANT: middleware.js must exclude `sanctum` from the i18n matcher,
+   * otherwise /sanctum/csrf-cookie is redirected to /ar/sanctum/... and 404s.
    */
   async rewrites() {
     const backendUrl = (
@@ -22,16 +24,14 @@ const nextConfig = {
       'https://creativity-house-production.up.railway.app'
     ).replace(/\/+$/, '');
 
-    // Never proxy when developing against local WAMP / artisan serve.
     const isLocalBackend = /localhost|127\.0\.0\.1/i.test(backendUrl);
     if (isLocalBackend) {
       return [];
     }
 
-    // Apply on Vercel production builds (and `next start` against Railway).
-    if (process.env.NODE_ENV === 'production') {
+    // Vercel production / `next start` against Railway
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL === '1') {
       return [
-        // Explicit CSRF route (avoids edge-case :path* matching issues)
         {
           source: '/sanctum/csrf-cookie',
           destination: `${backendUrl}/sanctum/csrf-cookie`,
