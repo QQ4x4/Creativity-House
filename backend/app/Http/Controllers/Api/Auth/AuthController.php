@@ -170,11 +170,29 @@ class AuthController extends Controller
         }
 
         if (! $user->hasVerifiedEmail()) {
+            $emailSent = true;
+
+            try {
+                // Regenerate OTP + dispatch verification email (was missing — frontend
+                // navigated to OTP screen but Resend never received a request).
+                $this->otp->issue($user);
+            } catch (Throwable $e) {
+                $emailSent = false;
+                Log::error('Login blocked for unverified user; OTP email failed.', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Please verify your email before logging in.',
+                'message' => $emailSent
+                    ? 'Please verify your email before logging in. A new code has been sent.'
+                    : 'Please verify your email before logging in. We could not send the code — use Resend code.',
                 'requires_verification' => true,
                 'email' => $user->email,
+                'email_sent' => $emailSent,
             ], 403);
         }
 
