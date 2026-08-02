@@ -22,7 +22,9 @@ export function firstValidationMessage(errorData) {
  * Never collapses a 422 into a vague generic message.
  */
 export function toastApiError(error, fallback = 'Something went wrong. Please try again.') {
-  if (error instanceof ApiError) {
+  const isApiError = error instanceof ApiError || error?.name === 'ApiError';
+
+  if (isApiError) {
     if (error.status === 422) {
       const detailed =
         formatValidationErrors(error.data) ||

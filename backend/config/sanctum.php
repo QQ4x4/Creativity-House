@@ -9,8 +9,13 @@ return [
     | Stateful Domains
     |--------------------------------------------------------------------------
     |
-    | First-party SPA hosts that receive stateful authentication cookies.
-    | Keep this locked to port 3000 locally — do not include :3001.
+    | Hostnames (no protocol) of first-party SPAs that receive stateful cookies.
+    |
+    | Local example:
+    |   localhost,localhost:3000,127.0.0.1,127.0.0.1:3000
+    |
+    | Production example (Vercel + Railway):
+    |   creativity-house.vercel.app,www.creativity-house.com
     |
     */
 

@@ -169,7 +169,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -196,6 +196,10 @@ return [
     | See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value
     |
     | Supported: "lax", "strict", "none", null
+    |
+    | Local WAMP/http://localhost → keep "lax" (default).
+    | Production Vercel↔Railway → set SESSION_SAME_SITE=none + SESSION_SECURE_COOKIE=true
+    | via Railway env vars (overrides these defaults).
     |
     */
 

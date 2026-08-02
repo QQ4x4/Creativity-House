@@ -1,10 +1,8 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/icon.svg/route": "app/icon.svg/route.js",
-  "/[lang]/about/page": "app/[lang]/about/page.js",
-  "/[lang]/profile/page": "app/[lang]/profile/page.js",
   "/[lang]/page": "app/[lang]/page.js",
+  "/[lang]/profile/page": "app/[lang]/profile/page.js",
+  "/[lang]/(auth)/login/page": "app/[lang]/(auth)/login/page.js",
   "/[lang]/(auth)/register/page": "app/[lang]/(auth)/register/page.js",
   "/[lang]/(auth)/verify-otp/page": "app/[lang]/(auth)/verify-otp/page.js",
-  "/[lang]/(auth)/login/page": "app/[lang]/(auth)/login/page.js"
+  "/[lang]/(auth)/forgot-password/page": "app/[lang]/(auth)/forgot-password/page.js"
 }

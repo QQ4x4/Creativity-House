@@ -1,62 +1,56 @@
 {
   "components\\AboutPageClient.jsx -> ./sections/about/AboutSocialProofSection": {
-    "id": 7921,
+    "id": "components\\AboutPageClient.jsx -> ./sections/about/AboutSocialProofSection",
     "files": [
-      "static/chunks/921.19349e1027d138a2.js"
+      "static/chunks/_app-pages-browser_components_sections_about_AboutSocialProofSection_jsx.js"
     ]
   },
   "components\\AboutPageClient.jsx -> ./sections/about/AboutTrainerSection": {
-    "id": 1725,
+    "id": "components\\AboutPageClient.jsx -> ./sections/about/AboutTrainerSection",
     "files": [
-      "static/chunks/725.266dc2b37c14e03c.js"
+      "static/chunks/_app-pages-browser_components_sections_about_AboutTrainerSection_jsx.js"
     ]
   },
   "components\\HomePageClient.jsx -> ./sections/AboutSection": {
-    "id": 1840,
+    "id": "components\\HomePageClient.jsx -> ./sections/AboutSection",
     "files": [
-      "static/chunks/840.13eb62b206413ddd.js"
+      "static/chunks/_app-pages-browser_components_sections_AboutSection_jsx.js"
     ]
   },
   "components\\HomePageClient.jsx -> ./sections/ContactSection": {
-    "id": 6966,
+    "id": "components\\HomePageClient.jsx -> ./sections/ContactSection",
     "files": [
-      "static/chunks/585.bb490511b9782f39.js"
+      "static/chunks/_app-pages-browser_components_sections_ContactSection_jsx.js"
     ]
   },
   "components\\HomePageClient.jsx -> ./sections/ServicesSection": {
-    "id": 4272,
+    "id": "components\\HomePageClient.jsx -> ./sections/ServicesSection",
     "files": [
-      "static/chunks/272.00efec1cf5e19444.js"
+      "static/chunks/_app-pages-browser_components_sections_ServicesSection_jsx.js"
     ]
   },
   "components\\HomePageClient.jsx -> ./sections/StatsSection": {
-    "id": 8059,
+    "id": "components\\HomePageClient.jsx -> ./sections/StatsSection",
     "files": [
-      "static/chunks/59.d7c4ff43fb5dd7c1.js"
+      "static/chunks/_app-pages-browser_components_sections_StatsSection_jsx.js"
     ]
   },
   "components\\HomePageClient.jsx -> ./sections/TestimonialsSection": {
-    "id": 634,
+    "id": "components\\HomePageClient.jsx -> ./sections/TestimonialsSection",
     "files": [
-      "static/chunks/634.7a2de0055986cb21.js"
+      "static/chunks/_app-pages-browser_components_sections_TestimonialsSection_jsx.js"
     ]
   },
   "components\\auth\\RegisterForm.jsx -> react-google-recaptcha": {
-    "id": 1141,
+    "id": "components\\auth\\RegisterForm.jsx -> react-google-recaptcha",
     "files": [
-      "static/chunks/141.83e599f9b32e0b7e.js"
+      "static/chunks/_app-pages-browser_node_modules_react-google-recaptcha_lib_esm_index_js.js"
     ]
   },
-  "node_modules\\next\\dist\\client\\index.js -> ../pages/_app": {
-    "id": 5139,
+  "node_modules\\next\\dist\\client\\dev\\hot-reloader\\app\\use-websocket.js -> @vercel/turbopack-ecmascript-runtime/browser/dev/hmr-client/hmr-client.ts": {
+    "id": "node_modules\\next\\dist\\client\\dev\\hot-reloader\\app\\use-websocket.js -> @vercel/turbopack-ecmascript-runtime/browser/dev/hmr-client/hmr-client.ts",
     "files": [
-      "static/chunks/139.7a5a8e93a21948c1.js"
-    ]
-  },
-  "node_modules\\next\\dist\\client\\index.js -> ../pages/_error": {
-    "id": 1646,
-    "files": [
-      "static/chunks/646.f342b7cffc01feb0.js"
+      "static/chunks/_app-pages-browser_node_modules_next_dist_client_dev_noop-turbopack-hmr_js.js"
     ]
   }
 }

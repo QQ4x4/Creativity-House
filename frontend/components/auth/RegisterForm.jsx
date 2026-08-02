@@ -81,15 +81,21 @@ export default function RegisterForm({ dictionary, lang }) {
       router.push(`/${lang}`);
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') {
-        // Surface full backend payload in the browser console during local debugging.
-        console.error('[register] failed', error instanceof ApiError ? {
-          status: error.status,
-          message: error.message,
-          data: error.data,
-        } : error);
+        const payload =
+          typeof error?.toJSON === 'function'
+            ? error.toJSON()
+            : {
+                name: error?.name,
+                message: error?.message,
+                status: error?.status,
+                data: error?.data,
+              };
+        console.error('[register] failed', payload);
       }
 
-      if (error instanceof ApiError) {
+      const isApiError = error instanceof ApiError || error?.name === 'ApiError';
+
+      if (isApiError) {
         const fieldMessage = applyServerErrors(setError, error.data);
         const detailed =
           formatValidationErrors(error.data) ||
