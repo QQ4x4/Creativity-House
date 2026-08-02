@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Use alternate distDir — default `.next` is locked/corrupt on this Windows host
-  distDir: '.next-build',
+  // distDir: '.next-build',
   /* ─── Remote image domains (for external service/hero images) ─── */
   images: {
     remotePatterns: [
