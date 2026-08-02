@@ -1,0 +1,232 @@
+/*
+ * Global CSS — migrated from src/index.css
+ *
+ * Changes from Vite version:
+ *  - Removed Google Fonts @import (handled by next/font/google in layout.jsx)
+ *  - Font-family rules now use CSS variables (--font-inter, --font-cairo)
+ *    set by next/font in the <html> tag
+ *  - Added CLS prevention rules (line-height locks per language)
+ *  - Added CSS @keyframes for deferred hero particles
+ *  - ALL visual tokens, colors, and RTL overrides are UNCHANGED
+ */
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-plum-50: #faf5f9;
+  --color-plum-100: #f0e0ec;
+  --color-plum-200: #e0bfd8;
+  --color-plum-300: #c890b8;
+  --color-plum-400: #a85e91;
+  --color-plum-500: #8a3f73;
+  --color-plum-600: #6b3762;
+  --color-plum-700: #5b2751;
+  --color-plum-800: #4a1f42;
+  --color-plum-900: #3a1734;
+  --color-plum-950: #220d1e;
+
+  --color-gold-50: #fefbeb;
+  --color-gold-100: #fdf3c7;
+  --color-gold-200: #fbe68a;
+  --color-gold-300: #f0d264;
+  --color-gold-400: #d4af37;
+  --color-gold-500: #b8962a;
+  --color-gold-600: #9a7a1e;
+  --color-gold-700: #7c5f18;
+  --color-gold-800: #664c1a;
+  --color-gold-900: #553f1b;
+  --color-gold-950: #302309;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+/* ─── Font families ───
+ * next/font sets --font-inter and --font-cairo CSS variables on <html>.
+ * This replaces the old Google Fonts @import approach and eliminates FOUT.
+ */
+html {
+  font-family: var(--font-inter), sans-serif;
+}
+
+html[lang="ar"] {
+  font-family: var(--font-cairo), var(--font-inter), sans-serif;
+}
+
+/* ─── CLS Prevention ───
+ * Lock line-height per language to prevent layout shift during font swap.
+ * Cairo (Arabic) needs slightly more vertical space than Inter (Latin).
+ */
+html[lang="en"] body {
+  line-height: 1.5;
+}
+
+html[lang="ar"] body {
+  line-height: 1.7;
+}
+
+/* ─── RTL-specific overrides ─── */
+/* Flip chevron icons in RTL */
+html[dir="rtl"] .chevron-flip {
+  transform: scaleX(-1);
+}
+
+/* Ensure form inputs use the correct text alignment */
+html[dir="rtl"] input,
+html[dir="rtl"] textarea {
+  text-align: right;
+}
+
+html[dir="ltr"] input,
+html[dir="ltr"] textarea {
+  text-align: left;
+}
+
+/* ─── Deferred Particles (CSS animation — off main thread) ─── */
+@keyframes particle-float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate(10px, -20px) scale(1.5);
+    opacity: 0.6;
+  }
+}
+
+.deferred-particle {
+  animation-name: particle-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/* ─── Glass phone input (react-phone-number-input) ───
+ * Restores flag + country select after Tailwind preflight / dark glass theme.
+ * Phone numbers always render LTR so the selector stays on the visual left.
+ */
+.PhoneInputGlass {
+  --PhoneInput-color--focus: #d4af37;
+  --PhoneInputCountryFlag-height: 1.05rem;
+  --PhoneInputCountryFlag-aspectRatio: 1.5;
+  --PhoneInputCountryFlag-borderWidth: 0px;
+  --PhoneInputCountryFlag-borderColor: transparent;
+  --PhoneInputCountryFlag-backgroundColor--loading: transparent;
+  --PhoneInputCountrySelect-marginRight: 0;
+  --PhoneInputCountrySelectArrow-color: #d4af37;
+  --PhoneInputCountrySelectArrow-opacity: 1;
+  --PhoneInputCountrySelectArrow-width: 0.35em;
+  --PhoneInputCountrySelectArrow-borderWidth: 1.5px;
+}
+
+.PhoneInputGlass .PhoneInput {
+  display: flex !important;
+  align-items: center;
+  width: 100%;
+  height: 52px;
+  min-height: 52px;
+  direction: ltr;
+}
+
+.PhoneInputGlass .PhoneInputCountry {
+  position: relative !important;
+  display: flex !important;
+  align-items: center;
+  align-self: stretch;
+  flex-shrink: 0;
+  margin: 0 !important;
+  padding-inline: 0.95rem 0.85rem;
+  border-inline-end: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.PhoneInputGlass .PhoneInputCountrySelect {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 2 !important;
+  margin: 0;
+  padding: 0;
+  border: 0 !important;
+  opacity: 0 !important;
+  cursor: pointer;
+  background: transparent;
+  color: transparent;
+  /* Keep native dropdown clickable over the flag */
+  -webkit-appearance: menulist-button;
+  appearance: menulist-button;
+}
+
+.PhoneInputGlass .PhoneInputCountryIcon,
+.PhoneInputGlass .PhoneInputCountryIcon--border {
+  display: block !important;
+  width: calc(var(--PhoneInputCountryFlag-height) * var(--PhoneInputCountryFlag-aspectRatio)) !important;
+  height: var(--PhoneInputCountryFlag-height) !important;
+  min-width: 1.5rem;
+  min-height: 1rem;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  overflow: visible !important;
+  border: 0 !important;
+  flex-shrink: 0;
+}
+
+.PhoneInputGlass .PhoneInputCountryIconImg,
+.PhoneInputGlass .PhoneInputCountryIcon img,
+.PhoneInputGlass .PhoneInputCountryIcon svg {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: cover;
+}
+
+.PhoneInputGlass .PhoneInputCountrySelectArrow {
+  display: block !important;
+  width: var(--PhoneInputCountrySelectArrow-width);
+  height: var(--PhoneInputCountrySelectArrow-width);
+  margin-inline-start: 0.45rem;
+  border-style: solid;
+  border-color: var(--PhoneInputCountrySelectArrow-color);
+  border-top-width: 0;
+  border-bottom-width: var(--PhoneInputCountrySelectArrow-borderWidth);
+  border-left-width: 0;
+  border-right-width: var(--PhoneInputCountrySelectArrow-borderWidth);
+  opacity: 1 !important;
+  transform: rotate(45deg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.PhoneInputGlass .PhoneInputInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 52px;
+  min-height: 52px;
+  border: 0 !important;
+  background: transparent !important;
+  color: #fff !important;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  padding-block: 0.875rem;
+  padding-inline: 0.85rem 1rem;
+  outline: none;
+  box-shadow: none !important;
+  text-align: left;
+}
+
+.PhoneInputGlass .PhoneInputInput::placeholder {
+  color: rgb(107 114 128);
+}
+
+.PhoneInputGlass .PhoneInputInput:focus {
+  outline: none;
+  box-shadow: none !important;
+}
