@@ -4,28 +4,13 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, CheckCircle2, Send } from 'lucide-react';
 import MagneticButton from '../ui/MagneticButton';
-
-function makeFadeLeft(isRTL) {
-    const xVal = isRTL ? 80 : -80;
-    return {
-        hidden: { opacity: 0, x: xVal },
-        visible: (i = 0) => ({
-            opacity: 1, x: 0,
-            transition: { duration: 1, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }
-        }),
-    };
-}
-
-function makeFadeRight(isRTL) {
-    const xVal = isRTL ? -80 : 80;
-    return {
-        hidden: { opacity: 0, x: xVal },
-        visible: (i = 0) => ({
-            opacity: 1, x: 0,
-            transition: { duration: 1, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }
-        }),
-    };
-}
+import {
+  fieldReveal,
+  makeFadeLeft,
+  makeFadeRight,
+  motionGpu,
+  motionViewport,
+} from '@/lib/motion';
 
 export default function ContactSection({ dictionary, lang }) {
     const isRTL = lang === 'ar';
@@ -54,7 +39,8 @@ export default function ContactSection({ dictionary, lang }) {
                         variants={fadeLeft}
                         initial="hidden"
                         whileInView="visible"
-                        viewport={{ once: true, margin: "0px 0px -100px 0px" }}
+                        viewport={motionViewport}
+                        className={motionGpu}
                     >
                         <motion.div
                             className="inline-block px-4 py-1.5 rounded-full bg-plum-100 dark:bg-plum-900/30 text-plum-700 dark:text-plum-400 text-sm font-semibold mb-4"
@@ -107,9 +93,9 @@ export default function ContactSection({ dictionary, lang }) {
                         variants={fadeRight}
                         initial="hidden"
                         whileInView="visible"
-                        viewport={{ once: true, margin: "0px 0px -100px 0px" }}
+                        viewport={motionViewport}
                         onSubmit={handleSubmit}
-                        className="bg-slate-50 dark:bg-slate-800 rounded-3xl p-8 md:p-10"
+                        className={`bg-slate-50 dark:bg-slate-800 rounded-3xl p-8 md:p-10 ${motionGpu}`}
                     >
                         <div className="space-y-5">
                             {[
@@ -119,10 +105,12 @@ export default function ContactSection({ dictionary, lang }) {
                             ].map((field, idx) => (
                                 <motion.div
                                     key={field.key}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true, margin: "0px 0px -100px 0px" }}
-                                    transition={{ delay: idx * 0.1 }}
+                                    custom={idx}
+                                    variants={fieldReveal}
+                                    initial="hidden"
+                                    whileInView="visible"
+                                    viewport={motionViewport}
+                                    className={motionGpu}
                                 >
                                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{field.label}</label>
                                     <input
@@ -137,10 +125,12 @@ export default function ContactSection({ dictionary, lang }) {
                             ))}
 
                             <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "0px 0px -100px 0px" }}
-                                transition={{ delay: 0.3 }}
+                                custom={3}
+                                variants={fieldReveal}
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={motionViewport}
+                                className={motionGpu}
                             >
                                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{dictionary.contact.form.message}</label>
                                 <textarea

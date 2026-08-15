@@ -6,15 +6,34 @@
  * so Next.js rewrites proxy to Railway. That makes XSRF-TOKEN a first-party
  * cookie on the Vercel domain — readable by JS and attachable as X-XSRF-TOKEN.
  *
- * Env:
- *  NEXT_PUBLIC_BACKEND_URL  Laravel origin (local or Railway)
- *  NEXT_PUBLIC_API_URL      Laravel API base (…/api) or `/api` on Vercel
+ * Env (Vercel):
+ *   NEXT_PUBLIC_BACKEND_URL=https://creativity-house-production.up.railway.app
+ *   NEXT_PUBLIC_API_URL=/api
+ *
+ * Env (local WAMP):
+ *   NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+ *   NEXT_PUBLIC_API_URL=http://localhost:8000/api
  */
 
 import axios from 'axios';
 
+/**
+ * Clean env URLs. Strips accidental "KEY=value" duplication pasted into Vercel/env files.
+ * e.g. "NEXT_PUBLIC_API_URL=https://…" → "https://…"
+ */
+function sanitizeEnvUrl(raw) {
+  let value = String(raw || '').trim();
+  if (!value) return '';
+
+  // Strip accidental KEY= prefix (common Vercel / .env paste mistake)
+  value = value.replace(/^(?:NEXT_PUBLIC_[A-Z0-9_]+=)+/i, '');
+  value = value.trim();
+
+  return value;
+}
+
 function stripTrailingSlashes(url) {
-  return String(url || '').trim().replace(/\/+$/, '');
+  return sanitizeEnvUrl(url).replace(/\/+$/, '');
 }
 
 function isLocalHost(url) {
@@ -26,13 +45,15 @@ function isLocalHost(url) {
  * and for Next.js rewrite destinations.
  */
 export function resolveAbsoluteBackendUrl() {
-  const rawBackend = process.env.NEXT_PUBLIC_BACKEND_URL;
-  if (rawBackend && String(rawBackend).trim()) {
-    return stripTrailingSlashes(rawBackend).replace(/\/api$/i, '');
+  const rawBackend = sanitizeEnvUrl(process.env.NEXT_PUBLIC_BACKEND_URL);
+  if (rawBackend) {
+    return stripTrailingSlashes(rawBackend)
+      .replace(/\/api\/v\d+$/i, '')
+      .replace(/\/api$/i, '');
   }
 
-  const rawApi = process.env.NEXT_PUBLIC_API_URL;
-  if (rawApi && String(rawApi).trim() && !String(rawApi).startsWith('/')) {
+  const rawApi = sanitizeEnvUrl(process.env.NEXT_PUBLIC_API_URL);
+  if (rawApi && !rawApi.startsWith('/')) {
     return stripTrailingSlashes(rawApi)
       .replace(/\/api\/v\d+$/i, '')
       .replace(/\/api$/i, '');
@@ -45,11 +66,11 @@ export function resolveAbsoluteBackendUrl() {
  * Absolute API base from env before same-origin proxy adjustment.
  */
 function resolveConfiguredApiBaseUrl() {
-  const rawApi = process.env.NEXT_PUBLIC_API_URL;
+  const rawApi = sanitizeEnvUrl(process.env.NEXT_PUBLIC_API_URL);
 
-  if (rawApi && String(rawApi).trim()) {
+  if (rawApi) {
     // Relative same-origin path (recommended on Vercel): `/api`
-    if (String(rawApi).startsWith('/')) {
+    if (rawApi.startsWith('/')) {
       return stripTrailingSlashes(rawApi) || '/api';
     }
 
@@ -70,13 +91,18 @@ function resolveConfiguredApiBaseUrl() {
  */
 function shouldUseSameOriginProxy(apiBase) {
   if (typeof window === 'undefined') return false;
-  if (!apiBase || apiBase.startsWith('/')) return false;
+  if (!apiBase) return false;
+
+  // Explicit relative path — already same-origin
+  if (apiBase.startsWith('/')) return true;
+
   if (isLocalHost(apiBase)) return false;
 
   try {
     return new URL(apiBase, window.location.origin).origin !== window.location.origin;
   } catch {
-    return false;
+    // Malformed absolute URL → fall back to same-origin proxy
+    return true;
   }
 }
 
@@ -260,18 +286,17 @@ function toApiError(error) {
  * Uses a bare Axios call (NOT apiClient) so the `/api` baseURL can never
  * prepend onto `/sanctum/csrf-cookie`.
  *
- * - Local:  http://localhost:8000/sanctum/csrf-cookie
- * - Vercel: https://creativity-house.vercel.app/sanctum/csrf-cookie
- *           → rewritten by next.config.mjs to Railway (middleware excludes /sanctum)
+ * - Local WAMP:  http://localhost:8000/sanctum/csrf-cookie
+ * - Vercel / proxy:  /sanctum/csrf-cookie  (same-origin → next.config rewrite → Railway)
  */
 export async function getCsrfCookie() {
   const backend = resolveBackendUrl();
-  const csrfOrigin =
-    backend ||
-    (typeof window !== 'undefined'
-      ? window.location.origin
-      : resolveAbsoluteBackendUrl());
-  const csrfUrl = `${csrfOrigin.replace(/\/+$/, '')}/sanctum/csrf-cookie`;
+
+  // Prefer relative path whenever we are in same-origin proxy mode.
+  // Absolute URLs are only used for true local Laravel (localhost:8000).
+  const csrfUrl = backend
+    ? `${backend.replace(/\/+$/, '')}/sanctum/csrf-cookie`
+    : '/sanctum/csrf-cookie';
 
   try {
     await axios.get(csrfUrl, {
@@ -283,8 +308,7 @@ export async function getCsrfCookie() {
         Accept: 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
       },
-      // Prevent inheriting any default baseURL
-      baseURL: undefined,
+      baseURL: '',
     });
   } catch (error) {
     const status = error?.response?.status || 0;

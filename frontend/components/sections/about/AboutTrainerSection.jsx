@@ -3,21 +3,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Award, BookOpen, Briefcase, GraduationCap, Star } from 'lucide-react';
-
-const fadeUp = {
-    hidden: { opacity: 0, y: 35 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] } },
-};
-
-const stagger = {
-    hidden: {},
-    visible: { transition: { staggerChildren: 0.13, delayChildren: 0.05 } },
-};
-
-const scaleUp = {
-    hidden: { opacity: 0, scale: 0.85 },
-    visible: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 200, damping: 22 } },
-};
+import {
+  fadeUpY35,
+  motionGpu,
+  motionViewport,
+  scaleUpSoft,
+  staggerAlt,
+} from '@/lib/motion';
 
 // Icon map for credentials and expertise (positional — order matches JSON)
 const credentialIcons = [GraduationCap, GraduationCap, BookOpen];
@@ -35,15 +27,15 @@ export default function AboutTrainerSection({ dictionary, lang }) {
                 {/* Section header */}
                 <motion.div
                     className="text-center mb-16"
-                    variants={stagger}
+                    variants={staggerAlt}
                     initial="hidden"
                     whileInView="visible"
-                    viewport={{ once: true, margin: '0px 0px -100px 0px' }}
+                    viewport={motionViewport}
                 >
-                    <motion.span variants={fadeUp} className="inline-block px-5 py-2 rounded-full bg-plum-50 dark:bg-plum-900/30 border border-plum-200 dark:border-plum-700 text-plum-700 dark:text-plum-300 text-sm font-semibold tracking-widest uppercase mb-4">
+                    <motion.span variants={fadeUpY35} className="inline-block px-5 py-2 rounded-full bg-plum-50 dark:bg-plum-900/30 border border-plum-200 dark:border-plum-700 text-plum-700 dark:text-plum-300 text-sm font-semibold tracking-widest uppercase mb-4">
                         {t.badge}
                     </motion.span>
-                    <motion.h2 variants={fadeUp} id="trainer-heading" className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
+                    <motion.h2 variants={fadeUpY35} id="trainer-heading" className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
                         {t.title}{' '}
                         <span className="bg-gradient-to-r from-plum-700 to-plum-500 bg-clip-text text-transparent">
                             {t.titleHighlight}
@@ -54,10 +46,11 @@ export default function AboutTrainerSection({ dictionary, lang }) {
                 {/* Trainer Card */}
                 <motion.div
                     className="relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50"
-                    variants={fadeUp}
+                    variants={fadeUpY35}
                     initial="hidden"
                     whileInView="visible"
-                    viewport={{ once: true, margin: '0px 0px -100px 0px' }}
+                    viewport={motionViewport}
+                    className={motionGpu}
                 >
                     {/* Top accent gradient */}
                     <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-plum-700 via-plum-500 to-gold-500" />
@@ -103,10 +96,10 @@ export default function AboutTrainerSection({ dictionary, lang }) {
 
                             {/* Credentials */}
                             <motion.div
-                                variants={stagger}
+                                variants={staggerAlt}
                                 initial="hidden"
                                 whileInView="visible"
-                                viewport={{ once: true, margin: '0px 0px -100px 0px' }}
+                                viewport={motionViewport}
                             >
                                 <h4 className="text-xs font-semibold tracking-widest uppercase text-plum-600 dark:text-plum-400 mb-4">
                                     {t.credentials_label}
@@ -115,7 +108,7 @@ export default function AboutTrainerSection({ dictionary, lang }) {
                                     {t.credentials.map((label, i) => {
                                         const Icon = credentialIcons[i] ?? GraduationCap;
                                         return (
-                                            <motion.div key={i} variants={scaleUp} className="flex items-center gap-3">
+                                            <motion.div key={i} variants={scaleUpSoft} className={`flex items-center gap-3 ${motionGpu}`}>
                                                 <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-plum-50 dark:bg-plum-900/40 flex items-center justify-center">
                                                     <Icon className="w-4 h-4 text-plum-600 dark:text-plum-400" aria-hidden="true" />
                                                 </div>

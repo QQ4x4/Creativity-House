@@ -3,14 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import TestimonialCard from '../ui/TestimonialCard';
-
-const fadeUp = {
-    hidden: { opacity: 0, y: 60, scale: 0.95 },
-    visible: (i = 0) => ({
-        opacity: 1, y: 0, scale: 1,
-        transition: { duration: 1, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }
-    }),
-};
+import { fadeUp, motionGpu, motionViewport } from '@/lib/motion';
 
 export default function TestimonialsSection({ dictionary, lang }) {
     return (
@@ -20,8 +13,8 @@ export default function TestimonialsSection({ dictionary, lang }) {
                     variants={fadeUp}
                     initial="hidden"
                     whileInView="visible"
-                    viewport={{ once: true, margin: "0px 0px -100px 0px" }}
-                    className="text-center mb-16"
+                    viewport={motionViewport}
+                    className={`text-center mb-16 ${motionGpu}`}
                 >
                     <motion.div
                         className="inline-block px-4 py-1.5 rounded-full bg-plum-100 dark:bg-plum-900/30 text-plum-700 dark:text-plum-400 text-sm font-semibold mb-4"

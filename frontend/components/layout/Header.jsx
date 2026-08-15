@@ -74,7 +74,7 @@ export default function Header({ dictionary, lang, scrolled }) {
                             {dictionary.nav.myProfile}
                         </Link>
                         <Link
-                            href={`/${lang}/#services`}
+                            href={`/${lang}/my-courses`}
                             onClick={() => setIsMenuOpen(false)}
                             className="flex min-h-[44px] items-center gap-2 rounded-lg px-0 py-2 text-slate-700 dark:text-slate-300"
                         >
@@ -142,7 +142,7 @@ export default function Header({ dictionary, lang, scrolled }) {
                                     {dictionary.nav.myProfile}
                                 </Link>
                                 <Link
-                                    href={`/${lang}/#services`}
+                                    href={`/${lang}/my-courses`}
                                     role="menuitem"
                                     onClick={() => setUserMenuOpen(false)}
                                     className="flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-sm text-white/90 transition-colors hover:bg-white/10"
@@ -246,7 +246,11 @@ export default function Header({ dictionary, lang, scrolled }) {
                                             filter: hoveredNav === null ? 'blur(0px)' : hoveredNav === link.name ? 'blur(0px)' : 'blur(3px)',
                                             opacity: hoveredNav === null ? 1 : hoveredNav === link.name ? 1 : 0.4,
                                         }}
-                                        transition={{ duration: 0.2, ease: 'easeOut' }}
+                                        transition={{
+                                            // Instant nav hover scale/blur — intentional (do not increase duration)
+                                            duration: 0,
+                                            ease: 'easeOut',
+                                        }}
                                     >
                                         {link.isPage
                                             ? <Link href={link.href} className="inherit">{link.name}</Link>

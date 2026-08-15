@@ -5,18 +5,13 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { socialLinks } from '@/components/ui/SocialIcons';
 
-const staggerContainer = {
-    hidden: {},
-    visible: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-};
-
-const fadeUp = {
-    hidden: { opacity: 0, y: 60, scale: 0.95 },
-    visible: (i = 0) => ({
-        opacity: 1, y: 0, scale: 1,
-        transition: { duration: 1, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }
-    }),
-};
+import {
+  fadeUp,
+  motionGpu,
+  motionViewport,
+  SCROLL_DURATION,
+  staggerContainer,
+} from '@/lib/motion';
 
 export default function Footer({ dictionary, lang }) {
     const isRTL = lang === 'ar';
@@ -30,9 +25,9 @@ export default function Footer({ dictionary, lang }) {
                     variants={staggerContainer}
                     initial="hidden"
                     whileInView="visible"
-                    viewport={{ once: true, margin: "0px 0px -100px 0px" }}
+                    viewport={motionViewport}
                 >
-                    <motion.div className="md:col-span-2" variants={fadeUp}>
+                    <motion.div className={`md:col-span-2 ${motionGpu}`} variants={fadeUp}>
                         <div className="flex items-center mb-6">
                             <img
                                 src="/logo.png"
@@ -65,7 +60,7 @@ export default function Footer({ dictionary, lang }) {
                         </div>
                     </motion.div>
 
-                    <motion.div variants={fadeUp} custom={1}>
+                    <motion.div className={motionGpu} variants={fadeUp} custom={1}>
                         <h4 className="font-bold mb-4">{dictionary.footer.servicesTitle}</h4>
                         <ul className="space-y-2 text-slate-400">
                             {dictionary.footer.serviceLinks.map((item, idx) => (
@@ -76,7 +71,7 @@ export default function Footer({ dictionary, lang }) {
                         </ul>
                     </motion.div>
 
-                    <motion.div variants={fadeUp} custom={2}>
+                    <motion.div className={motionGpu} variants={fadeUp} custom={2}>
                         <h4 className="font-bold mb-4">{dictionary.footer.contactTitle}</h4>
                         <ul className="space-y-2 text-slate-400">
                             <li>{dictionary.contact.emailValue}</li>
@@ -87,11 +82,11 @@ export default function Footer({ dictionary, lang }) {
                 </motion.div>
 
                 <motion.div
-                    className="mt-12 pt-8 border-t border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4"
+                    className={`mt-12 pt-8 border-t border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4 ${motionGpu}`}
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
-                    viewport={{ once: true, margin: "0px" }}
-                    transition={{ delay: 0.3 }}
+                    viewport={motionViewport}
+                    transition={{ duration: SCROLL_DURATION, ease: [0.22, 1, 0.36, 1] }}
                 >
                     <div className="text-sm text-slate-300">
                         {dictionary.footer.legal.copyright}

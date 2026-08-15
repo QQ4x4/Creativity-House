@@ -78,10 +78,11 @@ export default function OtpInput({ value, onChange, disabled = false, error }) {
             maxLength={1}
             disabled={disabled}
             value={digit}
+            dir="ltr"
             aria-label={`Digit ${index + 1}`}
             onChange={(e) => handleChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
-            className={`min-h-[52px] w-full max-w-[56px] rounded-2xl border bg-white/[0.05] text-center text-xl font-semibold text-white outline-none transition-all duration-200 focus:border-amber-400/60 focus:ring-2 focus:ring-amber-400/20 ${
+            className={`h-[52px] min-h-[52px] w-full max-w-[56px] rounded-2xl border bg-white/[0.05] p-0 text-center !text-center text-xl font-semibold leading-[52px] tabular-nums text-white outline-none transition-all duration-200 focus:border-amber-400/60 focus:ring-2 focus:ring-amber-400/20 ${
               error ? 'border-red-400/70' : 'border-white/10 hover:border-white/20'
             }`}
           />

@@ -4,41 +4,27 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Shield, Zap, TrendingUp } from 'lucide-react';
 import TiltCard from '../ui/TiltCard';
+import {
+  fadeUp,
+  motionGpu,
+  motionViewport,
+  scaleUp,
+  staggerContainer,
+} from '@/lib/motion';
 
 const featureIcons = [Sparkles, Shield, Zap, TrendingUp];
-
-const fadeUp = {
-    hidden: { opacity: 0, y: 60, scale: 0.95 },
-    visible: (i = 0) => ({
-        opacity: 1, y: 0, scale: 1,
-        transition: { duration: 1, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }
-    }),
-};
-
-const staggerContainer = {
-    hidden: {},
-    visible: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-};
-
-const scaleUp = {
-    hidden: { opacity: 0, scale: 0.7 },
-    visible: (i = 0) => ({
-        opacity: 1, scale: 1,
-        transition: { duration: 1, delay: i * 0.1, type: 'spring', stiffness: 200 }
-    }),
-};
 
 export default function AboutSection({ dictionary }) {
     return (
         <section id="about" className="py-24 bg-gradient-to-br from-slate-900 via-plum-900 to-plum-950 text-white relative overflow-hidden">
             <div className="absolute inset-0 opacity-20">
                 <motion.div
-                    className="absolute top-0 left-1/4 w-96 h-96 bg-plum-500 rounded-full blur-3xl"
+                    className="absolute top-0 left-1/4 w-96 h-96 bg-plum-500 rounded-full blur-3xl transform-gpu"
                     animate={{ x: [-30, 30, -30], y: [-20, 20, -20] }}
                     transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 <motion.div
-                    className="absolute bottom-0 right-1/4 w-96 h-96 bg-gold-500 rounded-full blur-3xl"
+                    className="absolute bottom-0 right-1/4 w-96 h-96 bg-gold-500 rounded-full blur-3xl transform-gpu"
                     animate={{ x: [30, -30, 30], y: [20, -20, 20] }}
                     transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
                 />
@@ -49,8 +35,8 @@ export default function AboutSection({ dictionary }) {
                     variants={fadeUp}
                     initial="hidden"
                     whileInView="visible"
-                    viewport={{ once: true, margin: "0px 0px -100px 0px" }}
-                    className="text-center mb-16"
+                    viewport={motionViewport}
+                    className={`text-center mb-16 ${motionGpu}`}
                 >
                     <motion.div
                         className="inline-block px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-semibold mb-4 border border-white/20"
@@ -71,7 +57,7 @@ export default function AboutSection({ dictionary }) {
                     variants={staggerContainer}
                     initial="hidden"
                     whileInView="visible"
-                    viewport={{ once: true, margin: "0px 0px -100px 0px" }}
+                    viewport={motionViewport}
                 >
                     {dictionary.about.features.map((feature, idx) => {
                         const FeatureIcon = featureIcons[idx];
@@ -80,6 +66,7 @@ export default function AboutSection({ dictionary }) {
                                 key={idx}
                                 custom={idx}
                                 variants={scaleUp}
+                                className={motionGpu}
                             >
                                 <TiltCard
                                     className="relative p-8 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-gold-400/30 transition-all duration-200 h-full"

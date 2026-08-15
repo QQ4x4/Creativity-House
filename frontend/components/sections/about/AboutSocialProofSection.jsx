@@ -3,6 +3,12 @@
 import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Quote } from 'lucide-react';
+import {
+  fadeUpY30,
+  motionGpu,
+  motionViewport,
+  staggerAlt,
+} from '@/lib/motion';
 
 /* ─── Client Logos ─── (Names are brand names — no translation needed) */
 const clientLogos = [
@@ -11,17 +17,6 @@ const clientLogos = [
     'DELL Technologies', 'Ministry of Defence Brunei', 'UPM', 'UTM',
     'MOL', 'LPC', 'GACA',
 ];
-
-/* ─── Animation Variants ─── */
-const fadeUp = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: [0.25, 0.46, 0.45, 0.94] } },
-};
-
-const stagger = {
-    hidden: {},
-    visible: { transition: { staggerChildren: 0.14, delayChildren: 0.05 } },
-};
 
 /* ─── Logo Marquee ───
  * Bug 2 Fix: The marquee is always forced to dir="ltr" because brand logos
@@ -75,11 +70,11 @@ function TestimonialTiltCard({ name, role, quote }) {
 
     return (
         <motion.div
-            variants={fadeUp}
+            variants={fadeUpY30}
             ref={cardRef}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
-            className="relative p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md hover:shadow-xl hover:shadow-plum-500/10 transition-shadow duration-300 cursor-default"
+            className={`relative p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md hover:shadow-xl hover:shadow-plum-500/10 transition-shadow duration-300 cursor-default ${motionGpu}`}
             style={{ transformStyle: 'preserve-3d', transition: 'transform 0.15s ease-out' }}
         >
             <Quote className="w-8 h-8 text-plum-300 dark:text-plum-600 mb-4 opacity-60" aria-hidden="true" />
@@ -106,22 +101,22 @@ export default function AboutSocialProofSection({ dictionary, lang }) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section header */}
                 <motion.div
-                    className="text-center mb-16"
-                    variants={stagger}
+                    className={`text-center mb-16 ${motionGpu}`}
+                    variants={staggerAlt}
                     initial="hidden"
                     whileInView="visible"
-                    viewport={{ once: true, margin: '0px 0px -100px 0px' }}
+                    viewport={motionViewport}
                 >
-                    <motion.span variants={fadeUp} className="inline-block px-5 py-2 rounded-full bg-plum-50 dark:bg-plum-900/30 border border-plum-200 dark:border-plum-700 text-plum-700 dark:text-plum-300 text-sm font-semibold tracking-widest uppercase mb-4">
+                    <motion.span variants={fadeUpY30} className="inline-block px-5 py-2 rounded-full bg-plum-50 dark:bg-plum-900/30 border border-plum-200 dark:border-plum-700 text-plum-700 dark:text-plum-300 text-sm font-semibold tracking-widest uppercase mb-4">
                         {t.badge}
                     </motion.span>
-                    <motion.h2 variants={fadeUp} id="social-proof-heading" className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mb-4">
+                    <motion.h2 variants={fadeUpY30} id="social-proof-heading" className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mb-4">
                         {t.title}{' '}
                         <span className="bg-gradient-to-r from-plum-700 to-plum-500 bg-clip-text text-transparent">
                             {t.titleHighlight}
                         </span>
                     </motion.h2>
-                    <motion.p variants={fadeUp} className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+                    <motion.p variants={fadeUpY30} className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
                         {t.description}
                     </motion.p>
                 </motion.div>
@@ -134,10 +129,10 @@ export default function AboutSocialProofSection({ dictionary, lang }) {
                 {/* Testimonials Grid */}
                 <motion.div
                     className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
-                    variants={stagger}
+                    variants={staggerAlt}
                     initial="hidden"
                     whileInView="visible"
-                    viewport={{ once: true, margin: '0px 0px -100px 0px' }}
+                    viewport={motionViewport}
                 >
                     {t.testimonials.map((testimonial, i) => (
                         <TestimonialTiltCard key={i} {...testimonial} />

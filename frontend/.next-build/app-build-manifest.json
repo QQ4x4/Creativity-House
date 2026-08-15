@@ -31,15 +31,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/[lang]/(auth)/login/page.js"
     ],
-    "/[lang]/(auth)/verify-otp/page": [
+    "/[lang]/about/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/[lang]/(auth)/verify-otp/page.js"
+      "static/chunks/app/[lang]/about/page.js"
     ],
-    "/[lang]/(auth)/forgot-password/page": [
+    "/[lang]/profile/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/[lang]/(auth)/forgot-password/page.js"
+      "static/chunks/app/[lang]/profile/page.js"
+    ],
+    "/[lang]/my-courses/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/[lang]/my-courses/page.js"
     ]
   }
 }

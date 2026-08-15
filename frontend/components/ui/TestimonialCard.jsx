@@ -4,14 +4,13 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Star, ChevronRight } from 'lucide-react';
 import TiltCard from './TiltCard';
-
-const fadeUp = {
-    hidden: { opacity: 0, y: 60, scale: 0.95 },
-    visible: (i = 0) => ({
-        opacity: 1, y: 0, scale: 1,
-        transition: { duration: 1, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }
-    }),
-};
+import {
+  fadeUp,
+  motionGpu,
+  motionViewport,
+  SCROLL_STAGGER,
+  staggerContainer,
+} from '@/lib/motion';
 
 export default function TestimonialCard({ testimonial, idx, lang, dictionary }) {
     const isRTL = lang === 'ar';
@@ -31,7 +30,8 @@ export default function TestimonialCard({ testimonial, idx, lang, dictionary }) 
             variants={fadeUp}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, margin: "0px 0px -100px 0px" }}
+            viewport={motionViewport}
+            className={motionGpu}
         >
             <TiltCard className="relative bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-2xl dark:shadow-slate-950/20 transition-all duration-500 flex flex-col justify-between h-full" intensity={8}>
                 <div>
@@ -41,8 +41,14 @@ export default function TestimonialCard({ testimonial, idx, lang, dictionary }) 
                                 key={i}
                                 initial={{ opacity: 0, scale: 0, rotate: -180 }}
                                 whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
-                                viewport={{ once: true, margin: "0px 0px -100px 0px" }}
-                                transition={{ delay: idx * 0.15 + i * 0.08, type: 'spring', stiffness: 300 }}
+                                viewport={motionViewport}
+                                transition={{
+                                    delay: idx * SCROLL_STAGGER + i * 0.04,
+                                    type: 'spring',
+                                    stiffness: 300,
+                                    damping: 22,
+                                }}
+                                className="transform-gpu"
                             >
                                 <Star className="w-5 h-5 fill-gold-400 text-gold-400" />
                             </motion.div>
@@ -64,7 +70,7 @@ export default function TestimonialCard({ testimonial, idx, lang, dictionary }) 
                 <div className="flex items-center gap-4 pt-6 border-t border-slate-100 dark:border-slate-700 mt-auto">
                     <motion.div
                         whileHover={{ scale: 1.15, rotate: 5 }}
-                        className="w-12 h-12 rounded-full bg-gradient-to-br from-plum-600 to-gold-500 flex items-center justify-center text-white font-bold flex-shrink-0 shadow-lg"
+                        className="w-12 h-12 rounded-full bg-gradient-to-br from-plum-600 to-gold-500 flex items-center justify-center text-white font-bold flex-shrink-0 shadow-lg transform-gpu"
                     >
                         {testimonial.name.charAt(0)}
                     </motion.div>

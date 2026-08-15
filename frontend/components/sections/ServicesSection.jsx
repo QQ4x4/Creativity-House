@@ -5,44 +5,17 @@ import { motion } from 'framer-motion';
 import { Database, Kanban, Cloud, GraduationCap, CheckCircle2, ChevronRight } from 'lucide-react';
 import TiltCard from '../ui/TiltCard';
 import { images } from '@/config/site';
+import {
+  fadeUp,
+  makeFadeLeft,
+  makeFadeRight,
+  motionGpu,
+  motionViewport,
+  staggerContainer,
+} from '@/lib/motion';
 
 const serviceIcons = [Database, Kanban, Cloud, GraduationCap];
 const serviceImages = [images.crm, images.pm, images.cloud, images.training];
-
-const fadeUp = {
-    hidden: { opacity: 0, y: 60, scale: 0.95 },
-    visible: (i = 0) => ({
-        opacity: 1, y: 0, scale: 1,
-        transition: { duration: 1, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }
-    }),
-};
-
-const staggerContainer = {
-    hidden: {},
-    visible: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-};
-
-function makeFadeLeft(isRTL) {
-    const xVal = isRTL ? 80 : -80;
-    return {
-        hidden: { opacity: 0, x: xVal },
-        visible: (i = 0) => ({
-            opacity: 1, x: 0,
-            transition: { duration: 1, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }
-        }),
-    };
-}
-
-function makeFadeRight(isRTL) {
-    const xVal = isRTL ? -80 : 80;
-    return {
-        hidden: { opacity: 0, x: xVal },
-        visible: (i = 0) => ({
-            opacity: 1, x: 0,
-            transition: { duration: 1, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }
-        }),
-    };
-}
 
 export default function ServicesSection({ dictionary, lang }) {
     const isRTL = lang === 'ar';
@@ -57,8 +30,8 @@ export default function ServicesSection({ dictionary, lang }) {
                     variants={fadeUp}
                     initial="hidden"
                     whileInView="visible"
-                    viewport={{ once: true, margin: "0px 0px -100px 0px" }}
-                    className="text-center mb-16"
+                    viewport={motionViewport}
+                    className={`text-center mb-16 ${motionGpu}`}
                 >
                     <motion.div
                         className="inline-block px-4 py-1.5 rounded-full bg-plum-100 dark:bg-plum-900/30 text-plum-700 dark:text-plum-400 text-sm font-semibold mb-4"
@@ -79,7 +52,7 @@ export default function ServicesSection({ dictionary, lang }) {
                     variants={staggerContainer}
                     initial="hidden"
                     whileInView="visible"
-                    viewport={{ once: true, margin: "0px 0px -100px 0px" }}
+                    viewport={motionViewport}
                 >
                     {dictionary.services.items.map((service, idx) => {
                         const ServiceIcon = serviceIcons[idx];
@@ -88,6 +61,7 @@ export default function ServicesSection({ dictionary, lang }) {
                                 key={idx}
                                 custom={idx}
                                 variants={idx % 2 === 0 ? fadeLeft : fadeRight}
+                                className={motionGpu}
                             >
                                 <TiltCard
                                     className="relative group bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl dark:shadow-slate-950/30 transition-all duration-500"
@@ -101,7 +75,7 @@ export default function ServicesSection({ dictionary, lang }) {
                                             height="256"
                                             loading="lazy"
                                             decoding="async"
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-cover transform-gpu"
                                             whileHover={{ scale: 1.1 }}
                                             transition={{ duration: 0.7 }}
                                         />

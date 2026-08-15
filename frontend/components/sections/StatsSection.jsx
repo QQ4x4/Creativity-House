@@ -3,21 +3,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Globe, Users, Star, Award } from 'lucide-react';
+import {
+  motionGpu,
+  motionViewport,
+  scaleUp,
+  staggerContainer,
+} from '@/lib/motion';
 
 const statIcons = [Globe, Users, Star, Award];
-
-const staggerContainer = {
-    hidden: {},
-    visible: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-};
-
-const scaleUp = {
-    hidden: { opacity: 0, scale: 0.7 },
-    visible: (i = 0) => ({
-        opacity: 1, scale: 1,
-        transition: { duration: 1, delay: i * 0.1, type: 'spring', stiffness: 200 }
-    }),
-};
 
 export default function StatsSection({ dictionary }) {
     return (
@@ -27,7 +20,7 @@ export default function StatsSection({ dictionary }) {
                 variants={staggerContainer}
                 initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true, margin: "0px 0px -100px 0px" }}
+                viewport={motionViewport}
             >
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                     {dictionary.stats.items.map((stat, idx) => {
@@ -39,7 +32,7 @@ export default function StatsSection({ dictionary }) {
                                 variants={scaleUp}
                                 whileHover={{ scale: 1.1, y: -10 }}
                                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                                className="text-center group cursor-pointer"
+                                className={`text-center group cursor-pointer ${motionGpu}`}
                             >
                                 <motion.div
                                     className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-plum-100 to-gold-100 dark:from-plum-900/40 dark:to-gold-900/40 mb-4 group-hover:shadow-lg group-hover:shadow-plum-500/20 transition-shadow"

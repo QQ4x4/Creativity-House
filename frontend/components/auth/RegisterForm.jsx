@@ -11,6 +11,7 @@ import { User, Mail, Lock } from 'lucide-react';
 import GlassAuthInput from '@/components/auth/GlassAuthInput';
 import GlassPhoneInput from '@/components/auth/GlassPhoneInput';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
+import PasswordRequirements from '@/components/auth/PasswordRequirements';
 import { applyServerErrors, formatValidationErrors, sanitizeRegisterPayload } from '@/lib/auth';
 import { ApiError, apiPost, getCsrfCookie } from '@/lib/api';
 import { createRegisterSchema } from '@/lib/validations/auth';
@@ -28,6 +29,7 @@ export default function RegisterForm({ dictionary, lang }) {
   const [formError, setFormError] = useState('');
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
   const t = dictionary.auth;
 
@@ -40,6 +42,7 @@ export default function RegisterForm({ dictionary, lang }) {
     handleSubmit,
     control,
     setError,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(createRegisterSchema(lang)),
@@ -52,6 +55,11 @@ export default function RegisterForm({ dictionary, lang }) {
       password_confirmation: '',
     },
   });
+
+  const passwordValue = watch('password') || '';
+  const passwordField = register('password');
+  const showPasswordRequirements =
+    passwordFocused || String(passwordValue).length > 0;
 
   const onSubmit = async (values) => {
     setFormError('');
@@ -176,16 +184,48 @@ export default function RegisterForm({ dictionary, lang }) {
         )}
       />
 
-      <GlassAuthInput
-        id="password"
-        label={t.password}
-        icon={Lock}
-        showPasswordToggle
-        maxLength={50}
-        autoComplete="new-password"
-        error={errors.password?.message}
-        {...register('password')}
-      />
+      <div>
+        <GlassAuthInput
+          id="password"
+          label={t.password}
+          icon={Lock}
+          showPasswordToggle
+          maxLength={50}
+          autoComplete="new-password"
+          error={errors.password?.message}
+          aria-describedby="password-requirements"
+          {...passwordField}
+          onFocus={(event) => {
+            passwordField.onFocus?.(event);
+            setPasswordFocused(true);
+          }}
+          onBlur={(event) => {
+            passwordField.onBlur(event);
+            setPasswordFocused(false);
+          }}
+        />
+
+        {mounted ? (
+          <PasswordRequirements
+            id="password-requirements"
+            password={passwordValue}
+            visible={showPasswordRequirements}
+            labels={{
+              title: t.passwordRequirementsTitle,
+              strength: t.passwordStrength,
+              weak: t.passwordWeak,
+              fair: t.passwordFair,
+              strong: t.passwordStrong,
+              veryStrong: t.passwordVeryStrong,
+              length: t.passwordRuleLength,
+              uppercase: t.passwordRuleUppercase,
+              lowercase: t.passwordRuleLowercase,
+              number: t.passwordRuleNumber,
+              special: t.passwordRuleSpecial,
+            }}
+          />
+        ) : null}
+      </div>
 
       <GlassAuthInput
         id="password_confirmation"
