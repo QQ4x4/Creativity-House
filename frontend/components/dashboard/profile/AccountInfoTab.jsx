@@ -68,6 +68,8 @@ export default function AccountInfoTab({ profile, labels, lang, onSave, onSaveAv
   const handleAvatar = async (file) => {
     setIsUploading(true);
     try {
+      // Avatar uploads immediately (not via Save changes). Success updates
+      // profile + AuthProvider so the Header avatar refreshes without a submit.
       const { source } = await onSaveAvatar(file);
       toast.success(source === 'mock' ? labels.avatarSavedLocally : labels.avatarSaved);
     } catch (error) {

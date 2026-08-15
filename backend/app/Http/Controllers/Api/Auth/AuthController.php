@@ -239,6 +239,8 @@ class AuthController extends Controller
             'name' => $user->full_name,
             'email' => $user->email,
             'phone_number' => $user->phone_number,
+            // Public URL so the Header avatar stays in sync after refresh.
+            'avatar_url' => $user->avatarUrl(),
             'email_verified_at' => $user->email_verified_at,
             'is_active' => $user->is_active,
         ];

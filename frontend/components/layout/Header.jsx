@@ -45,6 +45,7 @@ export default function Header({ dictionary, lang, scrolled }) {
 
     const displayName = user?.first_name || user?.name || '';
     const initial = (displayName || 'U').charAt(0).toUpperCase();
+    const avatarUrl = user?.avatar_url || user?.avatarUrl || null;
 
     const AuthActions = ({ mobile = false }) => {
         if (isLoading) {
@@ -103,14 +104,24 @@ export default function Header({ dictionary, lang, scrolled }) {
                         onClick={() => setUserMenuOpen((open) => !open)}
                         className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 ${
                             scrolled
-                                ? 'border-slate-200 bg-white/80 text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100'
+                                ? 'border-slate-200 bg-white/80 text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:hover:bg-white/10 dark:hover:text-white'
                                 : 'border-white/20 bg-white/10 text-white hover:bg-white/15'
                         }`}
                         aria-expanded={userMenuOpen}
                         aria-haspopup="menu"
                     >
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-plum-600 to-gold-500 text-sm font-semibold text-white">
-                            {initial}
+                        <span className="inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-plum-600 to-gold-500 text-sm font-semibold text-white">
+                            {avatarUrl ? (
+                                <img
+                                    src={avatarUrl}
+                                    alt=""
+                                    width={32}
+                                    height={32}
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                initial
+                            )}
                         </span>
                         <span className="max-w-[7rem] truncate text-sm font-medium">{displayName}</span>
                         <ChevronDown className={`h-4 w-4 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />

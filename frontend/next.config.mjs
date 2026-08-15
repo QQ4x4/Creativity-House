@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Default `.next` locks/corrupts on this Windows host (errno -4094 on manifests).
-  distDir: '.next-build',
+  // Use the default `.next` output directory. A custom `distDir` (e.g.
+  // `.next-build`) on Windows causes aggressive file-locking (errno -4094
+  // UNKNOWN) on compiled CSS under static/css/app/[lang]/layout.css and
+  // contributes to Watchpack escaping the project boundary.
   images: {
     remotePatterns: [
       {
@@ -11,9 +13,8 @@ const nextConfig = {
     ],
   },
 
-  // Windows: Watchpack sometimes probes C:\ (DumpStack.log.tmp / pagefile.sys),
-  // which throws EINVAL and can corrupt the build cache. Keep watching scoped
-  // to the project and ignore those system files.
+  // Keep Watchpack scoped to the project. Only relative / filename patterns —
+  // never absolute C:/… paths (those become the scan root on Windows).
   webpack: (config, { dev }) => {
     if (dev) {
       config.watchOptions = {
@@ -23,16 +24,10 @@ const nextConfig = {
           '**/node_modules/**',
           '**/.git/**',
           '**/.next/**',
-          '**/.next-build/**',
           '**/DumpStack.log.tmp',
           '**/pagefile.sys',
           '**/hiberfil.sys',
           '**/swapfile.sys',
-          'C:/DumpStack.log.tmp',
-          'C:/pagefile.sys',
-          'C:/hiberfil.sys',
-          'C:/swapfile.sys',
-          'C:/System Volume Information/**',
         ],
       };
     }
