@@ -329,3 +329,5 @@ export function findMockCourse(courseId) {
 export function findMockCurriculum(courseId) {
   return MOCK_CURRICULUM[String(courseId)] || [];
 }
+
+export { PUBLIC_CATALOG, getPublicCourse } from '@/lib/catalog/data';

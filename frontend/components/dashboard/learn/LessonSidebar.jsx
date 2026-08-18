@@ -47,8 +47,8 @@ export default function LessonSidebar({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-white/10 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+      <div className="border-b border-gray-200 p-4 dark:border-white/10">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">
           {labels.lessonDirectory}
         </p>
         <div className="mt-3">
@@ -75,7 +75,7 @@ export default function LessonSidebar({
                 type="button"
                 onClick={() => toggleModule(module.id)}
                 aria-expanded={isOpen}
-                className="flex min-h-[44px] w-full items-center gap-2.5 rounded-xl px-3 py-2 text-start transition-colors duration-300 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+                className="flex min-h-[44px] w-full items-center gap-2.5 rounded-xl px-3 py-2 text-start transition-colors duration-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 dark:hover:bg-white/[0.06]"
               >
                 <ChevronDown
                   className={`h-4 w-4 shrink-0 text-gold-400 transition-transform duration-300 ${
@@ -84,7 +84,7 @@ export default function LessonSidebar({
                   aria-hidden
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-gray-100">
+                  <span className="block truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {module.name || `${labels.module} ${moduleIndex + 1}`}
                   </span>
                   <span className="mt-0.5 block text-[11px] tabular-nums text-gray-500">
@@ -126,7 +126,7 @@ export default function LessonSidebar({
                                 ? 'border border-gold-400/40 bg-plum-700/40 shadow-[0_0_16px_rgba(212,175,55,0.2)]'
                                 : lesson.locked
                                   ? 'cursor-not-allowed opacity-55'
-                                  : 'border border-transparent hover:bg-white/[0.06]'
+                                  : 'border border-transparent hover:bg-gray-100 dark:hover:bg-white/[0.06]'
                             }`}
                           >
                             <span
@@ -136,8 +136,8 @@ export default function LessonSidebar({
                                   : isActive
                                     ? 'bg-gold-400/20 text-gold-300 shadow-[0_0_10px_rgba(212,175,55,0.4)]'
                                     : lesson.locked
-                                      ? 'bg-white/5 text-gray-500'
-                                      : 'bg-white/5 text-gray-400'
+                                      ? 'bg-gray-100 text-gray-500 dark:bg-white/5'
+                                      : 'bg-gray-100 text-gray-400 dark:bg-white/5'
                               }`}
                               aria-hidden
                             >
@@ -158,8 +158,8 @@ export default function LessonSidebar({
                                   isActive
                                     ? 'font-semibold text-white'
                                     : lesson.completed
-                                      ? 'text-gray-300'
-                                      : 'text-gray-200'
+                                      ? 'text-gray-600 dark:text-gray-300'
+                                      : 'text-gray-800 dark:text-gray-200'
                                 }`}
                               >
                                 {lesson.title}

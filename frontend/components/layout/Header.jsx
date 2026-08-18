@@ -8,6 +8,7 @@ import MagneticButton from '../ui/MagneticButton';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/providers/AuthProvider';
+import { usePathname } from 'next/navigation';
 
 export default function Header({ dictionary, lang, scrolled }) {
     const isRTL = lang === 'ar';
@@ -18,6 +19,14 @@ export default function Header({ dictionary, lang, scrolled }) {
     const { isDark, toggleTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
     const { user, isLoading, isAuthenticated, logout } = useAuth();
+    const pathname = usePathname();
+    const isCatalogFlow =
+        pathname?.startsWith(`/${lang}/courses`) ||
+        pathname?.startsWith(`/${lang}/checkout`) ||
+        pathname?.startsWith(`/${lang}/for-organization`);
+    const isPortalFlow =
+        pathname?.startsWith(`/${lang}/profile`) || pathname?.startsWith(`/${lang}/my-courses`);
+    const solid = Boolean(scrolled || isCatalogFlow || isPortalFlow);
 
     useEffect(() => {
         setMounted(true);
@@ -38,8 +47,9 @@ export default function Header({ dictionary, lang, scrolled }) {
 
     const navLinks = [
         { name: dictionary.nav.home, href: `/${lang}/#home`, isPage: true },
-        { name: dictionary.nav.services, href: `/${lang}/#services`, isPage: true },
-        { name: dictionary.nav.about, href: `/${lang}/about`, isPage: true },
+        { name: dictionary.nav.courses, href: `/${lang}/courses`, isPage: true, match: `/${lang}/courses` },
+        { name: dictionary.nav.forOrganizations, href: `/${lang}/for-organization`, isPage: true, match: `/${lang}/for-organization` },
+        { name: dictionary.nav.about, href: `/${lang}/about`, isPage: true, match: `/${lang}/about` },
         { name: dictionary.nav.contact, href: `/${lang}/#contact`, isPage: true },
     ];
 
@@ -52,7 +62,7 @@ export default function Header({ dictionary, lang, scrolled }) {
             return (
                 <div
                     className={`h-10 w-28 animate-pulse rounded-full ${
-                        scrolled ? 'bg-slate-200 dark:bg-slate-700' : 'bg-white/20'
+                        solid ? 'bg-gray-200 dark:bg-slate-700' : 'bg-white/20'
                     } ${mobile ? 'mx-4 my-2' : ''}`}
                     aria-hidden
                 />
@@ -102,9 +112,9 @@ export default function Header({ dictionary, lang, scrolled }) {
                     <button
                         type="button"
                         onClick={() => setUserMenuOpen((open) => !open)}
-                        className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-3 py-1.5 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 ${
-                            scrolled
-                                ? 'border-slate-200 bg-white/80 text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:hover:bg-white/10 dark:hover:text-white'
+                        className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-3 py-1.5 transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 ${
+                            solid
+                                ? 'border-gray-200 bg-white/80 text-gray-900 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:hover:bg-white/10'
                                 : 'border-white/20 bg-white/10 text-white hover:bg-white/15'
                         }`}
                         aria-expanded={userMenuOpen}
@@ -135,7 +145,7 @@ export default function Header({ dictionary, lang, scrolled }) {
                                 exit={{ opacity: 0, y: 6, scale: 0.96 }}
                                 transition={{ duration: 0.18 }}
                                 role="menu"
-                                className={`absolute end-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-white/15 bg-[#0d0514]/90 p-1.5 shadow-2xl backdrop-blur-2xl ${
+                                className={`absolute end-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-gray-200 bg-white/95 p-1.5 text-gray-900 shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-[#0d0514]/90 dark:text-white ${
                                     isRTL ? 'origin-top-left' : 'origin-top-right'
                                 }`}
                             >
@@ -147,18 +157,18 @@ export default function Header({ dictionary, lang, scrolled }) {
                                     href={`/${lang}/profile`}
                                     role="menuitem"
                                     onClick={() => setUserMenuOpen(false)}
-                                    className="flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-sm text-white/90 transition-colors hover:bg-white/10"
+                                    className="flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-sm text-gray-900 transition-colors hover:bg-gray-100 dark:text-white/90 dark:hover:bg-white/10"
                                 >
-                                    <User className="h-4 w-4 text-gold-300" />
+                                    <User className="h-4 w-4 text-plum-700 dark:text-gold-300" />
                                     {dictionary.nav.myProfile}
                                 </Link>
                                 <Link
                                     href={`/${lang}/my-courses`}
                                     role="menuitem"
                                     onClick={() => setUserMenuOpen(false)}
-                                    className="flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-sm text-white/90 transition-colors hover:bg-white/10"
+                                    className="flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-sm text-gray-900 transition-colors hover:bg-gray-100 dark:text-white/90 dark:hover:bg-white/10"
                                 >
-                                    <BookOpen className="h-4 w-4 text-gold-300" />
+                                    <BookOpen className="h-4 w-4 text-plum-700 dark:text-gold-300" />
                                     {dictionary.nav.myCourses}
                                 </Link>
                                 <button
@@ -168,7 +178,7 @@ export default function Header({ dictionary, lang, scrolled }) {
                                         setUserMenuOpen(false);
                                         await logout();
                                     }}
-                                    className="flex min-h-[44px] w-full items-center gap-2 rounded-xl px-3 text-start text-sm text-red-300 transition-colors hover:bg-white/10"
+                                    className="flex min-h-[44px] w-full items-center gap-2 rounded-xl px-3 text-start text-sm text-red-600 transition-colors hover:bg-gray-100 dark:text-red-300 dark:hover:bg-white/10"
                                 >
                                     <LogOut className="h-4 w-4" />
                                     {dictionary.nav.logout || dictionary.auth?.logout}
@@ -205,9 +215,9 @@ export default function Header({ dictionary, lang, scrolled }) {
             <>
                 <Link
                     href={`/${lang}/login`}
-                    className={`min-h-[44px] inline-flex items-center font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 rounded-lg px-2 ${
-                        scrolled
-                            ? 'text-slate-700 dark:text-slate-300 hover:text-plum-600'
+                    className={`min-h-[44px] inline-flex items-center font-medium transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 rounded-lg px-2 ${
+                        solid
+                            ? 'text-gray-900 hover:text-plum-700 dark:text-white dark:hover:text-gold-300'
                             : 'text-white hover:text-gold-300'
                     }`}
                 >
@@ -224,12 +234,11 @@ export default function Header({ dictionary, lang, scrolled }) {
 
     return (
         <header>
-            <nav className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg shadow-lg dark:shadow-slate-950/50' : 'bg-transparent'}`} aria-label="Main navigation">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-20">
+            <nav className={`fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-500 ${solid ? 'border-b border-gray-200 bg-white/80 shadow-sm backdrop-blur-md dark:border-b-0 dark:bg-slate-900/90 dark:shadow-lg dark:shadow-slate-950/50' : 'bg-transparent'}`} aria-label="Main navigation">
+                <div className="mx-auto flex h-20 w-full max-w-[95rem] items-center justify-between px-6 lg:px-10 xl:px-14">
                         <motion.a
                             href="#home"
-                            className="flex items-center group"
+                            className="flex flex-shrink-0 items-center group"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
@@ -238,11 +247,11 @@ export default function Header({ dictionary, lang, scrolled }) {
                                 alt="Creativity House Logo"
                                 width="160"
                                 height="64"
-                                className={`h-16 w-auto object-contain transition-all duration-300 ${scrolled ? 'dark:brightness-0 dark:invert' : 'brightness-0 invert'}`}
+                                className={`h-16 w-auto object-contain transition-all duration-300 dark:brightness-0 dark:invert ${solid ? '' : 'brightness-0 invert'}`}
                             />
                         </motion.a>
 
-                        <div className="hidden md:flex items-center gap-8">
+                        <div className="hidden md:flex items-center justify-end gap-6 lg:gap-8">
                             <div
                                 className="flex items-center gap-8"
                                 onMouseLeave={() => setHoveredNav(null)}
@@ -251,7 +260,7 @@ export default function Header({ dictionary, lang, scrolled }) {
                                     <motion.span
                                         key={link.href}
                                         onMouseEnter={() => setHoveredNav(link.name)}
-                                        className={`font-medium transition-all duration-300 relative cursor-pointer ${scrolled ? 'text-slate-700 dark:text-slate-300' : 'text-white'} ${hoveredNav === link.name ? '!text-gold-400' : ''}`}
+                                        className={`font-medium transition-all duration-300 relative cursor-pointer ${solid ? 'text-gray-900 dark:text-white' : 'text-white'} ${hoveredNav === link.name || (link.match && pathname?.startsWith(link.match)) ? '!text-gold-400' : ''}`}
                                         animate={{
                                             scale: hoveredNav === null ? 1 : hoveredNav === link.name ? 1.2 : 0.9,
                                             filter: hoveredNav === null ? 'blur(0px)' : hoveredNav === link.name ? 'blur(0px)' : 'blur(3px)',
@@ -279,15 +288,15 @@ export default function Header({ dictionary, lang, scrolled }) {
                                     </motion.span>
                                 ))}
                             </div>
-                            <LanguageSwitcher scrolled={scrolled} dictionary={dictionary} lang={lang} />
+                            <LanguageSwitcher scrolled={solid} dictionary={dictionary} lang={lang} />
                             <AuthActions />
                             <motion.button
                                 onClick={toggleTheme}
                                 whileHover={{ scale: 1.2, rotate: 180 }}
                                 whileTap={{ scale: 0.8 }}
                                 transition={{ type: 'spring', stiffness: 300 }}
-                                className={`p-2.5 min-h-[44px] min-w-[44px] rounded-full transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 ${scrolled
-                                    ? 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                className={`p-2.5 min-h-[44px] min-w-[44px] rounded-full transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 ${solid
+                                    ? 'text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-slate-800'
                                     : 'text-white hover:bg-white/20'
                                     }`}
                                 aria-label="Toggle theme"
@@ -297,13 +306,13 @@ export default function Header({ dictionary, lang, scrolled }) {
                         </div>
 
                         <div className="flex items-center gap-2 md:hidden">
-                            <LanguageSwitcher scrolled={scrolled} dictionary={dictionary} lang={lang} />
+                            <LanguageSwitcher scrolled={solid} dictionary={dictionary} lang={lang} />
                             <motion.button
                                 onClick={toggleTheme}
                                 whileHover={{ scale: 1.2, rotate: 180 }}
                                 whileTap={{ scale: 0.8 }}
-                                className={`p-2.5 min-h-[44px] min-w-[44px] rounded-full transition-all cursor-pointer ${scrolled
-                                    ? 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                className={`p-2.5 min-h-[44px] min-w-[44px] rounded-full transition-all duration-300 cursor-pointer ${solid
+                                    ? 'text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-slate-800'
                                     : 'text-white hover:bg-white/20'
                                     }`}
                                 aria-label="Toggle theme"
@@ -316,13 +325,12 @@ export default function Header({ dictionary, lang, scrolled }) {
                                 aria-label="Toggle menu"
                             >
                                 {isMenuOpen ? (
-                                    <X className={`w-6 h-6 ${scrolled ? 'text-slate-900 dark:text-white' : 'text-white'}`} />
+                                    <X className={`w-6 h-6 ${solid ? 'text-gray-900 dark:text-white' : 'text-white'}`} />
                                 ) : (
-                                    <Menu className={`w-6 h-6 ${scrolled ? 'text-slate-900 dark:text-white' : 'text-white'}`} />
+                                    <Menu className={`w-6 h-6 ${solid ? 'text-gray-900 dark:text-white' : 'text-white'}`} />
                                 )}
                             </button>
                         </div>
-                    </div>
                 </div>
 
                 <AnimatePresence>
@@ -331,7 +339,7 @@ export default function Header({ dictionary, lang, scrolled }) {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
-                            className="md:hidden bg-white dark:bg-slate-900 border-t dark:border-slate-700"
+                            className="md:hidden border-t border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900"
                         >
                             <div className="px-4 py-4 space-y-2">
                                 {navLinks.map((link, idx) => (
@@ -345,14 +353,14 @@ export default function Header({ dictionary, lang, scrolled }) {
                                             ? <Link
                                                 href={link.href}
                                                 onClick={() => setIsMenuOpen(false)}
-                                                className="block px-4 py-3 min-h-[44px] rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium transition-all duration-300"
+                                                className={`block px-4 py-3 min-h-[44px] rounded-lg hover:bg-gray-100 hover:text-gold-400 dark:hover:bg-slate-800 text-gray-900 dark:text-white font-medium transition-all duration-300 ${link.match && pathname?.startsWith(link.match) ? '!text-gold-400' : ''}`}
                                             >
                                                 {link.name}
                                               </Link>
                                             : <a
                                                 href={link.href}
                                                 onClick={() => setIsMenuOpen(false)}
-                                                className="block px-4 py-3 min-h-[44px] rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium transition-all duration-300"
+                                                className="block px-4 py-3 min-h-[44px] rounded-lg hover:bg-gray-100 hover:text-gold-400 dark:hover:bg-slate-800 text-gray-900 dark:text-white font-medium transition-all duration-300"
                                               >
                                                 {link.name}
                                               </a>

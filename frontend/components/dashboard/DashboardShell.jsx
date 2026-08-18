@@ -38,7 +38,7 @@ export default function DashboardShell({
   }, [isLoading, isAuthenticated, lang, router]);
 
   return (
-    <div className="flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-gradient-to-br from-slate-950 via-plum-950 to-slate-900">
+    <div className="flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-gray-50 transition-colors duration-300 dark:bg-[#0e0a16]">
       <Header dictionary={dictionary} lang={lang} scrolled={scrolled} />
 
       <main className="flex-1">

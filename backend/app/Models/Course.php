@@ -32,10 +32,40 @@ class Course extends Model
         'instructor_name',
         'level',
         'is_published',
+        'is_public',
         'sort_order',
         'seo_title',
         'seo_description',
         'seo_keywords',
+        'title_en',
+        'title_ar',
+        'subtitle_en',
+        'subtitle_ar',
+        'description_en',
+        'description_ar',
+        'original_price',
+        'badge',
+        'badge_ar',
+        'category',
+        'rating',
+        'students_count',
+        'duration_label_en',
+        'duration_label_ar',
+        'language_en',
+        'language_ar',
+        'last_updated_at',
+        'default_mode',
+        'available_modes',
+        'learning_outcomes',
+        'curriculum',
+        'target_audience',
+        'catalog_modes',
+        'instructor_bio_en',
+        'instructor_bio_ar',
+        'instructor_photo',
+        'instructor_credentials',
+        'schedule_en',
+        'schedule_ar',
     ];
 
     /**
@@ -47,8 +77,19 @@ class Course extends Model
             'price' => 'decimal:2',
             'total_hours' => 'decimal:2',
             'is_published' => 'boolean',
+            'is_public' => 'boolean',
             'sort_order' => 'integer',
             'seo_keywords' => 'array',
+            'original_price' => 'decimal:2',
+            'rating' => 'decimal:2',
+            'students_count' => 'integer',
+            'last_updated_at' => 'date',
+            'available_modes' => 'array',
+            'learning_outcomes' => 'array',
+            'curriculum' => 'array',
+            'target_audience' => 'array',
+            'catalog_modes' => 'array',
+            'instructor_credentials' => 'array',
         ];
     }
 
@@ -97,6 +138,14 @@ class Course extends Model
     public function scopePublished(Builder $query): void
     {
         $query->where('is_published', true);
+    }
+
+    /**
+     * @param  Builder<Course>  $query
+     */
+    public function scopePublicCatalog(Builder $query): void
+    {
+        $query->where('is_published', true)->where('is_public', true);
     }
 
     /**

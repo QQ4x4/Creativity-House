@@ -22,8 +22,8 @@ export default function MyCoursesClient({ dictionary, lang }) {
   return (
     <DashboardShell dictionary={dictionary} lang={lang}>
       <header>
-        <h1 className="text-2xl font-bold text-white sm:text-3xl">{labels.myCoursesTitle}</h1>
-        <p className="mt-2 max-w-2xl text-sm text-gray-400">{labels.myCoursesSubtitle}</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">{labels.myCoursesTitle}</h1>
+        <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300">{labels.myCoursesSubtitle}</p>
       </header>
 
       <section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label={labels.summary}>
@@ -58,24 +58,24 @@ export default function MyCoursesClient({ dictionary, lang }) {
       </section>
 
       <section className="mt-10" aria-label={labels.enrolledCourses}>
-        <h2 className="text-lg font-bold text-white">{labels.enrolledCourses}</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{labels.enrolledCourses}</h2>
 
         {isLoading ? (
           <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
             {[0, 1, 2].map((card) => (
               <div
                 key={card}
-                className="h-[22rem] animate-pulse rounded-3xl border border-purple-500/10 bg-white/5"
+                className="h-[22rem] animate-pulse rounded-3xl border border-gray-200 bg-gray-100 dark:border-purple-500/10 dark:bg-white/5"
               />
             ))}
           </div>
         ) : courses.length === 0 ? (
           <GlassPanel className="mt-5 text-center">
             <BookOpen className="mx-auto h-10 w-10 text-purple-300/70" aria-hidden />
-            <p className="mt-4 text-base font-semibold text-white">{labels.noCourses}</p>
-            <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">{labels.noCoursesHint}</p>
+            <p className="mt-4 text-base font-semibold text-gray-900 dark:text-white">{labels.noCourses}</p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-gray-600 dark:text-gray-400">{labels.noCoursesHint}</p>
             <Link
-              href={`/${lang}/#services`}
+              href={`/${lang}/courses`}
               className="mt-6 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-6 text-sm font-semibold text-white transition-all duration-300 hover:from-plum-600 hover:to-plum-400 hover:shadow-lg hover:shadow-plum-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
             >
               {labels.browseCourses}

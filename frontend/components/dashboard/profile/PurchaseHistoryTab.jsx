@@ -9,10 +9,10 @@ import { formatCurrency, formatDate } from '@/lib/student/types';
 import { toastApiError } from '@/lib/toast';
 
 const STATUS_STYLES = {
-  paid: 'border-emerald-400/30 bg-emerald-500/15 text-emerald-200',
-  refunded: 'border-amber-400/30 bg-amber-500/15 text-amber-200',
-  pending: 'border-purple-400/30 bg-purple-500/15 text-purple-200',
-  failed: 'border-red-400/30 bg-red-500/15 text-red-200',
+  paid: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/15 dark:text-emerald-200',
+  refunded: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/15 dark:text-amber-200',
+  pending: 'border-purple-200 bg-purple-50 text-plum-800 dark:border-purple-400/30 dark:bg-purple-500/15 dark:text-purple-200',
+  failed: 'border-red-200 bg-red-50 text-red-800 dark:border-red-400/30 dark:bg-red-500/15 dark:text-red-200',
 };
 
 function StatusPill({ status, labels }) {
@@ -33,7 +33,7 @@ function InvoiceButton({ order, label, isBusy, onDownload, full = false }) {
       type="button"
       onClick={() => onDownload(order)}
       disabled={isBusy}
-      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-purple-400/30 bg-purple-500/10 px-3.5 text-xs font-semibold text-purple-100 transition-all duration-300 hover:border-gold-400/50 hover:bg-gold-400/10 hover:text-gold-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 disabled:cursor-not-allowed disabled:opacity-60 ${
+      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3.5 text-xs font-semibold text-gray-900 transition-all duration-300 hover:border-plum-400 hover:bg-plum-50 hover:text-plum-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-purple-400/30 dark:bg-purple-500/10 dark:text-purple-100 dark:hover:border-gold-400/50 dark:hover:bg-gold-400/10 dark:hover:text-gold-200 ${
         full ? 'w-full' : ''
       }`}
     >
@@ -84,19 +84,19 @@ export default function PurchaseHistoryTab({ orders, isLoading, labels, lang }) 
           <Receipt className="h-5 w-5 text-emerald-300" />
         </span>
         <div>
-          <h2 className="text-lg font-bold text-white">{labels.purchasesTab}</h2>
-          <p className="mt-1 text-sm text-gray-400">{labels.purchasesTabHint}</p>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{labels.purchasesTab}</h2>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{labels.purchasesTabHint}</p>
         </div>
       </div>
 
       {isLoading ? (
         <div className="mt-6 space-y-3" aria-hidden>
           {[0, 1, 2].map((row) => (
-            <div key={row} className="h-16 animate-pulse rounded-2xl bg-white/5" />
+            <div key={row} className="h-16 animate-pulse rounded-2xl bg-gray-100 dark:bg-white/5" />
           ))}
         </div>
       ) : orders.length === 0 ? (
-        <p className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center text-sm text-gray-400">
+        <p className="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-600 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-400">
           {labels.noPurchases}
         </p>
       ) : (
@@ -106,13 +106,13 @@ export default function PurchaseHistoryTab({ orders, isLoading, labels, lang }) 
             <table className="w-full min-w-[720px] border-collapse text-start">
               <caption className="sr-only">{labels.purchasesTab}</caption>
               <thead>
-                <tr className="border-b border-white/10">
+                <tr className="border-b border-gray-200 dark:border-white/10">
                   {[labels.orderId, labels.date, labels.course, labels.total, labels.status, labels.actions].map(
                     (heading, index) => (
                       <th
                         key={heading}
                         scope="col"
-                        className={`pb-3 text-xs font-semibold uppercase tracking-wider text-gray-400 ${
+                        className={`pb-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400 ${
                           index === 5 ? 'text-end' : 'text-start'
                         }`}
                       >
@@ -126,15 +126,15 @@ export default function PurchaseHistoryTab({ orders, isLoading, labels, lang }) 
                 {orders.map((order) => (
                   <tr
                     key={order.orderId}
-                    className="border-b border-white/5 transition-colors duration-300 last:border-0 hover:bg-white/[0.04]"
+                    className="border-b border-gray-100 transition-colors duration-300 last:border-0 hover:bg-gray-50 dark:border-white/5 dark:hover:bg-white/[0.04]"
                   >
-                    <td className="py-4 text-sm font-semibold tabular-nums text-gray-100" dir="ltr">
+                    <td className="py-4 text-sm font-semibold tabular-nums text-gray-900 dark:text-gray-100" dir="ltr">
                       {order.orderId}
                     </td>
-                    <td className="py-4 text-sm text-gray-300">
+                    <td className="py-4 text-sm text-gray-600 dark:text-gray-300">
                       {formatDate(order.purchasedAt, lang)}
                     </td>
-                    <td className="py-4 pe-4 text-sm text-gray-100">{order.courseTitle}</td>
+                    <td className="py-4 pe-4 text-sm text-gray-900 dark:text-gray-100">{order.courseTitle}</td>
                     <td className="py-4 text-sm font-semibold tabular-nums text-gold-300" dir="ltr">
                       {formatCurrency(order.amount, order.currency)}
                     </td>
@@ -160,12 +160,12 @@ export default function PurchaseHistoryTab({ orders, isLoading, labels, lang }) 
             {orders.map((order) => (
               <li
                 key={order.orderId}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition-all duration-300 hover:border-purple-400/30"
+                className="rounded-2xl border border-gray-200 bg-gray-50 p-4 transition-all duration-300 hover:border-plum-300 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-purple-400/30"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-white">{order.courseTitle}</p>
-                    <p className="mt-1 text-xs tabular-nums text-gray-400" dir="ltr">
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{order.courseTitle}</p>
+                    <p className="mt-1 text-xs tabular-nums text-gray-600 dark:text-gray-400" dir="ltr">
                       {order.orderId} · {formatDate(order.purchasedAt, lang)}
                     </p>
                   </div>

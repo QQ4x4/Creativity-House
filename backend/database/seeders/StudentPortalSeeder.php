@@ -44,6 +44,8 @@ class StudentPortalSeeder extends Seeder
         }
 
         $this->command->info('Student portal demo data seeded for '.$student->email);
+
+        $this->call(PublicCatalogSeeder::class);
     }
 
     private function student(): User
@@ -80,6 +82,7 @@ class StudentPortalSeeder extends Seeder
                 'instructor_name' => 'Dr. Ahmed Al-Sharafi',
                 'level' => $definition['level'],
                 'is_published' => true,
+                'is_public' => false,
                 'sort_order' => $definition['sort_order'],
                 'seo_title' => $definition['title'].' | Creativity House',
                 'seo_description' => $definition['description'],

@@ -30,11 +30,11 @@ export default function CourseCard({ course, lang, labels, index = 0 }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={motionViewport}
       transition={{ duration: 0.45, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
-      className={`group flex h-full flex-col overflow-hidden rounded-3xl border border-purple-500/20 bg-[#181124]/90 shadow-2xl shadow-black/40 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-purple-400/40 hover:shadow-purple-900/30 ${motionGpu}`}
+      className={`group flex h-full flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-plum-300 hover:shadow-purple-900/10 dark:border-purple-500/20 dark:bg-[#181124]/90 dark:shadow-none dark:hover:border-purple-400/40 dark:hover:shadow-purple-900/30 ${motionGpu}`}
     >
       <Link
         href={learnHref}
-        className="relative block aspect-video w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400/60"
+        className="relative block aspect-video w-full overflow-hidden transform-gpu focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400/60"
         aria-label={`${labels.continueLearning}: ${course.title}`}
       >
         {showCover ? (
@@ -44,7 +44,7 @@ export default function CourseCard({ course, lang, labels, index = 0 }) {
             loading="lazy"
             decoding="async"
             onError={() => setCoverFailed(true)}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-500 will-change-transform backface-hidden translate-z-0 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-plum-800 via-plum-950 to-slate-900">
@@ -71,22 +71,22 @@ export default function CourseCard({ course, lang, labels, index = 0 }) {
 
       <div className="flex flex-1 flex-col p-5">
         {course.level ? (
-          <span className="mb-2 inline-flex w-fit rounded-full border border-purple-400/25 bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-purple-200">
+          <span className="mb-2 inline-flex w-fit rounded-full border border-purple-200 bg-purple-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-plum-800 dark:border-purple-400/25 dark:bg-purple-500/10 dark:text-purple-200">
             {course.level}
           </span>
         ) : null}
 
-        <h3 className="text-base font-bold leading-snug text-white">
+        <h3 className="text-base font-bold leading-snug text-gray-900 dark:text-white">
           <Link
             href={learnHref}
-            className="transition-colors duration-300 hover:text-gold-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#181124]"
+            className="transition-colors duration-300 hover:text-plum-700 dark:hover:text-gold-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#181124]"
           >
             {course.title}
           </Link>
         </h3>
 
         {course.instructorName ? (
-          <p className="mt-1 text-sm text-gray-400">{course.instructorName}</p>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{course.instructorName}</p>
         ) : null}
 
         <div className="mt-4">
@@ -97,7 +97,7 @@ export default function CourseCard({ course, lang, labels, index = 0 }) {
             showValue={false}
           />
 
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-400">
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-600 dark:text-gray-400">
             <span className="tabular-nums">
               {completedCount} / {totalCount} {labels.lessons}
             </span>
@@ -110,7 +110,7 @@ export default function CourseCard({ course, lang, labels, index = 0 }) {
 
         <Link
           href={learnHref}
-          className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-4 text-sm font-semibold text-white transition-all duration-300 hover:from-plum-600 hover:to-plum-400 hover:shadow-lg hover:shadow-plum-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#181124]"
+          className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-4 text-sm font-semibold text-white transition-all duration-300 hover:from-plum-600 hover:to-plum-400 hover:shadow-lg hover:shadow-plum-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#181124]"
         >
           {isComplete ? labels.reviewCourse : labels.continueLearning}
           <ArrowRight className="chevron-flip h-4 w-4" aria-hidden />

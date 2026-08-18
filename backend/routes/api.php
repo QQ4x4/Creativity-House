@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
+use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\OrganizationInquiryController;
+use App\Http\Controllers\Api\PublicCatalogController;
 use App\Http\Controllers\Api\Student\CourseController;
 use App\Http\Controllers\Api\Student\OrderController;
 use App\Http\Controllers\Api\Student\ProfileController;
@@ -44,6 +47,47 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+/*
+|--------------------------------------------------------------------------
+| Public course catalog
+|--------------------------------------------------------------------------
+|
+| Unauthenticated. Do not nest these under /student or auth:sanctum —
+| enrolled-only listings stay on /api/student/courses and /api/v1/courses.
+|
+*/
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/courses', [PublicCatalogController::class, 'index']);
+    Route::get('/courses/{course}', [PublicCatalogController::class, 'show']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Public checkout (mock payment — Stripe SDK not wired yet)
+|--------------------------------------------------------------------------
+|
+| Auth is optional. Guests are linked to a user row by email. Card PAN/CVC
+| must never be posted here; the frontend sends billing + course only.
+|
+*/
+Route::middleware('throttle:20,1')->group(function () {
+    Route::post('/v1/checkout', [CheckoutController::class, 'store'])->name('api.v1.checkout');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('api.checkout');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Public organization (B2B) inquiries
+|--------------------------------------------------------------------------
+|
+| Unauthenticated lead capture. Strict FormRequest validation + throttle.
+|
+*/
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/v1/organization-inquiries', [OrganizationInquiryController::class, 'store'])
+        ->name('api.v1.organization-inquiries.store');
 });
 
 /*

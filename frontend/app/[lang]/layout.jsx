@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { Inter, Cairo } from 'next/font/google';
 import ClientProviders from '@/providers/ClientProviders';
 import '../globals.css';
@@ -54,19 +55,26 @@ export function generateStaticParams() {
   return [{ lang: 'en' }, { lang: 'ar' }];
 }
 
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var m=document.cookie.match(/(?:^|; )theme=([^;]*)/);var c=m?decodeURIComponent(m[1]):'';var dark=c==='dark'||t==='dark'||((!c&&!t)&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',!!dark);document.cookie='theme='+(dark?'dark':'light')+'; path=/; max-age=31536000; SameSite=Lax';}catch(e){}})();`;
+
 /* ─── Layout Component ─── */
 export default async function LangLayout({ children, params }) {
   const { lang } = await params;
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
+  const theme = (await cookies()).get('theme')?.value;
+  const htmlClass = `${inter.variable} ${cairo.variable}${theme === 'dark' ? ' dark' : ''}`;
 
   return (
     <html
       lang={lang}
       dir={dir}
-      className={`${inter.variable} ${cairo.variable}`}
+      className={htmlClass}
       suppressHydrationWarning
     >
-      <body>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body suppressHydrationWarning>
         <ClientProviders lang={lang}>
           <div className="relative w-full max-w-full overflow-x-hidden min-h-screen flex flex-col">
             {children}

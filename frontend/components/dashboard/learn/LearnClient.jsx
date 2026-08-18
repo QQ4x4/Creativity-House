@@ -101,15 +101,15 @@ export default function LearnClient({ dictionary, lang, courseId }) {
         <div className="min-w-0">
           <Link
             href={`/${lang}/my-courses`}
-            className="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-medium text-gray-400 transition-colors duration-300 hover:text-gold-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+            className="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-medium text-gray-600 transition-colors duration-300 hover:text-plum-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 dark:text-gray-400 dark:hover:text-gold-300"
           >
             <ArrowLeft className="chevron-flip h-4 w-4" aria-hidden />
             {labels.backToCourses}
           </Link>
 
-          <h1 className="mt-1 truncate text-xl font-bold text-white sm:text-2xl">
+          <h1 className="mt-1 truncate text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">
             {isLoading ? (
-              <span className="inline-block h-7 w-56 animate-pulse rounded-lg bg-white/10 align-middle" />
+              <span className="inline-block h-7 w-56 animate-pulse rounded-lg bg-gray-200 align-middle dark:bg-white/10" />
             ) : (
               course?.title || labels.courseNotFound
             )}
@@ -129,7 +129,7 @@ export default function LearnClient({ dictionary, lang, courseId }) {
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl border border-purple-400/30 bg-purple-500/10 px-3.5 text-sm font-semibold text-purple-100 transition-all duration-300 hover:border-gold-400/50 hover:text-gold-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 lg:hidden"
+            className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl border border-gray-300 bg-white px-3.5 text-sm font-semibold text-gray-900 transition-all duration-300 hover:border-plum-400 hover:text-plum-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 dark:border-purple-400/30 dark:bg-purple-500/10 dark:text-purple-100 dark:hover:border-gold-400/50 dark:hover:text-gold-200 lg:hidden"
             aria-expanded={drawerOpen}
           >
             <ListVideo className="h-4 w-4" aria-hidden />
@@ -140,14 +140,14 @@ export default function LearnClient({ dictionary, lang, courseId }) {
 
       {isLoading ? (
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]" aria-hidden>
-          <div className="aspect-video w-full animate-pulse rounded-3xl bg-white/5" />
-          <div className="hidden h-[28rem] animate-pulse rounded-3xl bg-white/5 lg:block" />
+          <div className="aspect-video w-full animate-pulse rounded-3xl bg-gray-200 dark:bg-white/5" />
+          <div className="hidden h-[28rem] animate-pulse rounded-3xl bg-gray-200 dark:bg-white/5 lg:block" />
         </div>
       ) : !course ? (
         <GlassPanel className="mt-6 text-center">
           <BookOpen className="mx-auto h-10 w-10 text-purple-300/70" aria-hidden />
-          <p className="mt-4 text-base font-semibold text-white">{labels.courseNotFound}</p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-gray-400">{labels.courseNotFoundHint}</p>
+          <p className="mt-4 text-base font-semibold text-gray-900 dark:text-white">{labels.courseNotFound}</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-gray-600 dark:text-gray-400">{labels.courseNotFoundHint}</p>
           <Link
             href={`/${lang}/my-courses`}
             className="mt-6 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-6 text-sm font-semibold text-white transition-all duration-300 hover:from-plum-600 hover:to-plum-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
@@ -178,7 +178,7 @@ export default function LearnClient({ dictionary, lang, courseId }) {
               <div
                 role="tablist"
                 aria-label={labels.resources}
-                className="flex gap-1 border-b border-white/10 p-2"
+                className="flex gap-1 border-b border-gray-200 p-2 dark:border-white/10"
               >
                 {[
                   { id: 'resources', label: `${labels.resources} (${activeLesson?.resources?.length ?? 0})` },
@@ -193,7 +193,7 @@ export default function LearnClient({ dictionary, lang, courseId }) {
                     className={`inline-flex min-h-[44px] items-center rounded-xl px-4 text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 ${
                       activePanel === panel.id
                         ? 'bg-plum-700/50 text-white'
-                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200'
                     }`}
                   >
                     {panel.label}
@@ -210,7 +210,7 @@ export default function LearnClient({ dictionary, lang, courseId }) {
                       <dt className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                         {labels.module}
                       </dt>
-                      <dd className="mt-1 text-sm text-gray-100">
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">
                         {activeLesson?.moduleName || '—'}
                       </dd>
                     </div>
@@ -218,7 +218,7 @@ export default function LearnClient({ dictionary, lang, courseId }) {
                       <dt className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                         {labels.duration}
                       </dt>
-                      <dd className="mt-1 flex items-center gap-1.5 text-sm tabular-nums text-gray-100">
+                      <dd className="mt-1 flex items-center gap-1.5 text-sm tabular-nums text-gray-900 dark:text-gray-100">
                         <Clock className="h-3.5 w-3.5 text-gold-300" aria-hidden />
                         <span dir="ltr">{formatDuration(activeLesson?.durationSeconds)}</span>
                       </dd>
@@ -239,7 +239,7 @@ export default function LearnClient({ dictionary, lang, courseId }) {
                       <dt className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                         {labels.instructor}
                       </dt>
-                      <dd className="mt-1 text-sm text-gray-100">
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">
                         {course.instructorName || '—'}
                       </dd>
                     </div>
@@ -250,7 +250,7 @@ export default function LearnClient({ dictionary, lang, courseId }) {
           </div>
 
           {/* Desktop lesson directory */}
-          <aside className="hidden max-h-[calc(100vh-8rem)] overflow-hidden rounded-3xl border border-purple-500/20 bg-[#181124]/90 shadow-2xl shadow-black/40 backdrop-blur-md lg:sticky lg:top-24 lg:block">
+          <aside className="hidden max-h-[calc(100vh-8rem)] overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90 dark:shadow-2xl dark:shadow-black/40 lg:sticky lg:top-24 lg:block">
             {sidebar}
           </aside>
         </div>
@@ -281,15 +281,15 @@ export default function LearnClient({ dictionary, lang, courseId }) {
               animate={{ x: 0 }}
               exit={{ x: isRTL ? '-100%' : '100%' }}
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-y-0 end-0 flex w-[min(88vw,22rem)] flex-col border-s border-purple-500/20 bg-[#181124]/98 shadow-2xl shadow-black/60 backdrop-blur-xl focus-visible:outline-none"
+              className="absolute inset-y-0 end-0 flex w-[min(88vw,22rem)] flex-col border-s border-gray-200 bg-white shadow-2xl shadow-black/20 backdrop-blur-xl focus-visible:outline-none dark:border-purple-500/20 dark:bg-[#181124]/98 dark:shadow-black/60"
             >
-              <div className="flex items-center justify-between gap-3 border-b border-white/10 p-3">
-                <span className="text-sm font-bold text-white">{labels.lessonDirectory}</span>
+              <div className="flex items-center justify-between gap-3 border-b border-gray-200 p-3 dark:border-white/10">
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{labels.lessonDirectory}</span>
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(false)}
                   aria-label={labels.closeDirectory}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-gray-300 transition-colors duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-gray-600 transition-colors duration-300 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white"
                 >
                   <X className="h-5 w-5" aria-hidden />
                 </button>

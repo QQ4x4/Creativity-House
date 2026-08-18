@@ -43,15 +43,15 @@ export default function StudentProfileClient({ dictionary, lang }) {
   return (
     <DashboardShell dictionary={dictionary} lang={lang}>
       <header>
-        <h1 className="text-2xl font-bold text-white sm:text-3xl">{labels.profileHubTitle}</h1>
-        <p className="mt-2 max-w-2xl text-sm text-gray-400">{labels.profileHubSubtitle}</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">{labels.profileHubTitle}</h1>
+        <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300">{labels.profileHubSubtitle}</p>
       </header>
 
       {/* Tab bar */}
       <div
         role="tablist"
         aria-label={labels.profileHubTitle}
-        className="mt-7 flex w-full gap-2 overflow-x-auto rounded-2xl border border-purple-500/20 bg-[#181124]/90 p-1.5 shadow-xl shadow-black/30 backdrop-blur-md"
+        className="mt-7 flex w-full gap-2 overflow-x-auto rounded-2xl border border-gray-200 bg-white p-1.5 shadow-sm backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90 dark:shadow-xl dark:shadow-black/30"
       >
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -66,7 +66,7 @@ export default function StudentProfileClient({ dictionary, lang }) {
               aria-controls={`panel-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={`relative inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${
-                isActive ? 'text-white' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                isActive ? 'text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200'
               }`}
             >
               {isActive ? (
@@ -88,8 +88,8 @@ export default function StudentProfileClient({ dictionary, lang }) {
       <div className="mt-6">
         {isLoading ? (
           <div className="space-y-4" aria-hidden>
-            <div className="h-32 animate-pulse rounded-3xl bg-white/5" />
-            <div className="h-64 animate-pulse rounded-3xl bg-white/5" />
+            <div className="h-32 animate-pulse rounded-3xl bg-gray-200 dark:bg-white/5" />
+            <div className="h-64 animate-pulse rounded-3xl bg-gray-200 dark:bg-white/5" />
           </div>
         ) : (
           <>

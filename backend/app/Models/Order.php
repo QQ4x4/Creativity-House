@@ -32,6 +32,12 @@ class Order extends Model
         'payment_status',
         'invoice_path',
         'paid_at',
+        'billing_first_name',
+        'billing_last_name',
+        'billing_email',
+        'billing_phone',
+        'billing_country',
+        'delivery_mode',
     ];
 
     /**

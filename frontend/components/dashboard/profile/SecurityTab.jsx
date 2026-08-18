@@ -111,8 +111,8 @@ export default function SecurityTab({
             <ShieldCheck className="h-5 w-5 text-purple-300" />
           </span>
           <div>
-            <h2 className="text-lg font-bold text-white">{labels.passwordSection}</h2>
-            <p className="mt-1 text-sm text-gray-400">{labels.passwordSectionHint}</p>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{labels.passwordSection}</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{labels.passwordSectionHint}</p>
           </div>
         </div>
 
@@ -124,6 +124,7 @@ export default function SecurityTab({
             showPasswordToggle
             autoComplete="current-password"
             error={errors.currentPassword?.message}
+            variant="portal"
             {...register('currentPassword')}
           />
 
@@ -136,6 +137,7 @@ export default function SecurityTab({
               autoComplete="new-password"
               aria-describedby="profile-password-requirements"
               error={errors.newPassword?.message}
+              variant="portal"
               {...newPasswordField}
               onFocus={() => setPasswordFocused(true)}
               onBlur={(event) => {
@@ -173,6 +175,7 @@ export default function SecurityTab({
             showPasswordToggle
             autoComplete="new-password"
             error={errors.confirmPassword?.message}
+            variant="portal"
             {...register('confirmPassword')}
           />
 
@@ -205,8 +208,8 @@ export default function SecurityTab({
             <Bell className="h-5 w-5 text-gold-300" />
           </span>
           <div>
-            <h2 className="text-lg font-bold text-white">{labels.notificationsSection}</h2>
-            <p className="mt-1 text-sm text-gray-400">{labels.notificationsSectionHint}</p>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{labels.notificationsSection}</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{labels.notificationsSectionHint}</p>
           </div>
         </div>
 

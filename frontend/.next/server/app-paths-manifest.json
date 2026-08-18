@@ -1,8 +1,8 @@
 {
-  "/icon.svg/route": "app/icon.svg/route.js",
+  "/[lang]/courses/page": "app/[lang]/courses/page.js",
+  "/[lang]/profile/page": "app/[lang]/profile/page.js",
   "/[lang]/page": "app/[lang]/page.js",
   "/[lang]/my-courses/page": "app/[lang]/my-courses/page.js",
-  "/[lang]/profile/page": "app/[lang]/profile/page.js",
-  "/[lang]/about/page": "app/[lang]/about/page.js",
-  "/[lang]/(auth)/login/page": "app/[lang]/(auth)/login/page.js"
+  "/[lang]/for-organization/page": "app/[lang]/for-organization/page.js",
+  "/[lang]/about/page": "app/[lang]/about/page.js"
 }

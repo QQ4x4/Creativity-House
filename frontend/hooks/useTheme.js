@@ -2,6 +2,18 @@
 
 import { useState, useEffect } from 'react';
 
+function persistTheme(isDark) {
+    const value = isDark ? 'dark' : 'light';
+    const root = document.documentElement;
+    if (isDark) {
+        root.classList.add('dark');
+    } else {
+        root.classList.remove('dark');
+    }
+    localStorage.setItem('theme', value);
+    document.cookie = `theme=${value}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
 export function useTheme() {
     const [isDark, setIsDark] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -13,14 +25,7 @@ export function useTheme() {
     });
 
     useEffect(() => {
-        const root = document.documentElement;
-        if (isDark) {
-            root.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            root.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
-        }
+        persistTheme(isDark);
     }, [isDark]);
 
     const toggleTheme = () => setIsDark((prev) => !prev);

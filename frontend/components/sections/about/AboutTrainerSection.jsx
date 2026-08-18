@@ -45,12 +45,11 @@ export default function AboutTrainerSection({ dictionary, lang }) {
 
                 {/* Trainer Card */}
                 <motion.div
-                    className="relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50"
+                    className={`relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50 ${motionGpu}`}
                     variants={fadeUpY35}
                     initial="hidden"
                     whileInView="visible"
                     viewport={motionViewport}
-                    className={motionGpu}
                 >
                     {/* Top accent gradient */}
                     <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-plum-700 via-plum-500 to-gold-500" />
@@ -61,9 +60,15 @@ export default function AboutTrainerSection({ dictionary, lang }) {
                             <motion.div
                                 whileHover={{ scale: 1.05, rotate: 2 }}
                                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                                className="w-36 h-36 rounded-3xl bg-gradient-to-br from-plum-500 to-gold-500 flex items-center justify-center text-white text-5xl font-extrabold shadow-2xl mb-6"
+                                className="mb-6 h-44 w-44 overflow-hidden rounded-full bg-transparent"
                             >
-                                TE
+                                <img
+                                    src="/images/DR.jpg"
+                                    alt={t.name}
+                                    width={176}
+                                    height={176}
+                                    className="h-full w-full scale-[1.02] object-cover"
+                                />
                             </motion.div>
                             <h3 className="text-2xl font-extrabold text-white mb-2">
                                 {t.name}

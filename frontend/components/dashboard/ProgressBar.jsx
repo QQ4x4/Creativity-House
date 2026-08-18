@@ -27,7 +27,7 @@ export default function ProgressBar({
       {label || showValue ? (
         <div className="mb-1.5 flex items-center justify-between gap-3">
           {label ? (
-            <span className="text-xs font-medium text-gray-400">{label}</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{label}</span>
           ) : (
             <span />
           )}
@@ -44,7 +44,7 @@ export default function ProgressBar({
       ) : null}
 
       <div
-        className={`w-full overflow-hidden rounded-full bg-white/10 ${SIZES[size] || SIZES.md}`}
+        className={`w-full overflow-hidden rounded-full bg-gray-200 dark:bg-white/10 ${SIZES[size] || SIZES.md}`}
         role="progressbar"
         aria-valuenow={percentage}
         aria-valuemin={0}

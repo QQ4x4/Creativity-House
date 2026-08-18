@@ -72,8 +72,10 @@ export default function GlassPhoneInput({
   defaultCountry = 'YE',
   disabled = false,
   lang = 'en',
+  variant = 'glass',
 }) {
   const labels = lang === 'ar' ? arLabels : enLabels;
+  const isPortal = variant === 'portal';
   const countries = useMemo(() => getCountries(), []);
 
   const initial = splitValue(value, defaultCountry);
@@ -170,7 +172,9 @@ export default function GlassPhoneInput({
     <div className="w-full max-w-full text-start" ref={rootRef}>
       <label
         htmlFor={id}
-        className="mb-1.5 ms-1 flex items-center gap-2 text-sm font-medium text-gray-300"
+        className={`mb-1.5 ms-1 flex items-center gap-2 text-sm font-medium ${
+          isPortal ? 'text-gray-700 dark:text-gray-300' : 'text-gray-300'
+        }`}
       >
         <Phone className="h-3.5 w-3.5 text-gold-400/80" aria-hidden />
         <span>{label}</span>
@@ -179,11 +183,23 @@ export default function GlassPhoneInput({
       <div className="relative">
         <div
           dir="ltr"
-          className={`flex ${FIELD_H} w-full max-w-full items-stretch overflow-hidden rounded-2xl border bg-white/[0.05] transition-all duration-200 focus-within:border-amber-400/60 focus-within:ring-2 focus-within:ring-amber-400/20 ${
+          className={`flex ${FIELD_H} w-full max-w-full items-stretch overflow-hidden rounded-2xl border transition-all duration-200 ${
+            isPortal
+              ? 'bg-gray-50 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20 dark:bg-black/20 dark:focus-within:border-amber-400/60 dark:focus-within:ring-amber-400/20'
+              : 'bg-white/[0.05] focus-within:border-amber-400/60 focus-within:ring-2 focus-within:ring-amber-400/20'
+          } ${
             error
               ? 'border-red-400/70 focus-within:border-red-400 focus-within:ring-red-400/20'
-              : 'border-white/10 hover:border-white/20'
-          } ${open ? 'border-amber-400/40 ring-2 ring-amber-400/15' : ''}`}
+              : isPortal
+                ? 'border-gray-300 hover:border-gray-400 dark:border-white/10 dark:hover:border-white/20'
+                : 'border-white/10 hover:border-white/20'
+          } ${
+            open
+              ? isPortal
+                ? 'border-purple-500 ring-2 ring-purple-500/15 dark:border-amber-400/40 dark:ring-amber-400/15'
+                : 'border-amber-400/40 ring-2 ring-amber-400/15'
+              : ''
+          }`}
         >
           {/* Country trigger — custom dropdown (no native select) */}
           <button
@@ -197,7 +213,11 @@ export default function GlassPhoneInput({
               setOpen((prev) => !prev);
               if (open) setQuery('');
             }}
-            className="relative flex shrink-0 items-center gap-2 border-e border-white/10 bg-white/[0.04] px-3.5 text-gray-200 transition-colors duration-200 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400/40 disabled:cursor-not-allowed disabled:opacity-60"
+            className={`relative flex shrink-0 items-center gap-2 border-e px-3.5 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400/40 disabled:cursor-not-allowed disabled:opacity-60 ${
+              isPortal
+                ? 'border-gray-300 bg-gray-100 text-gray-800 hover:bg-gray-200 dark:border-white/10 dark:bg-white/[0.04] dark:text-gray-200 dark:hover:bg-white/[0.06]'
+                : 'border-white/10 bg-white/[0.04] text-gray-200 hover:bg-white/[0.06]'
+            }`}
           >
             <span className="flex h-4 w-6 overflow-hidden rounded-[2px] ring-1 ring-white/25">
               <CountryFlag code={country} labels={labels} />
@@ -229,7 +249,9 @@ export default function GlassPhoneInput({
             onBlur={onBlur}
             maxLength={20}
             placeholder="7XX XXX XXX"
-            className="min-w-0 flex-1 bg-transparent px-4 text-sm text-gray-100 outline-none placeholder:text-gray-500 disabled:cursor-not-allowed"
+            className={`min-w-0 flex-1 bg-transparent px-4 text-sm outline-none placeholder:text-gray-400 disabled:cursor-not-allowed ${
+              isPortal ? 'text-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500' : 'text-gray-100 placeholder:text-gray-500'
+            }`}
           />
         </div>
 

@@ -65,9 +65,14 @@ export default function Footer({ dictionary, lang }) {
                         <ul className="space-y-2 text-slate-400">
                             {dictionary.footer.serviceLinks.map((item, idx) => (
                                 <motion.li key={idx} whileHover={{ x: hoverX }} transition={{ duration: 0.2 }}>
-                                    <a href="#services" className="hover:text-gold-400 transition-colors">{item}</a>
+                                    <Link href={`/${lang}/courses`} className="hover:text-gold-400 transition-colors">{item}</Link>
                                 </motion.li>
                             ))}
+                            <motion.li whileHover={{ x: hoverX }} transition={{ duration: 0.2 }}>
+                                <Link href={`/${lang}/for-organization`} className="hover:text-gold-400 transition-colors">
+                                    {dictionary.nav.forOrganizations}
+                                </Link>
+                            </motion.li>
                         </ul>
                     </motion.div>
 

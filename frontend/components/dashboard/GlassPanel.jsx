@@ -14,9 +14,9 @@ export default function GlassPanel({
 }) {
   return (
     <Tag
-      className={`relative rounded-3xl border border-purple-500/20 bg-[#181124]/90 shadow-2xl shadow-black/40 backdrop-blur-md transition-all duration-300 ${
+      className={`relative rounded-3xl border border-gray-200 bg-white shadow-sm backdrop-blur-md transition-all duration-300 dark:border-purple-500/20 dark:bg-[#181124]/90 dark:shadow-none ${
         padded ? 'p-5 sm:p-6' : ''
-      } ${glow ? 'hover:border-purple-400/40 hover:shadow-purple-900/30' : ''} ${className}`}
+      } ${glow ? 'hover:border-plum-300 hover:shadow-purple-900/10 dark:hover:border-purple-400/40 dark:hover:shadow-purple-900/30' : ''} ${className}`}
       {...props}
     >
       {children}

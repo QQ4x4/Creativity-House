@@ -83,8 +83,8 @@ export default function AccountInfoTab({ profile, labels, lang, onSave, onSaveAv
 
   return (
     <GlassPanel>
-      <h2 className="text-lg font-bold text-white">{labels.accountTab}</h2>
-      <p className="mt-1 text-sm text-gray-400">{labels.accountTabHint}</p>
+      <h2 className="text-lg font-bold text-gray-900 dark:text-white">{labels.accountTab}</h2>
+      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{labels.accountTabHint}</p>
 
       <div className="mt-6">
         <AvatarUploader
@@ -105,6 +105,7 @@ export default function AccountInfoTab({ profile, labels, lang, onSave, onSaveAv
             icon={User}
             autoComplete="given-name"
             error={errors.firstName?.message}
+            variant="portal"
             {...register('firstName')}
           />
           <GlassAuthInput
@@ -113,6 +114,7 @@ export default function AccountInfoTab({ profile, labels, lang, onSave, onSaveAv
             icon={User}
             autoComplete="family-name"
             error={errors.lastName?.message}
+            variant="portal"
             {...register('lastName')}
           />
         </div>
@@ -125,6 +127,7 @@ export default function AccountInfoTab({ profile, labels, lang, onSave, onSaveAv
           dir="ltr"
           autoComplete="email"
           error={errors.email?.message}
+          variant="portal"
           {...register('email')}
         />
 
@@ -141,6 +144,7 @@ export default function AccountInfoTab({ profile, labels, lang, onSave, onSaveAv
               onChange={field.onChange}
               onBlur={field.onBlur}
               error={errors.phoneNumber?.message}
+              variant="portal"
             />
           )}
         />
@@ -181,7 +185,7 @@ export default function AccountInfoTab({ profile, labels, lang, onSave, onSaveAv
                   phoneNumber: profile?.phoneNumber || '',
                 })
               }
-              className="inline-flex min-h-[48px] items-center rounded-xl border border-white/15 px-5 text-sm font-medium text-gray-300 transition-all duration-300 hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+              className="inline-flex min-h-[48px] items-center rounded-xl border border-gray-300 px-5 text-sm font-medium text-gray-700 transition-all duration-300 hover:border-gray-400 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 dark:border-white/15 dark:text-gray-300 dark:hover:border-white/30 dark:hover:text-white"
             >
               {labels.discard}
             </button>

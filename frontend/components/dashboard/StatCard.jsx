@@ -6,19 +6,19 @@ import { motionGpu, motionViewport } from '@/lib/motion';
 
 const TONES = {
   purple: {
-    icon: 'text-purple-300',
-    iconBg: 'bg-purple-500/15 shadow-[0_0_20px_rgba(168,85,247,0.28)]',
-    value: 'text-white',
+    icon: 'text-plum-700 dark:text-purple-300',
+    iconBg: 'bg-purple-100 shadow-[0_0_20px_rgba(168,85,247,0.12)] dark:bg-purple-500/15 dark:shadow-[0_0_20px_rgba(168,85,247,0.28)]',
+    value: 'text-gray-900 dark:text-white',
   },
   gold: {
-    icon: 'text-gold-300',
-    iconBg: 'bg-gold-400/15 shadow-[0_0_20px_rgba(212,175,55,0.3)]',
-    value: 'text-white',
+    icon: 'text-amber-700 dark:text-gold-300',
+    iconBg: 'bg-amber-50 shadow-[0_0_20px_rgba(212,175,55,0.12)] dark:bg-gold-400/15 dark:shadow-[0_0_20px_rgba(212,175,55,0.3)]',
+    value: 'text-gray-900 dark:text-white',
   },
   emerald: {
-    icon: 'text-emerald-300',
-    iconBg: 'bg-emerald-400/15 shadow-[0_0_20px_rgba(52,211,153,0.28)]',
-    value: 'text-white',
+    icon: 'text-emerald-700 dark:text-emerald-300',
+    iconBg: 'bg-emerald-50 shadow-[0_0_20px_rgba(52,211,153,0.12)] dark:bg-emerald-400/15 dark:shadow-[0_0_20px_rgba(52,211,153,0.28)]',
+    value: 'text-gray-900 dark:text-white',
   },
 };
 
@@ -56,15 +56,15 @@ export default function StatCard({
           </span>
 
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-gray-400">{label}</p>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</p>
 
             {isLoading ? (
-              <div className="mt-2 h-8 w-20 animate-pulse rounded-lg bg-white/10" />
+              <div className="mt-2 h-8 w-20 animate-pulse rounded-lg bg-gray-200 dark:bg-white/10" />
             ) : (
               <p className={`mt-1 flex items-baseline gap-1.5 ${palette.value}`}>
                 <span className="text-3xl font-bold tabular-nums leading-none">{value}</span>
                 {suffix ? (
-                  <span className="text-sm font-medium text-gray-400">{suffix}</span>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{suffix}</span>
                 ) : null}
               </p>
             )}

@@ -32,7 +32,7 @@ export default function LanguageSwitcher({ scrolled, dictionary, lang }) {
             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-full font-medium text-sm transition-all duration-300 cursor-pointer border ${
                 scrolled
-                    ? 'border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-plum-400 dark:hover:border-plum-500 hover:bg-plum-50 dark:hover:bg-plum-900/20 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm'
+                    ? 'border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white hover:border-plum-400 dark:hover:border-plum-500 hover:bg-plum-50 dark:hover:bg-plum-900/20 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm'
                     : 'border-white/25 text-white hover:border-gold-400/50 hover:bg-white/15 backdrop-blur-sm'
             }`}
             aria-label="Switch language"

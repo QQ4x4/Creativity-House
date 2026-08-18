@@ -96,7 +96,7 @@ export default function AvatarUploader({
         className={`flex-1 rounded-2xl border border-dashed p-4 text-center transition-all duration-300 sm:text-start ${
           isDragging
             ? 'border-gold-400/70 bg-gold-400/10'
-            : 'border-purple-500/25 bg-white/[0.03] hover:border-purple-400/40'
+            : 'border-gray-300 bg-gray-50 hover:border-plum-400 dark:border-purple-500/25 dark:bg-black/20 dark:hover:border-purple-400/40'
         }`}
       >
         <input
@@ -115,7 +115,7 @@ export default function AvatarUploader({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={isUploading}
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-purple-400/30 bg-purple-500/10 px-4 text-sm font-semibold text-purple-100 transition-all duration-300 hover:border-gold-400/50 hover:bg-gold-400/10 hover:text-gold-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 transition-all duration-300 hover:border-plum-400 hover:bg-plum-50 hover:text-plum-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-purple-400/30 dark:bg-purple-500/10 dark:text-purple-100 dark:hover:border-gold-400/50 dark:hover:bg-gold-400/10 dark:hover:text-gold-200"
         >
           {isUploading ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -125,7 +125,7 @@ export default function AvatarUploader({
           {labels.uploadAvatar}
         </button>
 
-        <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-gray-400 sm:justify-start">
+        <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 sm:justify-start">
           <Upload className="h-3.5 w-3.5" aria-hidden />
           {labels.avatarHint}
         </p>

@@ -118,9 +118,9 @@ export default function PasswordRequirements({
           aria-live="polite"
           aria-atomic="true"
         >
-          <div className="mt-2 rounded-2xl border border-purple-500/20 bg-[#181124]/90 p-3.5 shadow-xl shadow-black/30 backdrop-blur-md sm:p-4">
+          <div className="mt-2 rounded-2xl border border-gray-200 bg-gray-50 p-3.5 shadow-sm backdrop-blur-md sm:p-4 dark:border-purple-500/20 dark:bg-[#181124]/90 dark:shadow-xl dark:shadow-black/30">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">
                 {labels.title}
               </p>
               {showBar ? (
@@ -142,7 +142,7 @@ export default function PasswordRequirements({
 
             {/* Strength bar */}
             <div
-              className="mb-3.5 h-1.5 overflow-hidden rounded-full bg-white/10"
+              className="mb-3.5 h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-white/10"
               aria-hidden={!showBar}
             >
               <div
@@ -162,14 +162,14 @@ export default function PasswordRequirements({
                     animate={item.met ? { scale: [1.05, 1] } : { scale: 1 }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
                     className={`flex items-center gap-2.5 text-sm transition-all duration-300 ${
-                      item.met ? 'text-emerald-400' : 'text-gray-400'
+                      item.met ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     <span
                       className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
                         item.met
-                          ? 'bg-emerald-400/15 text-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.35)]'
-                          : 'bg-white/5 text-gray-500'
+                          ? 'bg-emerald-400/15 text-emerald-600 shadow-[0_0_12px_rgba(52,211,153,0.35)] dark:text-emerald-400'
+                          : 'bg-gray-200 text-gray-500 dark:bg-white/5'
                       }`}
                       aria-hidden
                     >
