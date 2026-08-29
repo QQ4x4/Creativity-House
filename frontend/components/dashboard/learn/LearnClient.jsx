@@ -203,7 +203,7 @@ export default function LearnClient({ dictionary, lang, courseId }) {
 
               <div className="p-4 sm:p-5">
                 {activePanel === 'resources' ? (
-                  <LessonResources resources={activeLesson?.resources || []} labels={labels} />
+                  <LessonResources resources={activeLesson?.resources ?? []} labels={labels} />
                 ) : (
                   <dl className="grid gap-4 sm:grid-cols-2">
                     <div>

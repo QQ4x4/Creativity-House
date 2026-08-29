@@ -1,6 +1,6 @@
 /**
- * Public course catalog — bilingual source of truth.
- * Served as the Next.js mock fallback and mirrored by StudentPortalSeeder.
+ * Public course catalog — bilingual source of truth for seeding / localization
+ * helpers. Runtime pages fetch from Laravel via `lib/catalog/api.js` (live only).
  *
  * Cover images: high-resolution Unsplash stills in the same visual family as
  * PM-Tricks course cards (live classroom, self-paced video, exam prep).

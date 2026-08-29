@@ -5,21 +5,23 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, BadgeCheck, Clock, GraduationCap, PlayCircle } from 'lucide-react';
 import ProgressBar from './ProgressBar';
-import { formatLearningHours } from '@/lib/student/types';
 import { motionGpu, motionViewport } from '@/lib/motion';
 
 /**
  * Enrolled course tile: cover, live progress, and the resume CTA.
- * The cover uses a plain <img> with a reserved 16:9 box (no CLS) and falls back
- * to a gradient plate if the remote image fails.
+ * Lesson counts / duration hours come strictly from the live API
+ * (`lessonCount`, `totalDurationHours`) — never from mock fallbacks.
  */
 export default function CourseCard({ course, lang, labels, index = 0 }) {
   const [coverFailed, setCoverFailed] = useState(false);
 
-  const percentage = course.progress?.completionPercentage ?? 0;
+  const percentage = Number(course.progress?.completionPercentage ?? 0);
   const isComplete = percentage === 100;
-  const completedCount = course.progress?.completedLessons?.length ?? 0;
-  const totalCount = course.progress?.totalLessons ?? 0;
+  const completedCount = Array.isArray(course.progress?.completedLessons)
+    ? course.progress.completedLessons.length
+    : 0;
+  const totalCount = Number(course.lessonCount ?? 0);
+  const durationHours = Number(course.totalDurationHours ?? 0);
 
   const learnHref = `/${lang}/courses/${course.id}/learn`;
   const showCover = Boolean(course.coverImageUrl) && !coverFailed;
@@ -61,7 +63,7 @@ export default function CourseCard({ course, lang, labels, index = 0 }) {
           <PlayCircle className="h-14 w-14 text-white/90 drop-shadow-[0_0_16px_rgba(212,175,55,0.6)]" aria-hidden />
         </span>
 
-        {course.certificateEarned ? (
+        {course.hasCertificate === true ? (
           <span className="absolute end-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-200 backdrop-blur-md">
             <BadgeCheck className="h-3.5 w-3.5" aria-hidden />
             {labels.certificate}
@@ -103,7 +105,7 @@ export default function CourseCard({ course, lang, labels, index = 0 }) {
             </span>
             <span className="inline-flex items-center gap-1.5 tabular-nums">
               <Clock className="h-3.5 w-3.5" aria-hidden />
-              {formatLearningHours(course.progress?.totalLearningSeconds)} {labels.hoursShort}
+              {durationHours.toFixed(1)} {labels.hoursShort}
             </span>
           </div>
         </div>

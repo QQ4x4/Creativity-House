@@ -77,7 +77,7 @@ export function useCourseLearning(courseId) {
 
       if (!mountedRef.current) return;
 
-      const totalLessons = curriculum.lessons.length || loadedCourse.progress.totalLessons;
+      const totalLessons = curriculum.lessons.length;
       const completedLessons = curriculum.lessons
         .filter((lesson) => lesson.completed)
         .map((lesson) => lesson.id);
@@ -178,7 +178,7 @@ export function useCourseLearning(courseId) {
           setProgress((current) => ({
             ...(current || {}),
             ...serverProgress,
-            totalLessons: serverProgress.totalLessons || current?.totalLessons || 0,
+            totalLessons: serverProgress.totalLessons ?? current?.totalLessons ?? 0,
           }));
         }
 

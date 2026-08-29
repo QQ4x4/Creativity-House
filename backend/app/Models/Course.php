@@ -130,6 +130,16 @@ class Course extends Model
         return $this->hasOne(CourseProgress::class);
     }
 
+    /**
+     * Manual certificate awards (decoupled from progress).
+     *
+     * @return HasMany<CourseCertificate, $this>
+     */
+    public function certificates(): HasMany
+    {
+        return $this->hasMany(CourseCertificate::class);
+    }
+
     /* ─── Scopes ────────────────────────────────────────────────────────── */
 
     /**

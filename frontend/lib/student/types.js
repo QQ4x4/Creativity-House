@@ -78,6 +78,8 @@
  * @property {string} moduleName
  * @property {string} title
  * @property {string} videoUrl
+ * @property {string|null} bunnyVideoId Bunny Stream video GUID (iframe embed).
+ * @property {string|null} bunnyLibraryId Bunny Stream library ID.
  * @property {number} durationSeconds
  * @property {LessonResource[]} resources
  * @property {boolean} completed
@@ -101,7 +103,9 @@
  * @property {string} instructorName
  * @property {string} level
  * @property {string} enrolledAt                 ISO 8601.
- * @property {boolean} certificateEarned
+ * @property {boolean} hasCertificate            Manual admin award only.
+ * @property {number} lessonCount                Live DB lesson count (may be 0).
+ * @property {number} totalDurationHours         Live sum of lesson durations.
  * @property {CourseProgress} progress
  * @property {string|number|null} nextLessonId   Resume target for "Continue Learning".
  */
@@ -285,6 +289,10 @@ export function normalizeCourseLesson(raw, index = 0, completedLessonIds = []) {
     moduleName: toText(firstDefined(source.moduleName, source.module_name), ''),
     title: toText(firstDefined(source.title, source.name)),
     videoUrl: toText(firstDefined(source.videoUrl, source.video_url, source.video)),
+    bunnyVideoId:
+      toText(firstDefined(source.bunnyVideoId, source.bunny_video_id), '') || null,
+    bunnyLibraryId:
+      toText(firstDefined(source.bunnyLibraryId, source.bunny_library_id), '') || null,
     durationSeconds: toNumber(
       firstDefined(source.durationSeconds, source.duration_seconds, source.duration)
     ),
@@ -331,6 +339,29 @@ export function normalizeEnrolledCourse(raw) {
   const source = raw || {};
   const id = firstDefined(source.id, source.course_id, '') ?? '';
 
+  const lessonCount = toNumber(
+    firstDefined(source.lessonCount, source.lesson_count, source.total_lessons, source.totalLessons),
+    0
+  );
+
+  const totalDurationHours = toNumber(
+    firstDefined(source.totalDurationHours, source.total_duration_hours, source.total_hours),
+    0
+  );
+
+  // Certificates are admin-awarded only — never inferred from 100% progress.
+  const hasCertificate = toBool(
+    firstDefined(source.hasCertificate, source.has_certificate, source.certificate_earned)
+  );
+
+  const progress = normalizeCourseProgress(
+    firstDefined(source.progress, source.course_progress),
+    id
+  );
+
+  // Prefer live lesson_count from the course payload over any progress envelope.
+  progress.totalLessons = lessonCount;
+
   return {
     id,
     title: toText(firstDefined(source.title, source.name)),
@@ -343,13 +374,10 @@ export function normalizeEnrolledCourse(raw) {
     ),
     level: toText(firstDefined(source.level, source.difficulty)),
     enrolledAt: toText(firstDefined(source.enrolledAt, source.enrolled_at, source.created_at)),
-    certificateEarned: toBool(
-      firstDefined(source.certificateEarned, source.certificate_earned, source.has_certificate)
-    ),
-    progress: normalizeCourseProgress(
-      firstDefined(source.progress, source.course_progress),
-      id
-    ),
+    hasCertificate,
+    lessonCount,
+    totalDurationHours,
+    progress,
     nextLessonId:
       firstDefined(source.nextLessonId, source.next_lesson_id, source.resume_lesson_id) ?? null,
   };
@@ -404,7 +432,7 @@ export function summarizeCourses(courses = []) {
 
   return {
     totalCourses: courses.length,
-    certificatesEarned: courses.filter((course) => course.certificateEarned).length,
+    certificatesEarned: courses.filter((course) => course.hasCertificate === true).length,
     totalLearningSeconds: totalSeconds,
     totalLearningHours: Math.round((totalSeconds / 3600) * 10) / 10,
   };

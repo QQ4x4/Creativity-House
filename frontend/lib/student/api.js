@@ -1,24 +1,13 @@
 /**
- * lib/student/api.js — Student Portal API layer.
+ * lib/student/api.js — Student Portal API layer (live Laravel only).
  *
- * Each exported function is a thin, typed wrapper around ONE Laravel endpoint
- * from `endpoints.js`. Responses always pass through a normalizer from
- * `types.js`, and requests always go out in Laravel's snake_case.
- *
- * Until the backend ships those routes, "not implemented" responses
- * (404/405/501/network) transparently fall back to `mockData.js`, so the UI is
- * fully clickable today. Real auth/validation errors (401/403/419/422) are
- * never masked — they surface to the caller.
- *
- * Mode resolution (no Vercel dashboard var required in production):
- *   1. Explicit NEXT_PUBLIC_STUDENT_API=live|mock wins when set.
- *   2. Otherwise: NODE_ENV === 'production' → live; local/dev → mock.
+ * Every call hits the Sanctum-authenticated student endpoints. Failures
+ * propagate to the caller — there is no silent mock / fixture fallback.
  */
 
 import { apiClient, apiGet, apiPost, apiPut, getCsrfCookie, ApiError } from '@/lib/api';
-import { NOT_IMPLEMENTED_STATUSES, STUDENT_ENDPOINTS } from './endpoints';
+import { STUDENT_ENDPOINTS } from './endpoints';
 import {
-  applyLessonCompletion,
   groupLessonsByModule,
   normalizeCourseLesson,
   normalizeCourseProgress,
@@ -28,56 +17,9 @@ import {
   normalizeUserProfile,
   unwrap,
 } from './types';
-import {
-  MOCK_COURSES,
-  MOCK_ORDERS,
-  MOCK_PROFILE,
-  findMockCourse,
-  findMockCurriculum,
-} from './mockData';
-
-/**
- * @returns {'live' | 'mock'}
- */
-function resolveStudentApiMode() {
-  const explicit = String(process.env.NEXT_PUBLIC_STUDENT_API ?? '')
-    .trim()
-    .toLowerCase();
-
-  if (explicit === 'live' || explicit === 'mock') {
-    return explicit;
-  }
-
-  return process.env.NODE_ENV === 'production' ? 'live' : 'mock';
-}
-
-const MOCK_FALLBACK_ENABLED = resolveStudentApiMode() !== 'live';
 
 function statusOf(error) {
   return Number(error?.status ?? error?.response?.status ?? 0);
-}
-
-function isNotImplemented(error) {
-  return NOT_IMPLEMENTED_STATUSES.includes(statusOf(error));
-}
-
-/**
- * Run a live request; fall back to fixtures only when the route doesn't exist.
- *
- * @template T
- * @param {() => Promise<T>} live
- * @param {() => T} mock
- * @returns {Promise<{ data: T, source: 'api'|'mock' }>}
- */
-async function withMockFallback(live, mock) {
-  try {
-    return { data: await live(), source: 'api' };
-  } catch (error) {
-    if (MOCK_FALLBACK_ENABLED && isNotImplemented(error)) {
-      return { data: mock(), source: 'mock' };
-    }
-    throw error;
-  }
 }
 
 /** Sanctum CSRF for mutations. Swallowed on failure so the real request reports the status. */
@@ -89,55 +31,23 @@ async function ensureCsrf() {
   }
 }
 
-/* ─── Session-scoped mock progress ───────────────────────────────────────── */
-
-/**
- * In mock mode, lesson completions live here for the duration of the tab so the
- * learning screen and "My Courses" percentages stay in sync. The real API
- * replaces this entirely — nothing else reads this map.
- *
- * @type {Map<string, Array<string|number>>}
- */
-const mockCompletions = new Map();
-
-function mockCompletedLessons(courseId) {
-  const key = String(courseId);
-
-  if (!mockCompletions.has(key)) {
-    const course = findMockCourse(key);
-    mockCompletions.set(key, [...(course?.progress?.completed_lessons || [])]);
-  }
-
-  return mockCompletions.get(key);
-}
-
-function mockCourseWithProgress(rawCourse) {
-  const completed = mockCompletedLessons(rawCourse.id);
-
-  return normalizeEnrolledCourse({
-    ...rawCourse,
-    progress: { ...rawCourse.progress, completed_lessons: completed },
-  });
-}
-
 /* ─── Profile ────────────────────────────────────────────────────────────── */
 
 /**
- * @param {import('./types').UserProfile|null} authUser Already-known user from
- *   AuthProvider, used to seed the mock so the page never shows fake names.
- * @returns {Promise<{ data: import('./types').UserProfile, source: 'api'|'mock' }>}
+ * @param {import('./types').UserProfile|null} _authUser Unused (kept for call-site compatibility).
+ * @returns {Promise<{ data: import('./types').UserProfile, source: 'api' }>}
  */
-export async function fetchStudentProfile(authUser = null) {
-  return withMockFallback(
-    async () => normalizeUserProfile(await apiGet(STUDENT_ENDPOINTS.profile)),
-    () => normalizeUserProfile({ ...MOCK_PROFILE, ...(authUser || {}) })
-  );
+export async function fetchStudentProfile(_authUser = null) {
+  return {
+    data: normalizeUserProfile(await apiGet(STUDENT_ENDPOINTS.profile)),
+    source: 'api',
+  };
 }
 
 /**
  * @param {{ firstName: string, lastName: string, email: string, phoneNumber: string }} values
  */
-export async function updateStudentProfile(values, currentProfile = null) {
+export async function updateStudentProfile(values) {
   const payload = {
     first_name: values.firstName,
     last_name: values.lastName,
@@ -147,17 +57,17 @@ export async function updateStudentProfile(values, currentProfile = null) {
 
   await ensureCsrf();
 
-  return withMockFallback(
-    async () => normalizeUserProfile(await apiPut(STUDENT_ENDPOINTS.profile, payload)),
-    () => normalizeUserProfile({ ...(currentProfile || MOCK_PROFILE), ...payload })
-  );
+  return {
+    data: normalizeUserProfile(await apiPut(STUDENT_ENDPOINTS.profile, payload)),
+    source: 'api',
+  };
 }
 
 /**
  * Multipart avatar upload. Content-Type is cleared so Axios sets the boundary.
  *
  * @param {File} file
- * @returns {Promise<{ data: string, source: 'api'|'mock' }>} New avatar URL.
+ * @returns {Promise<{ data: string, source: 'api' }>} New avatar URL.
  */
 export async function uploadStudentAvatar(file) {
   const formData = new FormData();
@@ -165,28 +75,23 @@ export async function uploadStudentAvatar(file) {
 
   await ensureCsrf();
 
-  return withMockFallback(
-    async () => {
-      try {
-        const response = await apiClient.request({
-          method: 'post',
-          url: STUDENT_ENDPOINTS.avatar,
-          data: formData,
-          headers: { 'Content-Type': undefined },
-        });
-        const body = unwrap(response.data, 'avatar_url', 'avatarUrl', 'url');
-        return typeof body === 'string' ? body : normalizeUserProfile(response.data).avatarUrl;
-      } catch (error) {
-        throw new ApiError(
-          error?.response?.data?.message || error?.message || 'Avatar upload failed.',
-          statusOf(error),
-          error?.response?.data || null
-        );
-      }
-    },
-    // Mock: preview the picked file locally via an object URL.
-    () => (typeof URL !== 'undefined' ? URL.createObjectURL(file) : null)
-  );
+  try {
+    const response = await apiClient.request({
+      method: 'post',
+      url: STUDENT_ENDPOINTS.avatar,
+      data: formData,
+      headers: { 'Content-Type': undefined },
+    });
+    const body = unwrap(response.data, 'avatar_url', 'avatarUrl', 'url');
+    const url = typeof body === 'string' ? body : normalizeUserProfile(response.data).avatarUrl;
+    return { data: url, source: 'api' };
+  } catch (error) {
+    throw new ApiError(
+      error?.response?.data?.message || error?.message || 'Avatar upload failed.',
+      statusOf(error),
+      error?.response?.data || null
+    );
+  }
 }
 
 /**
@@ -200,14 +105,8 @@ export async function changeStudentPassword(values) {
   };
 
   await ensureCsrf();
-
-  return withMockFallback(
-    async () => {
-      await apiPut(STUDENT_ENDPOINTS.password, payload);
-      return true;
-    },
-    () => true
-  );
+  await apiPut(STUDENT_ENDPOINTS.password, payload);
+  return { data: true, source: 'api' };
 }
 
 /**
@@ -222,30 +121,27 @@ export async function updateNotificationPreferences(preferences) {
 
   await ensureCsrf();
 
-  return withMockFallback(
-    async () =>
-      normalizeNotificationPreferences(
-        unwrap(
-          await apiPut(STUDENT_ENDPOINTS.notifications, payload),
-          'notification_preferences',
-          'notificationPreferences'
-        )
-      ),
-    () => normalizeNotificationPreferences(payload)
-  );
+  return {
+    data: normalizeNotificationPreferences(
+      unwrap(
+        await apiPut(STUDENT_ENDPOINTS.notifications, payload),
+        'notification_preferences',
+        'notificationPreferences'
+      )
+    ),
+    source: 'api',
+  };
 }
 
 /* ─── Purchase history ───────────────────────────────────────────────────── */
 
-/** @returns {Promise<{ data: import('./types').PurchaseRecord[], source: 'api'|'mock' }>} */
+/** @returns {Promise<{ data: import('./types').PurchaseRecord[], source: 'api' }>} */
 export async function fetchPurchaseHistory() {
-  return withMockFallback(
-    async () => {
-      const rows = unwrap(await apiGet(STUDENT_ENDPOINTS.orders), 'orders');
-      return (Array.isArray(rows) ? rows : []).map(normalizePurchaseRecord);
-    },
-    () => MOCK_ORDERS.map(normalizePurchaseRecord)
-  );
+  const rows = unwrap(await apiGet(STUDENT_ENDPOINTS.orders), 'orders');
+  return {
+    data: (Array.isArray(rows) ? rows : []).map(normalizePurchaseRecord),
+    source: 'api',
+  };
 }
 
 function saveBlob(blob, filename) {
@@ -258,13 +154,12 @@ function saveBlob(blob, filename) {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  // Revoke on the next tick so the download has started.
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /**
- * Print-ready invoice used while the Laravel PDF route is pending. Opening it
- * lets the browser's own "Save as PDF" finish the job.
+ * Print-ready invoice when the backend has no stored PDF yet (HTTP 404 only).
+ * Not a course-data mock — only fills a missing invoice file.
  */
 function buildInvoicePreview(order, labels) {
   const html = `<!doctype html>
@@ -295,8 +190,8 @@ function buildInvoicePreview(order, labels) {
 }
 
 /**
- * Download an invoice PDF. Falls back to a print-ready preview window when the
- * backend route isn't live yet.
+ * Download an invoice PDF. On 404 (no stored PDF), opens a print-ready preview
+ * from the live order fields. All other errors propagate.
  *
  * @param {import('./types').PurchaseRecord} order
  * @returns {Promise<'api'|'preview'>}
@@ -310,7 +205,7 @@ export async function downloadInvoice(order, labels) {
     saveBlob(blob, `invoice-${order.orderId}.pdf`);
     return 'api';
   } catch (error) {
-    if (!MOCK_FALLBACK_ENABLED || !isNotImplemented(error)) throw error;
+    if (statusOf(error) !== 404) throw error;
 
     if (order.invoiceUrl) {
       window.open(order.invoiceUrl, '_blank', 'noopener,noreferrer');
@@ -324,64 +219,51 @@ export async function downloadInvoice(order, labels) {
 
 /* ─── Courses & curriculum ───────────────────────────────────────────────── */
 
-/** @returns {Promise<{ data: import('./types').EnrolledCourse[], source: 'api'|'mock' }>} */
+/** @returns {Promise<{ data: import('./types').EnrolledCourse[], source: 'api' }>} */
 export async function fetchEnrolledCourses() {
-  return withMockFallback(
-    async () => {
-      const rows = unwrap(await apiGet(STUDENT_ENDPOINTS.courses), 'courses');
-      return (Array.isArray(rows) ? rows : []).map(normalizeEnrolledCourse);
-    },
-    () => MOCK_COURSES.map(mockCourseWithProgress)
-  );
+  const rows = unwrap(await apiGet(STUDENT_ENDPOINTS.courses), 'courses');
+  return {
+    data: (Array.isArray(rows) ? rows : []).map(normalizeEnrolledCourse),
+    source: 'api',
+  };
 }
 
-/** @returns {Promise<{ data: import('./types').EnrolledCourse|null, source: 'api'|'mock' }>} */
+/** @returns {Promise<{ data: import('./types').EnrolledCourse|null, source: 'api' }>} */
 export async function fetchCourse(courseId) {
-  return withMockFallback(
-    async () => normalizeEnrolledCourse(unwrap(await apiGet(STUDENT_ENDPOINTS.course(courseId)), 'course')),
-    () => {
-      const raw = findMockCourse(courseId);
-      return raw ? mockCourseWithProgress(raw) : null;
-    }
-  );
+  const raw = unwrap(await apiGet(STUDENT_ENDPOINTS.course(courseId)), 'course');
+  return {
+    data: raw ? normalizeEnrolledCourse(raw) : null,
+    source: 'api',
+  };
 }
 
 /**
- * Curriculum + module grouping. `completedLessonIds` comes from the course
- * progress so lesson rows render their status without a second request.
+ * Curriculum + module grouping.
  *
- * @returns {Promise<{ data: { lessons: import('./types').CourseLesson[], modules: import('./types').CourseModule[] }, source: 'api'|'mock' }>}
+ * @returns {Promise<{ data: { lessons: import('./types').CourseLesson[], modules: import('./types').CourseModule[] }, source: 'api' }>}
  */
 export async function fetchCourseCurriculum(courseId, completedLessonIds = []) {
-  const build = (rows) => {
-    const lessons = (Array.isArray(rows) ? rows : []).map((row, index) =>
-      normalizeCourseLesson(row, index, completedLessonIds)
-    );
-    return { lessons, modules: groupLessonsByModule(lessons) };
-  };
-
-  return withMockFallback(
-    async () =>
-      build(unwrap(await apiGet(STUDENT_ENDPOINTS.courseCurriculum(courseId)), 'lessons', 'curriculum')),
-    () => build(findMockCurriculum(courseId))
+  const rows = unwrap(
+    await apiGet(STUDENT_ENDPOINTS.courseCurriculum(courseId)),
+    'lessons',
+    'curriculum'
   );
+  const lessons = (Array.isArray(rows) ? rows : []).map((row, index) =>
+    normalizeCourseLesson(row, index, completedLessonIds)
+  );
+
+  return {
+    data: { lessons, modules: groupLessonsByModule(lessons) },
+    source: 'api',
+  };
 }
 
-/** @returns {Promise<{ data: import('./types').CourseProgress, source: 'api'|'mock' }>} */
+/** @returns {Promise<{ data: import('./types').CourseProgress, source: 'api' }>} */
 export async function fetchCourseProgress(courseId) {
-  return withMockFallback(
-    async () => normalizeCourseProgress(await apiGet(STUDENT_ENDPOINTS.courseProgress(courseId)), courseId),
-    () => {
-      const raw = findMockCourse(courseId);
-      return normalizeCourseProgress(
-        {
-          ...(raw?.progress || {}),
-          completed_lessons: mockCompletedLessons(courseId),
-        },
-        courseId
-      );
-    }
-  );
+  return {
+    data: normalizeCourseProgress(await apiGet(STUDENT_ENDPOINTS.courseProgress(courseId)), courseId),
+    source: 'api',
+  };
 }
 
 /**
@@ -390,40 +272,32 @@ export async function fetchCourseProgress(courseId) {
  * @param {string|number} courseId
  * @param {string|number} lessonId
  * @param {boolean} completed
- * @param {import('./types').CourseProgress} currentProgress Used for the mock recalculation.
  */
-export async function setLessonCompletion(courseId, lessonId, completed, currentProgress) {
+export async function setLessonCompletion(courseId, lessonId, completed) {
   await ensureCsrf();
 
-  return withMockFallback(
-    async () => {
-      const endpoint = STUDENT_ENDPOINTS.lessonCompletion(courseId, lessonId);
-      const response = completed
-        ? await apiPost(endpoint, { completed: true })
-        : await apiClient
-            .request({ method: 'delete', url: endpoint })
-            .then((res) => res.data)
-            .catch((error) => {
-              throw new ApiError(
-                error?.response?.data?.message || error?.message || 'Request failed.',
-                statusOf(error),
-                error?.response?.data || null
-              );
-            });
+  const endpoint = STUDENT_ENDPOINTS.lessonCompletion(courseId, lessonId);
+  const response = completed
+    ? await apiPost(endpoint, { completed: true })
+    : await apiClient
+        .request({ method: 'delete', url: endpoint })
+        .then((res) => res.data)
+        .catch((error) => {
+          throw new ApiError(
+            error?.response?.data?.message || error?.message || 'Request failed.',
+            statusOf(error),
+            error?.response?.data || null
+          );
+        });
 
-      return normalizeCourseProgress(response, courseId);
-    },
-    () => {
-      const next = applyLessonCompletion(currentProgress, lessonId, completed);
-      mockCompletions.set(String(courseId), [...next.completedLessons]);
-      return next;
-    }
-  );
+  return {
+    data: normalizeCourseProgress(response, courseId),
+    source: 'api',
+  };
 }
 
 /**
- * Trigger a resource download. Same-origin/blob-friendly files download
- * directly; anything else opens in a new tab.
+ * Trigger a resource download.
  *
  * @param {import('./types').LessonResource} resource
  */
@@ -439,5 +313,3 @@ export function downloadLessonResource(resource) {
   anchor.click();
   anchor.remove();
 }
-
-export { MOCK_FALLBACK_ENABLED };

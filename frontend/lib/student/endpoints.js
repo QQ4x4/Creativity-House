@@ -42,7 +42,7 @@ export const STUDENT_ENDPOINTS = {
 };
 
 /**
- * Statuses that mean "this endpoint isn't built yet" — safe to fall back to
- * mock data. 401/403/419/422 are real answers and must surface to the user.
+ * Statuses historically used for "endpoint not built yet" probes.
+ * Student/catalog API layers no longer silently mock on these — errors surface.
  */
 export const NOT_IMPLEMENTED_STATUSES = [0, 404, 405, 501, 502, 503];

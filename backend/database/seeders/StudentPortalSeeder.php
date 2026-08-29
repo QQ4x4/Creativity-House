@@ -11,8 +11,8 @@ use App\Services\Student\ProgressService;
 use Illuminate\Database\Seeder;
 
 /**
- * Mirrors frontend/lib/student/mockData.js so the portal shows the same data it
- * shows in mock mode once NEXT_PUBLIC_STUDENT_API points at Laravel.
+ * Mirrors the student portal demo curriculum so the portal shows real lesson
+ * rows once NEXT_PUBLIC_API_URL points at Laravel.
  *
  * NOT wired into DatabaseSeeder — run it explicitly:
  *   php artisan db:seed --class=StudentPortalSeeder
@@ -105,6 +105,7 @@ class StudentPortalSeeder extends Seeder
                 [
                     'module_name' => $lesson['module'],
                     'video_url' => self::SAMPLE_VIDEOS[$index % count(self::SAMPLE_VIDEOS)],
+                    'bunny_video_id' => $lesson['bunny_video_id'] ?? null,
                     'duration' => $lesson['duration'],
                     'pdf_resource_urls' => $lesson['resources'] ?? [],
                     'is_locked' => $lesson['locked'] ?? false,
@@ -200,7 +201,12 @@ class StudentPortalSeeder extends Seeder
                             ['title' => 'Scope checklist.pdf', 'url' => '/files/scope-checklist.pdf', 'type' => 'pdf', 'size_bytes' => 196000],
                         ],
                     ],
-                    ['module' => 'Module 2: Planning & Scope', 'title' => 'Estimating time and cost realistically', 'duration' => 866],
+                    [
+                        'module' => 'Module 2: Planning & Scope',
+                        'title' => 'Estimating time and cost realistically',
+                        'duration' => 866,
+                        'bunny_video_id' => '4ae24953-6c34-4080-906e-b62ab1a8f6ab',
+                    ],
                     [
                         'module' => 'Module 3: Execution & Risk',
                         'title' => 'Running a risk register',

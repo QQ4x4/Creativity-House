@@ -1,4 +1,8 @@
 {
   "/[lang]/courses/[courseId]/page": "app/[lang]/courses/[courseId]/page.js",
+  "/[lang]/profile/page": "app/[lang]/profile/page.js",
+  "/[lang]/my-courses/page": "app/[lang]/my-courses/page.js",
+  "/[lang]/checkout/page": "app/[lang]/checkout/page.js",
+  "/[lang]/courses/[courseId]/learn/page": "app/[lang]/courses/[courseId]/learn/page.js",
   "/[lang]/courses/page": "app/[lang]/courses/page.js"
 }

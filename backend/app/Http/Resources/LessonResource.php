@@ -27,6 +27,8 @@ class LessonResource extends JsonResource
             'module_name' => $this->module_name,
             'title' => $this->title,
             'video_url' => $this->video_url,
+            'bunny_video_id' => $this->bunny_video_id,
+            'bunny_library_id' => $this->bunny_library_id,
             'duration_seconds' => $this->duration,
             'resources' => $this->transformResources(),
             'completed' => (bool) ($this->getAttribute('is_completed') ?? false),

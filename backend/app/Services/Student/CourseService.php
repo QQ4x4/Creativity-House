@@ -6,27 +6,30 @@ use App\Models\Course;
 use App\Models\CourseProgress;
 use App\Models\Lesson;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\Certificates\CertificateService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
  * Read side of the Student Portal course library.
  *
  * Every query is scoped to paid orders, so an unenrolled course can never be
- * returned even if its id is guessed.
+ * returned even if its id is guessed. Certificates are resolved via the
+ * isolated CertificateService — never from progress percentage.
  */
 class CourseService
 {
     public function __construct(
         private readonly EnrollmentService $enrollment,
         private readonly ProgressService $progress,
+        private readonly CertificateService $certificates,
     ) {}
 
     /**
      * Courses the student owns, ready for CourseResource.
      *
-     * Query budget: 1 for courses (+lessons_count), 1 for progress rows,
-     * 1 for slim lesson rows, 1 for enrollment dates. No N+1.
+     * Query budget: 1 for courses (+lesson aggregates), 1 for progress rows,
+     * 1 for slim lesson rows, 1 for enrollment dates, 1 for certificates. No N+1.
      *
      * @return EloquentCollection<int, Course>
      */
@@ -36,24 +39,36 @@ class CourseService
         $courses = Course::query()
             ->purchasedBy($user->id)
             ->withCount('lessons')
+            ->withSum('lessons', 'duration')
             ->with([
-                'progressForUser' => fn (Builder $query) => $query->where('user_id', $user->id),
+                // Eager-load constraints receive a Relation, not a Builder.
+                'progressForUser' => fn (Relation $relation) => $relation->where('user_id', $user->id),
                 // Slim projection: enough to pick the resume lesson without
                 // shipping full lesson payloads in the listing.
-                'lessons' => fn (Builder $query) => $query->select(['id', 'course_id', 'sort_order', 'is_locked']),
+                'lessons' => fn (Relation $relation) => $relation->select(['id', 'course_id', 'sort_order', 'is_locked']),
             ])
             ->orderBy('sort_order')
             ->orderBy('title')
             ->get();
 
-        $enrollmentDates = $this->enrollment->enrollmentDates(
-            $user->id,
-            $courses->pluck('id')->all()
-        );
+        $courseIds = $courses->pluck('id')->all();
+
+        $enrollmentDates = $this->enrollment->enrollmentDates($user->id, $courseIds);
+        $certificateMap = $this->certificates->hasCertificatesMap($user->id, $courseIds);
 
         foreach ($courses as $course) {
+            // Paid order is enrollment — create a progress row if missing so the
+            // listing never drops a purchased course for lack of progress data.
+            if ($course->progressForUser === null) {
+                $course->setRelation(
+                    'progressForUser',
+                    $this->progress->progressFor($user, $course)
+                );
+            }
+
             $course->setAttribute('enrolled_at', $enrollmentDates[$course->id] ?? null);
             $course->setAttribute('next_lesson_id', $this->resolveNextLessonId($course));
+            $course->setAttribute('has_certificate', $certificateMap[$course->id] ?? false);
 
             // Drop the slim lessons so the listing response stays lean —
             // CourseResource only serializes lessons when they're loaded.
@@ -71,13 +86,25 @@ class CourseService
         $this->enrollment->assertEnrolled($user, $course);
 
         $course->loadCount('lessons');
+        $course->loadSum('lessons', 'duration');
         $course->load([
-            'progressForUser' => fn (Builder $query) => $query->where('user_id', $user->id),
-            'lessons' => fn (Builder $query) => $query->select(['id', 'course_id', 'sort_order', 'is_locked']),
+            'progressForUser' => fn (Relation $relation) => $relation->where('user_id', $user->id),
+            'lessons' => fn (Relation $relation) => $relation->select(['id', 'course_id', 'sort_order', 'is_locked']),
         ]);
+
+        if ($course->progressForUser === null) {
+            $course->setRelation(
+                'progressForUser',
+                $this->progress->progressFor($user, $course)
+            );
+        }
 
         $course->setAttribute('enrolled_at', $this->enrollment->enrolledAt($user->id, $course->id));
         $course->setAttribute('next_lesson_id', $this->resolveNextLessonId($course));
+        $course->setAttribute(
+            'has_certificate',
+            $this->certificates->hasCertificate($user->id, $course->id)
+        );
         $course->unsetRelation('lessons');
 
         return $course;

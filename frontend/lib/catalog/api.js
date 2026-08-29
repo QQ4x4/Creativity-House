@@ -1,19 +1,11 @@
 /**
- * Public catalog API — live Laravel first, bilingual mock fallback.
+ * Public catalog API — live Laravel only.
+ * Failures propagate; there is no silent static-catalog mock fallback.
  */
 
 import { apiGet } from '@/lib/api';
-import { NOT_IMPLEMENTED_STATUSES } from '@/lib/student/endpoints';
 import { CATALOG_ENDPOINTS } from './endpoints';
-import {
-  getPublicCourse,
-  localizeCatalog,
-  localizeCatalogCourse,
-} from './data';
-
-function statusOf(error) {
-  return Number(error?.status ?? error?.response?.status ?? 0);
-}
+import { localizeCatalogCourse } from './data';
 
 function unwrapList(payload) {
   if (Array.isArray(payload)) return payload;
@@ -66,29 +58,14 @@ function normalizePublicCourse(raw, lang) {
   );
 }
 
-async function withFallback(live, mock) {
-  try {
-    return { data: await live(), source: 'api' };
-  } catch (error) {
-    if (NOT_IMPLEMENTED_STATUSES.includes(statusOf(error))) {
-      return { data: mock(), source: 'mock' };
-    }
-    throw error;
-  }
-}
-
 export async function fetchPublicCatalog(lang = 'en') {
-  return withFallback(
-    async () => unwrapList(await apiGet(CATALOG_ENDPOINTS.courses)).map((item) =>
-      normalizePublicCourse(item, lang)
-    ),
-    () => localizeCatalog(lang)
+  const rows = unwrapList(await apiGet(CATALOG_ENDPOINTS.courses)).map((item) =>
+    normalizePublicCourse(item, lang)
   );
+  return { data: rows.filter(Boolean), source: 'api' };
 }
 
 export async function fetchPublicCourse(slug, lang = 'en') {
-  return withFallback(
-    async () => normalizePublicCourse(unwrapOne(await apiGet(CATALOG_ENDPOINTS.course(slug))), lang),
-    () => localizeCatalogCourse(getPublicCourse(slug), lang)
-  );
+  const course = normalizePublicCourse(unwrapOne(await apiGet(CATALOG_ENDPOINTS.course(slug))), lang);
+  return { data: course, source: 'api' };
 }

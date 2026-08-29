@@ -335,7 +335,7 @@
     "statCourses": "Courses purchased",
     "statCoursesHint": "Lifetime enrollments on your account",
     "statCertificates": "Certificates earned",
-    "statCertificatesHint": "Awarded on 100% completion",
+    "statCertificatesHint": "Awarded by instructor after exam",
     "statHours": "Learning hours",
     "statHoursHint": "Total time spent watching lessons",
     "hoursSuffix": "hrs",

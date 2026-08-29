@@ -12,12 +12,15 @@ import {
 } from 'lucide-react';
 import { formatDuration } from '@/lib/student/types';
 
+/** Fallback Bunny library when a lesson omits bunny_library_id. */
+const DEFAULT_BUNNY_LIBRARY_ID = '739576';
+
 /**
- * Custom HTML5 player wrapper for the learning screen.
+ * Lesson player — prefers Bunny Stream iframe when `bunnyVideoId` is set,
+ * otherwise falls back to the custom HTML5 player (or an unavailable state).
  *
- * Deliberately not using the native control bar so the chrome matches the dark
- * glass theme. All time values start at 0 on both server and client, so the
- * first paint is identical (no hydration mismatch).
+ * Sidebar lesson clicks change `lesson`; remounting via `key` keeps the
+ * Bunny iframe / video source in sync with the active lesson.
  */
 export default function LessonPlayer({ lesson, labels, isRTL = false }) {
   const videoRef = useRef(null);
@@ -31,7 +34,14 @@ export default function LessonPlayer({ lesson, labels, isRTL = false }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasError, setHasError] = useState(false);
 
+  const bunnyVideoId = lesson?.bunnyVideoId || '';
+  const bunnyLibraryId = lesson?.bunnyLibraryId || DEFAULT_BUNNY_LIBRARY_ID;
   const videoUrl = lesson?.videoUrl || '';
+  const useBunny = Boolean(bunnyVideoId);
+
+  const bunnyEmbedUrl = useBunny
+    ? `https://iframe.mediadelivery.net/embed/${bunnyLibraryId}/${bunnyVideoId}?autoplay=false&preload=true&responsive=true`
+    : '';
 
   // New lesson → reset transport state and load the new source paused.
   useEffect(() => {
@@ -45,7 +55,7 @@ export default function LessonPlayer({ lesson, labels, isRTL = false }) {
       video.pause();
       video.currentTime = 0;
     }
-  }, [videoUrl]);
+  }, [bunnyLibraryId, bunnyVideoId, videoUrl]);
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -92,6 +102,7 @@ export default function LessonPlayer({ lesson, labels, isRTL = false }) {
   }, []);
 
   const onKeyDown = (event) => {
+    if (useBunny) return;
     // Let the control buttons handle their own Enter/Space.
     if (event.target !== containerRef.current) return;
 
@@ -114,6 +125,8 @@ export default function LessonPlayer({ lesson, labels, isRTL = false }) {
   };
 
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const showHtml5 = !useBunny && videoUrl && !hasError;
+  const showUnavailable = !useBunny && (!videoUrl || hasError);
 
   return (
     <div
@@ -124,7 +137,17 @@ export default function LessonPlayer({ lesson, labels, isRTL = false }) {
       className="group relative w-full overflow-hidden rounded-3xl border border-purple-500/20 bg-black shadow-2xl shadow-black/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
     >
       <div className="relative aspect-video w-full bg-gradient-to-br from-plum-950 to-slate-950">
-        {videoUrl && !hasError ? (
+        {useBunny ? (
+          <iframe
+            key={`${bunnyLibraryId}-${bunnyVideoId}`}
+            src={bunnyEmbedUrl}
+            title={lesson?.title || labels.videoPlayer}
+            loading="lazy"
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen={true}
+            className="absolute top-0 left-0 h-full w-full border-0"
+          />
+        ) : showHtml5 ? (
           <video
             ref={videoRef}
             key={videoUrl}
@@ -147,31 +170,33 @@ export default function LessonPlayer({ lesson, labels, isRTL = false }) {
           >
             {labels.videoUnsupported}
           </video>
-        ) : (
+        ) : showUnavailable ? (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-6 text-center">
             <p className="text-sm font-semibold text-gray-200">{labels.videoUnavailable}</p>
             <p className="text-xs text-gray-400">{labels.videoUnavailableHint}</p>
           </div>
-        )}
+        ) : null}
 
         {/* Lesson title overlay — fades out while playing so it never blocks the frame */}
-        <div
-          className={`pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 to-transparent p-4 transition-opacity duration-300 sm:p-5 ${
-            isPlaying ? 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100' : 'opacity-100'
-          }`}
-        >
-          {lesson?.moduleName ? (
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gold-300/90">
-              {lesson.moduleName}
+        {!useBunny ? (
+          <div
+            className={`pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 to-transparent p-4 transition-opacity duration-300 sm:p-5 ${
+              isPlaying ? 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100' : 'opacity-100'
+            }`}
+          >
+            {lesson?.moduleName ? (
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gold-300/90">
+                {lesson.moduleName}
+              </p>
+            ) : null}
+            <p className="mt-0.5 line-clamp-2 text-sm font-bold text-white sm:text-base">
+              {lesson?.title}
             </p>
-          ) : null}
-          <p className="mt-0.5 line-clamp-2 text-sm font-bold text-white sm:text-base">
-            {lesson?.title}
-          </p>
-        </div>
+          </div>
+        ) : null}
 
         {/* Center play affordance */}
-        {!isPlaying && videoUrl && !hasError ? (
+        {!useBunny && !isPlaying && videoUrl && !hasError ? (
           <button
             type="button"
             onClick={togglePlay}
@@ -185,96 +210,98 @@ export default function LessonPlayer({ lesson, labels, isRTL = false }) {
         ) : null}
       </div>
 
-      {/* Control bar */}
-      <div className="border-t border-white/10 bg-[#120a1c]/95 px-3 py-3 backdrop-blur-md sm:px-4">
-        <div className="relative flex items-center gap-3">
-          <input
-            type="range"
-            min={0}
-            max={duration || 0}
-            step={0.1}
-            value={currentTime}
-            disabled={!duration}
-            onChange={(event) => {
-              const next = Number(event.target.value);
-              setCurrentTime(next);
-              if (videoRef.current) videoRef.current.currentTime = next;
-            }}
-            aria-label={labels.seek}
-            dir="ltr"
-            className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/15 accent-gold-400 disabled:cursor-not-allowed"
-            style={{
-              background: `linear-gradient(to right, #d4af37 ${progressPercentage}%, rgba(255,255,255,0.15) ${progressPercentage}%)`,
-            }}
-          />
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={togglePlay}
-              aria-label={isPlaying ? labels.pause : labels.play}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-white transition-colors duration-300 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
-            >
-              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => seekBy(-10)}
-              aria-label={labels.rewind10}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-gray-300 transition-colors duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
-            >
-              <RotateCcw className="h-5 w-5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={toggleMute}
-              aria-label={isMuted ? labels.unmute : labels.mute}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-gray-300 transition-colors duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
-            >
-              {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-            </button>
-
+      {/* Custom control bar — HTML5 only; Bunny Stream provides its own chrome */}
+      {!useBunny ? (
+        <div className="border-t border-white/10 bg-[#120a1c]/95 px-3 py-3 backdrop-blur-md sm:px-4">
+          <div className="relative flex items-center gap-3">
             <input
               type="range"
               min={0}
-              max={1}
-              step={0.05}
-              value={isMuted ? 0 : volume}
+              max={duration || 0}
+              step={0.1}
+              value={currentTime}
+              disabled={!duration}
               onChange={(event) => {
                 const next = Number(event.target.value);
-                setVolume(next);
-                setIsMuted(next === 0);
-                if (videoRef.current) {
-                  videoRef.current.volume = next;
-                  videoRef.current.muted = next === 0;
-                }
+                setCurrentTime(next);
+                if (videoRef.current) videoRef.current.currentTime = next;
               }}
-              aria-label={labels.volume}
+              aria-label={labels.seek}
               dir="ltr"
-              className="hidden h-1.5 w-20 cursor-pointer appearance-none rounded-full bg-white/15 accent-gold-400 sm:block"
+              className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/15 accent-gold-400 disabled:cursor-not-allowed"
+              style={{
+                background: `linear-gradient(to right, #d4af37 ${progressPercentage}%, rgba(255,255,255,0.15) ${progressPercentage}%)`,
+              }}
             />
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium tabular-nums text-gray-300" dir="ltr">
-              {formatDuration(currentTime)} / {formatDuration(duration || lesson?.durationSeconds)}
-            </span>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={togglePlay}
+                aria-label={isPlaying ? labels.pause : labels.play}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-white transition-colors duration-300 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+              >
+                {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+              </button>
 
-            <button
-              type="button"
-              onClick={toggleFullscreen}
-              aria-label={isFullscreen ? labels.exitFullscreen : labels.fullscreen}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-gray-300 transition-colors duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
-            >
-              {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-            </button>
+              <button
+                type="button"
+                onClick={() => seekBy(-10)}
+                aria-label={labels.rewind10}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-gray-300 transition-colors duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+              >
+                <RotateCcw className="h-5 w-5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleMute}
+                aria-label={isMuted ? labels.unmute : labels.mute}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-gray-300 transition-colors duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+              >
+                {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+              </button>
+
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={isMuted ? 0 : volume}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  setVolume(next);
+                  setIsMuted(next === 0);
+                  if (videoRef.current) {
+                    videoRef.current.volume = next;
+                    videoRef.current.muted = next === 0;
+                  }
+                }}
+                aria-label={labels.volume}
+                dir="ltr"
+                className="hidden h-1.5 w-20 cursor-pointer appearance-none rounded-full bg-white/15 accent-gold-400 sm:block"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-medium tabular-nums text-gray-300" dir="ltr">
+                {formatDuration(currentTime)} / {formatDuration(duration || lesson?.durationSeconds)}
+              </span>
+
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                aria-label={isFullscreen ? labels.exitFullscreen : labels.fullscreen}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-gray-300 transition-colors duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+              >
+                {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
  * @property int $id
  * @property int $course_id
  * @property string $module_name
+ * @property string|null $bunny_video_id Bunny Stream video GUID.
+ * @property string|null $bunny_library_id Bunny Stream library ID.
  * @property int $duration Seconds.
  * @property array<int, mixed>|null $pdf_resource_urls
  */
@@ -25,6 +27,8 @@ class Lesson extends Model
         'module_name',
         'title',
         'video_url',
+        'bunny_video_id',
+        'bunny_library_id',
         'duration',
         'pdf_resource_urls',
         'is_locked',

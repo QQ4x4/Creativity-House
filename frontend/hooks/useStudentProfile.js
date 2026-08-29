@@ -4,8 +4,7 @@
  * hooks/useStudentProfile.js — state store for the profile hub.
  *
  * Owns the UserProfile + PurchaseHistory slices and exposes one mutation per
- * form so components stay presentational. Every mutation reports whether it hit
- * the live API or the mock fallback, letting the UI say so honestly.
+ * form so components stay presentational. Every mutation hits the live API.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -53,7 +52,7 @@ function syncAuthUser(setUser, patch) {
 /**
  * @param {object|null} authUser Signed-in user from AuthProvider.
  * @param {{ enabled?: boolean }} options `enabled: false` holds the request
- *   until auth resolves, so the hub never flashes fallback data.
+ *   until auth resolves, so the hub never flashes empty profile data.
  */
 export function useStudentProfile(authUser = null, { enabled = true } = {}) {
   const { setUser } = useAuth();
@@ -65,8 +64,6 @@ export function useStudentProfile(authUser = null, { enabled = true } = {}) {
   const [source, setSource] = useState(null);
 
   const mountedRef = useRef(true);
-  // Keep the latest auth user for seed/fallback without putting the whole
-  // object in loadProfile deps (that caused the infinite reload loop).
   const authUserRef = useRef(authUser);
   authUserRef.current = authUser;
   const authUserId = authUser?.id ?? null;

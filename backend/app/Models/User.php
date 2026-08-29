@@ -116,6 +116,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Manual certificate awards (decoupled module).
+     *
+     * @return HasMany<CourseCertificate, $this>
+     */
+    public function courseCertificates(): HasMany
+    {
+        return $this->hasMany(CourseCertificate::class);
+    }
+
+    /**
      * Courses unlocked by a paid order, using `orders` as the pivot.
      *
      * @return BelongsToMany<Course, $this>

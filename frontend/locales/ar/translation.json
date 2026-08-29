@@ -335,7 +335,7 @@
     "statCourses": "الدورات المشتراة",
     "statCoursesHint": "إجمالي التسجيلات في حسابك",
     "statCertificates": "الشهادات المكتسبة",
-    "statCertificatesHint": "تُمنح عند إكمال الدورة بنسبة 100%",
+    "statCertificatesHint": "تُمنح من المدرب بعد اجتياز الامتحان",
     "statHours": "ساعات التعلم",
     "statHoursHint": "إجمالي الوقت الذي أمضيته في مشاهدة الدروس",
     "hoursSuffix": "ساعة",

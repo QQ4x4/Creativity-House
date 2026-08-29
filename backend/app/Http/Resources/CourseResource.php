@@ -10,8 +10,11 @@ use Illuminate\Support\Facades\Storage;
 /**
  * @mixin Course
  *
- * `enrolled_at` and `next_lesson_id` are transient attributes set by
- * CourseService (they belong to the student↔course pairing, not the course row).
+ * `enrolled_at`, `next_lesson_id`, and `has_certificate` are transient attributes
+ * set by CourseService (student↔course pairing — not course columns).
+ *
+ * Certificates come only from `course_certificates` via CertificateService —
+ * never from progress === 100%.
  */
 class CourseResource extends JsonResource
 {
@@ -20,7 +23,9 @@ class CourseResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $lessonsCount = (int) ($this->lessons_count ?? $this->lessons()->count());
+        $lessonCount = $this->resolveLessonCount();
+        $totalDurationHours = $this->resolveTotalDurationHours();
+        $hasCertificate = (bool) ($this->getAttribute('has_certificate') ?? false);
 
         return [
             'id' => $this->id,
@@ -32,17 +37,23 @@ class CourseResource extends JsonResource
             'cover_image_url' => $this->resolveCoverImage(),
             'instructor_name' => $this->instructor_name,
             'level' => $this->level,
-            'total_hours' => (float) $this->total_hours,
-            'total_lessons' => $lessonsCount,
+
+            // Live curriculum metrics from lessons table (never hardcoded).
+            'lesson_count' => $lessonCount,
+            'total_lessons' => $lessonCount,
+            'total_duration_hours' => $totalDurationHours,
+            'total_hours' => $totalDurationHours,
 
             'enrolled_at' => $this->transientDate('enrolled_at'),
-            'certificate_earned' => $this->certificateEarned(),
+            'has_certificate' => $hasCertificate,
+            // Legacy alias — same boolean as has_certificate (not progress-based).
+            'certificate_earned' => $hasCertificate,
             'next_lesson_id' => $this->getAttribute('next_lesson_id'),
 
             'progress' => $this->whenLoaded(
                 'progressForUser',
                 fn () => $this->progressForUser
-                    ? (new ProgressResource($this->progressForUser))->withTotalLessons($lessonsCount)
+                    ? (new ProgressResource($this->progressForUser))->withTotalLessons($lessonCount)
                     : null
             ),
 
@@ -56,14 +67,25 @@ class CourseResource extends JsonResource
         ];
     }
 
-    /**
-     * A certificate is earned once the student's progress reaches 100%.
-     */
-    private function certificateEarned(): bool
+    private function resolveLessonCount(): int
     {
-        return $this->relationLoaded('progressForUser')
-            && $this->progressForUser !== null
-            && $this->progressForUser->isComplete();
+        if (! array_key_exists('lessons_count', $this->resource->getAttributes())) {
+            return (int) $this->lessons()->count();
+        }
+
+        return (int) ($this->lessons_count ?? 0);
+    }
+
+    /**
+     * Sum of lesson.duration (seconds) → hours, 1 decimal.
+     */
+    private function resolveTotalDurationHours(): float
+    {
+        if (! array_key_exists('lessons_sum_duration', $this->resource->getAttributes())) {
+            return round(((int) $this->lessons()->sum('duration')) / 3600, 1);
+        }
+
+        return round(((int) ($this->lessons_sum_duration ?? 0)) / 3600, 1);
     }
 
     private function resolveCoverImage(): ?string
