@@ -38,6 +38,7 @@ class Order extends Model
         'billing_phone',
         'billing_country',
         'delivery_mode',
+        'stripe_session_id',
     ];
 
     /**

@@ -92,18 +92,18 @@ export default function HeroSection({ dictionary, lang }) {
                         </motion.p>
 
                         <motion.div
-                            className="flex flex-wrap gap-4"
+                            className="flex w-full max-w-sm flex-col items-start gap-4 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:gap-6"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.9, duration: 0.6 }}
                         >
-                            <MagneticButton>
-                                <a href="#services" className="px-8 py-4 bg-gradient-to-r from-plum-700 to-plum-500 text-white rounded-full font-semibold hover:shadow-2xl hover:shadow-plum-500/50 transition-all flex items-center gap-2 hover:gap-3 group">
+                            <MagneticButton className="w-full sm:w-auto">
+                                <a href="#services" className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-plum-700 to-plum-500 px-8 py-4 font-semibold text-white transition-all hover:gap-3 hover:shadow-2xl hover:shadow-plum-500/50 group sm:w-auto">
                                     {dictionary.hero.exploreServices} <ArrowRight className={`w-5 h-5 transition-transform chevron-flip ${isRTL ? 'group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} />
                                 </a>
                             </MagneticButton>
-                            <MagneticButton>
-                                <a href="#contact" className="px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/30 text-white rounded-full font-semibold hover:bg-white/20 hover:border-gold-400/50 transition-all">
+                            <MagneticButton className="w-full sm:w-auto">
+                                <a href="#contact" className="inline-flex w-full items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 py-4 font-semibold text-white backdrop-blur-sm transition-all hover:border-gold-400/50 hover:bg-white/20 sm:w-auto">
                                     {dictionary.hero.contactUs}
                                 </a>
                             </MagneticButton>

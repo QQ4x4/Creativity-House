@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Award,
   BadgeCheck,
@@ -10,12 +11,17 @@ import {
   ChevronDown,
   Clock,
   Globe,
+  Loader2,
+  MessageCircle,
   ShieldCheck,
   Star,
   Users,
 } from 'lucide-react';
 import PublicShell from './PublicShell';
 import { fetchPublicCourse } from '@/lib/catalog/api';
+import { createStripeCheckoutSession } from '@/lib/checkout/api';
+import { ApiError } from '@/lib/api';
+import { toastApiError } from '@/lib/toast';
 
 const MODE_ORDER = ['live', 'recorded', 'simulator'];
 
@@ -23,7 +29,28 @@ function formatCount(value) {
   return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-function PricingCard({ course, mode, labels, lang, sticky = false }) {
+function BuyNowButton({ labels, isCheckingOut, onBuyNow, className }) {
+  return (
+    <button
+      type="button"
+      onClick={onBuyNow}
+      disabled={isCheckingOut}
+      aria-busy={isCheckingOut}
+      className={className}
+    >
+      {isCheckingOut ? (
+        <>
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+          <span>{labels.startingCheckout || labels.processing}</span>
+        </>
+      ) : (
+        labels.buyNow
+      )}
+    </button>
+  );
+}
+
+function PricingCard({ course, mode, labels, lang, sticky = false, isCheckingOut, onBuyNow }) {
   const selected = course.modes?.[mode] || {
     price: course.price,
     originalPrice: course.originalPrice,
@@ -32,7 +59,7 @@ function PricingCard({ course, mode, labels, lang, sticky = false }) {
   };
   const hasDiscount = selected.originalPrice > selected.price;
   const savings = hasDiscount ? selected.originalPrice - selected.price : 0;
-  const checkoutHref = `/${lang}/checkout?course=${encodeURIComponent(course.slug)}&mode=${encodeURIComponent(mode)}`;
+  const inquiryHref = `/${lang}/course-inquiry?course=${encodeURIComponent(course.slug)}`;
 
   return (
     <aside
@@ -57,11 +84,21 @@ function PricingCard({ course, mode, labels, lang, sticky = false }) {
         {selected.duration}
       </p>
 
+      <BuyNowButton
+        labels={labels}
+        isCheckingOut={isCheckingOut}
+        onBuyNow={onBuyNow}
+        className={`mt-5 inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 text-sm font-semibold text-white shadow-[0_0_24px_rgba(168,85,247,0.35)] transition-all duration-300 hover:from-plum-600 hover:to-plum-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 disabled:cursor-wait disabled:opacity-80 ${
+          isCheckingOut ? 'animate-pulse shadow-[0_0_28px_rgba(212,175,55,0.45)]' : ''
+        }`}
+      />
+
       <Link
-        href={checkoutHref}
-        className="mt-5 inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 text-sm font-semibold text-white shadow-[0_0_24px_rgba(168,85,247,0.35)] transition-all duration-300 hover:from-plum-600 hover:to-plum-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+        href={inquiryHref}
+        className="mt-2 inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-300/80 bg-white/40 px-4 text-sm font-medium text-gray-700 shadow-[0_0_0_1px_rgba(168,85,247,0)] backdrop-blur-md transition-all duration-300 hover:border-plum-400/50 hover:bg-white/70 hover:text-plum-800 hover:shadow-[0_0_20px_rgba(168,85,247,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 dark:border-white/15 dark:bg-white/5 dark:text-gray-200 dark:hover:border-gold-400/40 dark:hover:bg-white/10 dark:hover:text-gold-200 dark:hover:shadow-[0_0_22px_rgba(212,175,55,0.18)]"
       >
-        {labels.buyNow}
+        <MessageCircle className="h-4 w-4 shrink-0" aria-hidden />
+        {labels.haveQuestions}
       </Link>
 
       <p className="mt-3 inline-flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-200">
@@ -84,8 +121,10 @@ function PricingCard({ course, mode, labels, lang, sticky = false }) {
 
 export default function CourseDetailClient({ dictionary, lang, slug }) {
   const labels = dictionary.catalog;
+  const router = useRouter();
   const [course, setCourse] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [mode, setMode] = useState('live');
   const [openModule, setOpenModule] = useState(0);
 
@@ -112,6 +151,34 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
       cancelled = true;
     };
   }, [slug, lang]);
+
+  const handleBuyNow = useCallback(async () => {
+    if (isCheckingOut || !course) return;
+
+    const courseId = Number(course.id);
+    if (!Number.isFinite(courseId) || courseId < 1) {
+      toastApiError(new Error(labels.genericError), labels.genericError);
+      return;
+    }
+
+    setIsCheckingOut(true);
+    try {
+      const data = await createStripeCheckoutSession(courseId);
+      const url = data?.url || data?.data?.url;
+      if (!url) {
+        throw new Error(labels.genericError);
+      }
+      window.location.href = url;
+    } catch (error) {
+      setIsCheckingOut(false);
+      if (error instanceof ApiError && error.status === 401) {
+        toastApiError(error, labels.signInToPay);
+        router.push(`/${lang}/login`);
+        return;
+      }
+      toastApiError(error, labels.genericError);
+    }
+  }, [course, isCheckingOut, labels.genericError, labels.signInToPay, lang, router]);
 
   const availableModes = useMemo(
     () => MODE_ORDER.filter((key) => course?.availableModes?.includes(key)),
@@ -198,7 +265,15 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
               </div>
 
               <div className="hidden lg:block">
-                <PricingCard course={course} mode={mode} labels={labels} lang={lang} sticky />
+                <PricingCard
+                  course={course}
+                  mode={mode}
+                  labels={labels}
+                  lang={lang}
+                  sticky
+                  isCheckingOut={isCheckingOut}
+                  onBuyNow={handleBuyNow}
+                />
               </div>
             </header>
 
@@ -314,12 +389,23 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
                   <p className="text-lg font-extrabold text-plum-700 dark:text-gold-300">${(course.modes?.[mode]?.price ?? course.price)}</p>
                   <p className="text-[11px] text-emerald-800 dark:text-emerald-200">{labels.guarantee}</p>
                 </div>
-                <Link
-                  href={`/${lang}/checkout?course=${encodeURIComponent(course.slug)}&mode=${encodeURIComponent(mode)}`}
-                  className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-5 text-sm font-semibold text-white"
-                >
-                  {labels.buyNow}
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/${lang}/course-inquiry?course=${encodeURIComponent(course.slug)}`}
+                    aria-label={labels.haveQuestions}
+                    className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-xl border border-gray-300/80 bg-white/50 text-gray-700 backdrop-blur-md transition-all duration-300 hover:border-plum-400/50 hover:text-plum-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 dark:border-white/15 dark:bg-white/5 dark:text-gray-200 dark:hover:border-gold-400/40 dark:hover:text-gold-200"
+                  >
+                    <MessageCircle className="h-4 w-4" aria-hidden />
+                  </Link>
+                  <BuyNowButton
+                    labels={labels}
+                    isCheckingOut={isCheckingOut}
+                    onBuyNow={handleBuyNow}
+                    className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-80 ${
+                      isCheckingOut ? 'animate-pulse' : ''
+                    }`}
+                  />
+                </div>
               </div>
             </div>
           </>

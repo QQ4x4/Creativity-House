@@ -38,3 +38,19 @@ export async function processCheckout(data) {
 
   return apiPost(CHECKOUT_ENDPOINT, payload);
 }
+
+/**
+ * Start a Stripe-hosted Checkout Session for a published course.
+ * @param {number|string} courseId
+ * @returns {Promise<{ success?: boolean, url?: string, data?: { id?: string, url?: string } }>}
+ */
+export async function createStripeCheckoutSession(courseId) {
+  await getCsrfCookie();
+
+  const id = Number(courseId);
+  if (!Number.isFinite(id) || id < 1) {
+    throw new Error('A valid course is required to start checkout.');
+  }
+
+  return apiPost(CHECKOUT_ENDPOINT, { course_id: id });
+}

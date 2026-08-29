@@ -3,7 +3,9 @@
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\CourseInquiryController;
 use App\Http\Controllers\Api\OrganizationInquiryController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PublicCatalogController;
 use App\Http\Controllers\Api\Student\CourseController;
 use App\Http\Controllers\Api\Student\OrderController;
@@ -65,7 +67,30 @@ Route::middleware('throttle:60,1')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Public checkout (mock payment — Stripe SDK not wired yet)
+| Stripe Checkout
+|--------------------------------------------------------------------------
+|
+| Authenticated buyers receive a Stripe-hosted Checkout URL.
+| The mock billing checkout remains on POST /api/checkout.
+|
+*/
+Route::middleware(['auth:sanctum', 'throttle:20,1'])->group(function () {
+    Route::post('/v1/checkout', [PaymentController::class, 'createCheckoutSession'])
+        ->name('api.v1.checkout');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Stripe webhooks (no auth, no CSRF — verified by Stripe-Signature)
+|--------------------------------------------------------------------------
+*/
+Route::post('/v1/stripe/webhook', [PaymentController::class, 'webhook'])
+    ->middleware('throttle:60,1')
+    ->name('api.v1.stripe.webhook');
+
+/*
+|--------------------------------------------------------------------------
+| Public checkout (mock payment — legacy billing payload)
 |--------------------------------------------------------------------------
 |
 | Auth is optional. Guests are linked to a user row by email. Card PAN/CVC
@@ -73,13 +98,12 @@ Route::middleware('throttle:60,1')->group(function () {
 |
 */
 Route::middleware('throttle:20,1')->group(function () {
-    Route::post('/v1/checkout', [CheckoutController::class, 'store'])->name('api.v1.checkout');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('api.checkout');
 });
 
 /*
 |--------------------------------------------------------------------------
-| Public organization (B2B) inquiries
+| Public inquiries (B2B organizations + individual course questions)
 |--------------------------------------------------------------------------
 |
 | Unauthenticated lead capture. Strict FormRequest validation + throttle.
@@ -88,6 +112,8 @@ Route::middleware('throttle:20,1')->group(function () {
 Route::middleware('throttle:10,1')->group(function () {
     Route::post('/v1/organization-inquiries', [OrganizationInquiryController::class, 'store'])
         ->name('api.v1.organization-inquiries.store');
+    Route::post('/v1/course-inquiries', [CourseInquiryController::class, 'store'])
+        ->name('api.v1.course-inquiries.store');
 });
 
 /*

@@ -403,6 +403,8 @@
     "enrollNow": "Enroll Now",
     "viewDetails": "View Details",
     "buyNow": "Buy Now",
+    "startingCheckout": "Connecting to secure checkout…",
+    "haveQuestions": "Have questions? Contact Us",
     "students": "students",
     "hours": "Hours",
     "from": "From",
@@ -466,6 +468,13 @@
     "featuredSubtitle": "Start with our most requested PMP® programs — live training, self-paced video, and exam simulation.",
     "exploreAll": "Explore All Courses"
   },
+  "paymentSuccess": {
+    "badge": "Payment confirmed",
+    "title": "You're enrolled",
+    "subtitle": "Thank you. Your course is now in My Courses — you can start learning right away.",
+    "cta": "Go to My Courses",
+    "secureNote": "Your payment was processed securely by Stripe. A receipt was sent to your email."
+  },
   "organizations": {
     "badge": "Corporate training",
     "heroTitle": "Transform Your Team with Corporate Training",
@@ -498,6 +507,39 @@
       "Custom learning paths for your teams",
       "Dedicated corporate account support",
       "Live, recorded, or blended delivery"
+    ]
+  },
+  "courseInquiry": {
+    "badge": "Student support",
+    "heroTitle": "Have a question before you enroll?",
+    "heroSubtitle": "Ask us anything about this course — dates, delivery mode, prerequisites, or payment. We typically reply within 24 hours.",
+    "formTitle": "Course inquiry",
+    "formSubtitle": "Share your question and we will get back to you shortly.",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "Jane Cooper",
+    "email": "Email",
+    "emailPlaceholder": "you@email.com",
+    "phone": "Phone number",
+    "phoneOptional": "Optional",
+    "targetCourse": "Target course",
+    "targetCourseOptional": "Optional",
+    "coursePlaceholder": "Select a course",
+    "courseNone": "General question",
+    "loadingCourses": "Loading courses...",
+    "coursesUnavailable": "Courses could not be loaded. You can still send this question.",
+    "message": "Your question",
+    "messagePlaceholder": "What would you like to know before enrolling?",
+    "submit": "Send question",
+    "submitting": "Sending…",
+    "successTitle": "Message received",
+    "successMessage": "Thank you! Our team will reply to your course question within 24 hours.",
+    "sendAnother": "Ask another question",
+    "genericError": "Something went wrong. Please try again.",
+    "secureNote": "Your details are encrypted in transit and used only to answer this inquiry.",
+    "points": [
+      "Get clarity on dates, format, and exam readiness",
+      "Ask about live vs recorded delivery",
+      "We reply within 24 hours"
     ]
   }
 }

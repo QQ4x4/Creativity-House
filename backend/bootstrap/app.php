@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Railway / reverse proxies terminate TLS; required for Secure cookies.
         $middleware->trustProxies(at: '*');
         $middleware->statefulApi();
+        $middleware->validateCsrfTokens(except: [
+            'api/v1/stripe/webhook',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
