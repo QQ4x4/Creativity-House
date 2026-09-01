@@ -24,6 +24,7 @@ class Lesson extends Model
 
     protected $fillable = [
         'course_id',
+        'module_id',
         'module_name',
         'title',
         'video_url',
@@ -42,6 +43,7 @@ class Lesson extends Model
     {
         return [
             'course_id' => 'integer',
+            'module_id' => 'integer',
             'duration' => 'integer',
             'pdf_resource_urls' => 'array',
             'is_locked' => 'boolean',
@@ -55,6 +57,14 @@ class Lesson extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    /**
+     * @return BelongsTo<Module, $this>
+     */
+    public function module(): BelongsTo
+    {
+        return $this->belongsTo(Module::class);
     }
 
     /**

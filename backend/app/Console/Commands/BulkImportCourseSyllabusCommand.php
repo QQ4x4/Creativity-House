@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Course;
 use App\Models\CourseProgress;
 use App\Models\Lesson;
+use App\Services\Admin\CurriculumService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -178,6 +179,10 @@ class BulkImportCourseSyllabusCommand extends Command
 
             return [$createdModules, $createdLessons];
         });
+
+        // Promote the module labels into real `modules` rows, which is what the
+        // public syllabus preview and the admin editor read.
+        app(CurriculumService::class)->rebuildFromLessonLabels($course);
 
         // @temporary — success summary for console / deploy logs
         $this->info(sprintf(

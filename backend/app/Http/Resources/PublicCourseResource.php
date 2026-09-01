@@ -20,6 +20,7 @@ class PublicCourseResource extends JsonResource
     {
         $outcomes = $this->localizedList($this->learning_outcomes);
         $audience = $this->localizedList($this->target_audience);
+        $credentials = $this->localizedList($this->instructor_credentials);
 
         return [
             'id' => $this->id,
@@ -51,15 +52,22 @@ class PublicCourseResource extends JsonResource
             'last_updated' => optional($this->last_updated_at)?->toDateString(),
             'cover_image' => $this->resolveCoverImage(),
             'instructor_name' => $this->instructor_name,
+            'instructor_name_ar' => $this->instructor_name_ar ?: $this->instructor_name,
+            'instructor_title_en' => $this->instructor_title_en,
+            'instructor_title_ar' => $this->instructor_title_ar ?: $this->instructor_title_en,
             'instructor_bio_en' => $this->instructor_bio_en,
             'instructor_bio_ar' => $this->instructor_bio_ar,
             'instructor_photo' => $this->instructor_photo,
-            'instructor_credentials' => $this->instructor_credentials ?? [],
+            'instructor_trained' => $this->instructor_trained,
+            'instructor_countries' => $this->instructor_countries,
+            'instructor_credentials' => $credentials['en'],
+            'instructor_credentials_en' => $credentials['en'],
+            'instructor_credentials_ar' => $credentials['ar'],
             'target_audience_en' => $audience['en'],
             'target_audience_ar' => $audience['ar'],
             'learning_outcomes_en' => $outcomes['en'],
             'learning_outcomes_ar' => $outcomes['ar'],
-            'curriculum' => $this->curriculum ?? [],
+            'curriculum' => $this->syllabus(),
             'schedule_en' => $this->schedule_en,
             'schedule_ar' => $this->schedule_ar,
             'modes' => $this->catalog_modes ?? [],
@@ -69,6 +77,66 @@ class PublicCourseResource extends JsonResource
                 'keywords' => $this->seo_keywords ?? [],
             ],
         ];
+    }
+
+    /**
+     * Syllabus preview derived from the `modules` + `lessons` tables — the same
+     * rows the student player reads, so the marketing page can never drift from
+     * the real curriculum.
+     *
+     * Falls back to the legacy `courses.curriculum` JSON for courses that have
+     * not been migrated to modules yet.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function syllabus(): array
+    {
+        if (! $this->relationLoaded('modules')) {
+            return $this->curriculum ?? [];
+        }
+
+        $modules = $this->modules;
+
+        if ($modules->isEmpty()) {
+            return $this->curriculum ?? [];
+        }
+
+        return $modules->map(function ($module): array {
+            $titles = $module->lessons->pluck('title')->map(strval(...))->values()->all();
+            $seconds = (int) $module->lessons->sum('duration');
+
+            return [
+                'title_en' => $module->title_en,
+                'title_ar' => $module->title_ar ?: $module->title_en,
+                'duration_en' => $module->duration_label_en ?: $this->durationLabel($seconds, 'en'),
+                'duration_ar' => $module->duration_label_ar
+                    ?: ($module->duration_label_en ?: $this->durationLabel($seconds, 'ar')),
+                // Lesson titles are single-language in the lessons table.
+                'lessons_en' => $titles,
+                'lessons_ar' => $titles,
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * Human duration for a module, rounded to a sensible unit.
+     */
+    private function durationLabel(int $seconds, string $locale): string
+    {
+        if ($seconds <= 0) {
+            return $locale === 'ar' ? 'قريبًا' : 'Coming soon';
+        }
+
+        $minutes = (int) round($seconds / 60);
+
+        if ($minutes < 60) {
+            return $locale === 'ar' ? "{$minutes} دقيقة" : "{$minutes} min";
+        }
+
+        $hours = round($seconds / 3600, 1);
+        $hours = floor($hours) == $hours ? (int) $hours : $hours;
+
+        return $locale === 'ar' ? "{$hours} ساعة" : "{$hours} hours";
     }
 
     /**

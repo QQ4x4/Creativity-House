@@ -29,6 +29,9 @@ class UserResource extends JsonResource
             'avatar_url' => $this->avatarUrl(),
             'email_verified' => $this->hasVerifiedEmail(),
             'email_verified_at' => $this->email_verified_at?->toISOString(),
+            // Drives the admin route guard in the Next.js client. Authorization
+            // itself is always enforced server-side by the `admin` middleware.
+            'is_admin' => $this->isAdmin(),
             'notification_preferences' => $this->notificationPreferences(),
         ];
     }

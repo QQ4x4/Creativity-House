@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\PaymentStatus;
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +14,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
@@ -33,6 +35,7 @@ class User extends Authenticatable
         'password',
         'google_id',
         'is_active',
+        'is_admin',
         'email_verified_at',
         'verification_code',
         'code_expires_at',
@@ -61,8 +64,26 @@ class User extends Authenticatable
             'code_expires_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'is_admin' => 'boolean',
             'notification_preferences' => 'array',
         ];
+    }
+
+    /**
+     * Single authority for admin access, used by both the `admin` API
+     * middleware and the Filament panel.
+     */
+    public function isAdmin(): bool
+    {
+        return (bool) $this->is_admin && (bool) $this->is_active;
+    }
+
+    /**
+     * Filament previously let any authenticated user into /admin.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->isAdmin();
     }
 
     /**

@@ -52,4 +52,15 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    /*
+     * Bunny Stream. The API key is a full-access library credential and must
+     * never reach the browser — the admin UI reads videos through
+     * GET /api/v1/admin/bunny/videos instead.
+     */
+    'bunny' => [
+        'library_id' => env('BUNNY_STREAM_LIBRARY_ID', '739576'),
+        'api_key' => env('BUNNY_STREAM_API_KEY'),
+        'base_url' => env('BUNNY_STREAM_BASE_URL', 'https://video.bunnycdn.com'),
+    ],
+
 ];

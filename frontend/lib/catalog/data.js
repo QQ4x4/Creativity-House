@@ -713,6 +713,37 @@ export function getPublicCourse(slug) {
   return PUBLIC_CATALOG.find((course) => course.slug === String(slug)) || null;
 }
 
+/**
+ * Instructor field for the active language, falling back through the other
+ * language and then the shared INSTRUCTOR constant.
+ */
+function pickInstructor(course, ar, field) {
+  const apiKeys = {
+    name: ['instructor_name_ar', 'instructor_name'],
+    title: ['instructor_title_ar', 'instructor_title_en'],
+    bio: ['instructor_bio_ar', 'instructor_bio_en'],
+  }[field];
+
+  const [arKey, enKey] = apiKeys;
+  const value = ar ? course[arKey] || course[enKey] : course[enKey] || course[arKey];
+
+  if (value) return value;
+
+  return ar ? INSTRUCTOR[`${field}_ar`] : INSTRUCTOR[`${field}_en`];
+}
+
+function pickInstructorList(course, ar) {
+  const localized = ar
+    ? course.instructor_credentials_ar || course.instructor_credentials_en
+    : course.instructor_credentials_en || course.instructor_credentials_ar;
+
+  const value = localized || course.instructor_credentials;
+
+  if (Array.isArray(value) && value.length > 0) return value;
+
+  return ar ? INSTRUCTOR.credentials_ar : INSTRUCTOR.credentials_en;
+}
+
 export function localizeCatalogCourse(course, lang = 'en') {
   if (!course) return null;
   const ar = lang === 'ar';
@@ -746,15 +777,17 @@ export function localizeCatalogCourse(course, lang = 'en') {
     language: ar ? course.language_ar : course.language_en,
     lastUpdated: course.last_updated,
     coverImage: course.cover_image,
-    instructorName: ar ? INSTRUCTOR.name_ar : INSTRUCTOR.name_en,
+    instructorName: pickInstructor(course, ar, 'name'),
+    // Admin-managed columns win; the INSTRUCTOR constant is only a fallback for
+    // courses that predate the instructor fields.
     instructor: {
-      name: ar ? INSTRUCTOR.name_ar : INSTRUCTOR.name_en,
-      title: ar ? INSTRUCTOR.title_ar : INSTRUCTOR.title_en,
-      photo: INSTRUCTOR.photo,
-      trained: INSTRUCTOR.trained,
-      countries: INSTRUCTOR.countries,
-      credentials: ar ? INSTRUCTOR.credentials_ar : INSTRUCTOR.credentials_en,
-      bio: ar ? INSTRUCTOR.bio_ar : INSTRUCTOR.bio_en,
+      name: pickInstructor(course, ar, 'name'),
+      title: pickInstructor(course, ar, 'title'),
+      photo: course.instructor_photo || INSTRUCTOR.photo,
+      trained: course.instructor_trained ?? INSTRUCTOR.trained,
+      countries: course.instructor_countries ?? INSTRUCTOR.countries,
+      credentials: pickInstructorList(course, ar),
+      bio: pickInstructor(course, ar, 'bio'),
     },
     targetAudience: ar ? course.target_audience_ar : course.target_audience_en,
     learningOutcomes: ar ? course.learning_outcomes_ar : course.learning_outcomes_en,

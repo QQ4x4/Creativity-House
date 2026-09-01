@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Services\Admin\CurriculumService;
 use Illuminate\Console\Command;
 
 /**
@@ -55,6 +56,10 @@ class FixPmpCourseCommand extends Command
                 'sort_order' => 1,
             ]
         );
+
+        // Promote the module label into a real `modules` row, which is what the
+        // public syllabus preview and the admin editor read.
+        app(CurriculumService::class)->rebuildFromLessonLabels($course);
 
         $this->info(sprintf(
             'Course #%d (%s) → lesson #%d "%s" with bunny_video_id=%s',

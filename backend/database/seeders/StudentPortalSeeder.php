@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\Admin\CurriculumService;
 use App\Services\Student\ProgressService;
 use Illuminate\Database\Seeder;
 
@@ -38,6 +39,10 @@ class StudentPortalSeeder extends Seeder
         foreach ($this->catalog() as $definition) {
             $course = $this->seedCourse($definition);
             $lessons = $this->seedLessons($course, $definition['lessons']);
+
+            // Promote the module labels into `modules` rows — the source of
+            // truth for the admin editor and the public syllabus preview.
+            app(CurriculumService::class)->rebuildFromLessonLabels($course);
 
             $this->seedOrder($student, $course, $definition);
             $this->seedProgress($student, $course, $lessons, $definition['completed_count']);

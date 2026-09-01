@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Course;
 use App\Models\CourseProgress;
 use App\Models\Lesson;
+use App\Services\Admin\CurriculumService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -104,6 +105,10 @@ class UpdateCourseSyllabusCommand extends Command
                 'sort_order' => 1,
             ]);
         });
+
+        // Promote the module label into a real `modules` row, which is what the
+        // public syllabus preview and the admin editor read.
+        app(CurriculumService::class)->rebuildFromLessonLabels($course);
 
         $this->info(sprintf(
             'Syllabus updated: course #%d (%s) → lesson #%d "%s" under "%s".',

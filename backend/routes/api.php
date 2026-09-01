@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\BunnyController;
+use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
+use App\Http\Controllers\Api\Admin\CurriculumController;
+use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
+use App\Http\Controllers\Api\Admin\ModuleController as AdminModuleController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CheckoutController;
@@ -195,3 +200,48 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () use ($s
 
     Route::prefix('student')->name('api.student.')->group($studentRoutes);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Admin course management
+|--------------------------------------------------------------------------
+|
+| auth:sanctum → `admin` (users.is_admin). Consumed by the Next.js editor at
+| /[lang]/admin/courses/[id]/edit via frontend/lib/admin/api.ts.
+|
+| scopeBindings() forces {module} and {lesson} to resolve through {course},
+| so an id belonging to another course 404s instead of being edited.
+|
+*/
+Route::middleware(['auth:sanctum', 'admin', 'throttle:120,1'])
+    ->prefix('v1/admin')
+    ->name('api.v1.admin.')
+    ->scopeBindings()
+    ->group(function (): void {
+        Route::get('/bunny/videos', [BunnyController::class, 'videos'])->name('bunny.videos');
+
+        Route::get('/courses', [AdminCourseController::class, 'index'])->name('courses.index');
+        Route::post('/courses', [AdminCourseController::class, 'store'])->name('courses.store');
+        Route::get('/courses/{course}', [AdminCourseController::class, 'show'])->name('courses.show');
+        Route::match(['put', 'patch'], '/courses/{course}', [AdminCourseController::class, 'update'])
+            ->name('courses.update');
+
+        Route::get('/courses/{course}/curriculum', [CurriculumController::class, 'show'])
+            ->name('curriculum.show');
+        Route::put('/courses/{course}/curriculum', [CurriculumController::class, 'sync'])
+            ->name('curriculum.sync');
+
+        Route::post('/courses/{course}/modules', [AdminModuleController::class, 'store'])
+            ->name('modules.store');
+        Route::match(['put', 'patch'], '/courses/{course}/modules/{module}', [AdminModuleController::class, 'update'])
+            ->name('modules.update');
+        Route::delete('/courses/{course}/modules/{module}', [AdminModuleController::class, 'destroy'])
+            ->name('modules.destroy');
+
+        Route::post('/courses/{course}/modules/{module}/lessons', [AdminLessonController::class, 'store'])
+            ->name('lessons.store');
+        Route::match(['put', 'patch'], '/courses/{course}/lessons/{lesson}', [AdminLessonController::class, 'update'])
+            ->name('lessons.update');
+        Route::delete('/courses/{course}/lessons/{lesson}', [AdminLessonController::class, 'destroy'])
+            ->name('lessons.destroy');
+    });

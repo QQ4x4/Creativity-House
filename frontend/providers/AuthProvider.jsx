@@ -12,9 +12,16 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { apiGet, apiPost, getCsrfCookie } from '@/lib/api';
 
+/**
+ * @typedef {import('./auth-types').AuthUser} AuthUser
+ * @typedef {import('./auth-types').AuthContextValue} AuthContextValue
+ */
+
+/** @type {import('react').Context<AuthContextValue | null>} */
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children, lang = 'en' }) {
+  /** @type {[AuthUser | null, import('react').Dispatch<import('react').SetStateAction<AuthUser | null>>]} */
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -75,6 +82,7 @@ export function AuthProvider({ children, lang = 'en' }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+/** @returns {AuthContextValue} */
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) {

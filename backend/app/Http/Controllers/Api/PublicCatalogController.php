@@ -17,6 +17,7 @@ class PublicCatalogController extends Controller
         return PublicCourseResource::collection(
             Course::query()
                 ->publicCatalog()
+                ->with('modules.lessons')
                 ->orderBy('sort_order')
                 ->orderBy('id')
                 ->get()
@@ -29,6 +30,8 @@ class PublicCatalogController extends Controller
     public function show(Course $course): PublicCourseResource
     {
         abort_unless($course->is_published && $course->is_public, 404);
+
+        $course->load('modules.lessons');
 
         return new PublicCourseResource($course);
     }

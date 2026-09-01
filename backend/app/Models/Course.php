@@ -60,10 +60,15 @@ class Course extends Model
         'curriculum',
         'target_audience',
         'catalog_modes',
+        'instructor_name_ar',
+        'instructor_title_en',
+        'instructor_title_ar',
         'instructor_bio_en',
         'instructor_bio_ar',
         'instructor_photo',
         'instructor_credentials',
+        'instructor_trained',
+        'instructor_countries',
         'schedule_en',
         'schedule_ar',
     ];
@@ -90,6 +95,7 @@ class Course extends Model
             'target_audience' => 'array',
             'catalog_modes' => 'array',
             'instructor_credentials' => 'array',
+            'instructor_countries' => 'integer',
         ];
     }
 
@@ -101,6 +107,17 @@ class Course extends Model
     public function lessons(): HasMany
     {
         return $this->hasMany(Lesson::class)->ordered();
+    }
+
+    /**
+     * Curriculum modules. Source of truth for the player sidebar and for the
+     * public syllabus preview.
+     *
+     * @return HasMany<Module, $this>
+     */
+    public function modules(): HasMany
+    {
+        return $this->hasMany(Module::class)->ordered();
     }
 
     /**

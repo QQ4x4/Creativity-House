@@ -242,7 +242,11 @@ class AuthController extends Controller
             // Public URL so the Header avatar stays in sync after refresh.
             'avatar_url' => $user->avatarUrl(),
             'email_verified_at' => $user->email_verified_at,
-            'is_active' => $user->is_active,
+            'is_active' => (bool) $user->is_active,
+            // Drives the /[lang]/admin route guard in Next.js. Authorization is
+            // still enforced server-side by the `admin` middleware, so this only
+            // decides whether the UI is offered.
+            'is_admin' => $user->isAdmin(),
         ];
     }
 }
