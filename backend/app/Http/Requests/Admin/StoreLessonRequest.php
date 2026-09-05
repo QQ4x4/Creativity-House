@@ -27,7 +27,15 @@ class StoreLessonRequest extends FormRequest
             'is_locked' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'pdf_resource_urls' => ['nullable', 'array'],
-            'pdf_resource_urls.*' => ['string', 'max:2048'],
+            'pdf_resource_urls.*' => ['nullable'],
+            'resources' => ['nullable', 'array', 'max:50'],
+            'resources.*.id' => ['nullable', 'integer'],
+            'resources.*.title' => ['required_with:resources', 'string', 'max:200'],
+            'resources.*.type' => ['nullable', 'string', 'in:file,link'],
+            'resources.*.url' => ['required_with:resources', 'string', 'max:2048'],
+            'resources.*.file_path' => ['nullable', 'string', 'max:2048'],
+            'resources.*.file_size' => ['nullable', 'string', 'max:40'],
+            'resources.*.size_bytes' => ['nullable', 'integer', 'min:0'],
         ];
     }
 }

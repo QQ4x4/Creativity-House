@@ -9,6 +9,7 @@ use App\Http\Resources\Admin\AdminLessonResource;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
+use App\Services\Admin\LessonResourceUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
@@ -18,9 +19,15 @@ use Illuminate\Http\Response;
  */
 class LessonController extends Controller
 {
+    public function __construct(
+        private readonly LessonResourceUploadService $resourceUploads,
+    ) {}
+
     public function store(StoreLessonRequest $request, Course $course, Module $module): JsonResponse
     {
         $data = $request->validated();
+        $resources = $data['resources'] ?? null;
+        unset($data['resources']);
 
         $data['module_id'] = $module->id;
         $data['module_name'] = $module->title_en;
@@ -29,12 +36,20 @@ class LessonController extends Controller
 
         $lesson = $course->lessons()->create($data);
 
+        if (is_array($resources)) {
+            $this->resourceUploads->syncForLesson($lesson, $resources);
+        }
+
+        $lesson->load('resources');
+
         return (new AdminLessonResource($lesson))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     public function update(UpdateLessonRequest $request, Course $course, Lesson $lesson): AdminLessonResource
     {
         $data = $request->validated();
+        $resources = array_key_exists('resources', $data) ? $data['resources'] : null;
+        unset($data['resources']);
 
         // Moving between modules must keep the mirrored label in step.
         if (array_key_exists('module_id', $data)) {
@@ -42,9 +57,15 @@ class LessonController extends Controller
             $data['module_name'] = $target->title_en;
         }
 
-        $lesson->update($data);
+        if ($data !== []) {
+            $lesson->update($data);
+        }
 
-        return new AdminLessonResource($lesson->refresh());
+        if (is_array($resources)) {
+            $this->resourceUploads->syncForLesson($lesson, $resources);
+        }
+
+        return new AdminLessonResource($lesson->refresh()->load('resources'));
     }
 
     public function destroy(Course $course, Lesson $lesson): Response

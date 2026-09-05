@@ -124,7 +124,7 @@ class CourseService
         $completed = $progress->completedLessonIds();
 
         /** @var EloquentCollection<int, Lesson> $lessons */
-        $lessons = $course->lessons()->get();
+        $lessons = $course->lessons()->with('resources')->get();
 
         foreach ($lessons as $lesson) {
             $lesson->setAttribute('is_completed', in_array($lesson->id, $completed, true));

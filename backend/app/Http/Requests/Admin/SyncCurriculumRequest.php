@@ -41,7 +41,15 @@ class SyncCurriculumRequest extends FormRequest
             'modules.*.lessons.*.duration' => ['nullable', 'integer', 'min:0', 'max:86400'],
             'modules.*.lessons.*.is_locked' => ['nullable', 'boolean'],
             'modules.*.lessons.*.pdf_resource_urls' => ['nullable', 'array'],
-            'modules.*.lessons.*.pdf_resource_urls.*' => ['string', 'max:2048'],
+            'modules.*.lessons.*.pdf_resource_urls.*' => ['nullable'],
+            'modules.*.lessons.*.resources' => ['nullable', 'array', 'max:50'],
+            'modules.*.lessons.*.resources.*.id' => ['nullable', 'integer'],
+            'modules.*.lessons.*.resources.*.title' => ['required_with:modules.*.lessons.*.resources', 'string', 'max:200'],
+            'modules.*.lessons.*.resources.*.type' => ['nullable', 'string', 'in:file,link'],
+            'modules.*.lessons.*.resources.*.url' => ['required_with:modules.*.lessons.*.resources', 'string', 'max:2048'],
+            'modules.*.lessons.*.resources.*.file_path' => ['nullable', 'string', 'max:2048'],
+            'modules.*.lessons.*.resources.*.file_size' => ['nullable', 'string', 'max:40'],
+            'modules.*.lessons.*.resources.*.size_bytes' => ['nullable', 'integer', 'min:0'],
         ];
     }
 

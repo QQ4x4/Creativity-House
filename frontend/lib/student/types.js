@@ -271,6 +271,8 @@ export function normalizeLessonResource(raw, index = 0) {
       url.split('.').pop() || 'file'
     ).toLowerCase(),
     sizeBytes: firstDefined(source.sizeBytes, source.size_bytes, source.size) ?? null,
+    file_size: firstDefined(source.file_size, source.fileSize) ?? null,
+    source_type: firstDefined(source.source_type, source.sourceType) ?? null,
   };
 }
 

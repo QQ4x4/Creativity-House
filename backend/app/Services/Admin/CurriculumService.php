@@ -21,6 +21,7 @@ class CurriculumService
 {
     public function __construct(
         private readonly ProgressService $progress,
+        private readonly LessonResourceUploadService $resourceUploads,
     ) {}
 
     /**
@@ -51,6 +52,8 @@ class CurriculumService
                         $this->globalLessonOrder($modules, $moduleIndex, $lessonIndex),
                         $existingLessonIds,
                     );
+
+                    $this->syncLessonResources($lesson, $lessonPayload);
 
                     $keptLessonIds[] = $lesson->id;
                 }
@@ -111,7 +114,7 @@ class CurriculumService
     public function tree(Course $course): EloquentCollection
     {
         return $course->modules()
-            ->with(['lessons' => fn ($relation) => $relation->ordered()])
+            ->with(['lessons' => fn ($relation) => $relation->ordered()->with('resources')])
             ->ordered()
             ->get();
     }
@@ -166,7 +169,8 @@ class CurriculumService
             'bunny_library_id' => $this->nullIfBlank($payload['bunny_library_id'] ?? null),
             'duration' => (int) ($payload['duration'] ?? 0),
             'is_locked' => (bool) ($payload['is_locked'] ?? false),
-            'pdf_resource_urls' => $payload['pdf_resource_urls'] ?? null,
+            // Kept for BC; authoritative rows live in lesson_resources via syncLessonResources().
+            'pdf_resource_urls' => $payload['pdf_resource_urls'] ?? $payload['resources'] ?? null,
             'sort_order' => $sortOrder,
         ];
 
@@ -181,6 +185,43 @@ class CurriculumService
         }
 
         return $course->lessons()->create($attributes);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function syncLessonResources(Lesson $lesson, array $payload): void
+    {
+        if (array_key_exists('resources', $payload) && is_array($payload['resources'])) {
+            $this->resourceUploads->syncForLesson($lesson, $payload['resources']);
+
+            return;
+        }
+
+        // Legacy editors still send flat URL strings.
+        if (array_key_exists('pdf_resource_urls', $payload) && is_array($payload['pdf_resource_urls'])) {
+            $legacy = [];
+
+            foreach (array_values($payload['pdf_resource_urls']) as $index => $item) {
+                if (is_string($item) && trim($item) !== '') {
+                    $url = trim($item);
+                    $legacy[] = [
+                        'title' => basename(parse_url($url, PHP_URL_PATH) ?: $url) ?: 'Resource',
+                        'type' => str_starts_with($url, 'http') ? 'link' : 'file',
+                        'url' => $url,
+                        'sort_order' => $index,
+                    ];
+
+                    continue;
+                }
+
+                if (is_array($item)) {
+                    $legacy[] = $item;
+                }
+            }
+
+            $this->resourceUploads->syncForLesson($lesson, $legacy);
+        }
     }
 
     /**

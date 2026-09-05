@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -65,6 +66,16 @@ class Lesson extends Model
     public function module(): BelongsTo
     {
         return $this->belongsTo(Module::class);
+    }
+
+    /**
+     * Downloadable files and external links shown in the student Resources tab.
+     *
+     * @return HasMany<LessonResource, $this>
+     */
+    public function resources(): HasMany
+    {
+        return $this->hasMany(LessonResource::class)->orderBy('sort_order')->orderBy('id');
     }
 
     /**

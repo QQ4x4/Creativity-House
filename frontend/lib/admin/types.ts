@@ -28,6 +28,18 @@ export interface CatalogModePricing {
   features_ar?: string[];
 }
 
+export interface AdminLessonResourceDto {
+  id: number | null;
+  title: string;
+  /** Upload vs external link. */
+  type: 'file' | 'link';
+  url: string;
+  file_path?: string | null;
+  file_size?: string | null;
+  size_bytes?: number | null;
+  sort_order?: number;
+}
+
 export interface AdminLessonDto {
   id: number;
   module_id: number | null;
@@ -38,7 +50,9 @@ export interface AdminLessonDto {
   duration: number;
   is_locked: boolean;
   sort_order: number;
-  pdf_resource_urls: string[];
+  resources: AdminLessonResourceDto[];
+  /** Legacy mirror of resource URLs — prefer `resources`. */
+  pdf_resource_urls?: string[];
 }
 
 export interface AdminModuleDto {

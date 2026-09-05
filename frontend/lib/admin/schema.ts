@@ -36,6 +36,17 @@ const bilingualBulletsSchema = z.object({
   ar: z.array(bulletItemSchema),
 });
 
+export const lessonResourceSchema = z.object({
+  id: z.number().int().positive().nullable(),
+  client_key: z.string().min(1),
+  title: z.string().trim().min(1, 'Resource name is required.').max(200),
+  type: z.enum(['file', 'link']),
+  url: z.string().trim().min(1, 'A URL or uploaded file is required.').max(2048),
+  file_path: z.string().max(2048).nullable().optional(),
+  file_size: z.string().max(40).nullable().optional(),
+  size_bytes: z.number().int().min(0).nullable().optional(),
+});
+
 export const lessonSchema = z.object({
   id: z.number().int().positive().nullable(),
   title: z.string().trim().min(1, 'Lesson title is required.').max(200),
@@ -48,7 +59,7 @@ export const lessonSchema = z.object({
     .min(0, 'Duration cannot be negative.')
     .max(86400, 'Duration cannot exceed 24 hours.'),
   is_locked: z.boolean(),
-  pdf_resource_urls: z.array(z.string().max(2048)),
+  resources: z.array(lessonResourceSchema),
 });
 
 export const moduleSchema = z.object({
@@ -186,6 +197,68 @@ export const courseFormSchema = z
 export type CourseFormValues = z.infer<typeof courseFormSchema>;
 export type ModuleFormValues = z.infer<typeof moduleSchema>;
 export type LessonFormValues = z.infer<typeof lessonSchema>;
+export type LessonResourceFormValues = z.infer<typeof lessonResourceSchema>;
+
+function newClientKey(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `res-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/** Normalize admin API / legacy PDF URL lists into form resource rows. */
+export function toLessonResourceFormValues(lesson: {
+  resources?: AdminCourseDto['modules'][number]['lessons'][number]['resources'];
+  pdf_resource_urls?: string[];
+}): LessonResourceFormValues[] {
+  const fromRelation = Array.isArray(lesson.resources) ? lesson.resources : [];
+
+  if (fromRelation.length > 0) {
+    return fromRelation.map((resource, index) => ({
+      id: resource.id ?? null,
+      client_key: `resource-${resource.id ?? index}-${resource.url}`,
+      title: resource.title || 'Resource',
+      type: resource.type === 'link' ? 'link' : 'file',
+      url: resource.url || '',
+      file_path: resource.file_path ?? null,
+      file_size: resource.file_size ?? null,
+      size_bytes: resource.size_bytes ?? null,
+    }));
+  }
+
+  const legacy = Array.isArray(lesson.pdf_resource_urls) ? lesson.pdf_resource_urls : [];
+
+  return legacy
+    .filter((item): item is string => typeof item === 'string' && item.trim() !== '')
+    .map((url, index) => {
+      const path = url.split('?')[0] ?? url;
+      const name = path.split('/').pop() || 'Resource';
+      return {
+        id: null,
+        client_key: `legacy-${index}-${url}`,
+        title: decodeURIComponent(name),
+        type: /^https?:\/\//i.test(url) ? ('link' as const) : ('file' as const),
+        url,
+        file_path: null,
+        file_size: null,
+        size_bytes: null,
+      };
+    });
+}
+
+export function emptyLessonResource(partial?: Partial<LessonResourceFormValues>): LessonResourceFormValues {
+  return {
+    id: null,
+    client_key: newClientKey(),
+    title: '',
+    type: 'file',
+    url: '',
+    file_path: null,
+    file_size: null,
+    size_bytes: null,
+    ...partial,
+  };
+}
 
 /** Blank editor defaults for POST /api/v1/admin/courses (create flow). */
 export function defaultFormValues(): CourseFormValues {
@@ -360,7 +433,7 @@ export function toFormValues(course: AdminCourseDto): CourseFormValues {
         bunny_library_id: lesson.bunny_library_id ?? '',
         duration: lesson.duration ?? 0,
         is_locked: Boolean(lesson.is_locked),
-        pdf_resource_urls: lesson.pdf_resource_urls ?? [],
+        resources: toLessonResourceFormValues(lesson),
       })),
     })),
   };
@@ -452,7 +525,15 @@ export function toCurriculumPayload(values: CourseFormValues): Record<string, un
         bunny_library_id: nullable(lesson.bunny_library_id),
         duration: lesson.duration,
         is_locked: lesson.is_locked,
-        pdf_resource_urls: lesson.pdf_resource_urls,
+        resources: lesson.resources.map((resource) => ({
+          id: resource.id,
+          title: resource.title.trim(),
+          type: resource.type,
+          url: resource.url.trim(),
+          file_path: resource.file_path ?? null,
+          file_size: resource.file_size ?? null,
+          size_bytes: resource.size_bytes ?? null,
+        })),
       })),
     })),
   };

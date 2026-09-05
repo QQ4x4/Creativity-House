@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Lesson;
+use App\Models\LessonResource as LessonResourceModel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -38,13 +39,38 @@ class LessonResource extends JsonResource
     }
 
     /**
-     * Normalize `pdf_resource_urls` into the object shape the player expects.
-     * Accepts either a plain list of URLs or a list of {title,url,type,size} maps,
-     * so older seed data keeps working.
+     * Prefer the `lesson_resources` relation; fall back to legacy JSON.
      *
      * @return list<array<string, mixed>>
      */
     private function transformResources(): array
+    {
+        /** @var \Illuminate\Support\Collection<int, LessonResourceModel> $rows */
+        $rows = $this->relationLoaded('resources')
+            ? $this->resources
+            : $this->resources()->get();
+
+        if ($rows->isNotEmpty()) {
+            return $rows->values()->map(function (LessonResourceModel $resource): array {
+                return [
+                    'id' => $resource->id,
+                    'title' => $resource->title,
+                    'url' => $resource->publicUrl(),
+                    'type' => $resource->displayType(),
+                    'size_bytes' => $resource->size_bytes,
+                    'file_size' => $resource->file_size,
+                    'source_type' => $resource->type,
+                ];
+            })->all();
+        }
+
+        return $this->transformLegacyJson();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function transformLegacyJson(): array
     {
         $raw = is_array($this->pdf_resource_urls) ? $this->pdf_resource_urls : [];
         $resources = [];
@@ -55,13 +81,13 @@ class LessonResource extends JsonResource
                 $title = basename(parse_url($item, PHP_URL_PATH) ?: $item);
                 $type = $this->extensionOf($url);
                 $size = null;
+                $fileSize = null;
             } elseif (is_array($item)) {
                 $url = (string) ($item['url'] ?? $item['file_url'] ?? '');
                 $title = (string) ($item['title'] ?? $item['name'] ?? basename($url));
-                // Type comes from the URL, not the title — a title like "Slides"
-                // has no extension to read.
                 $type = (string) ($item['type'] ?? $this->extensionOf($url));
                 $size = isset($item['size_bytes']) ? (int) $item['size_bytes'] : null;
+                $fileSize = isset($item['file_size']) ? (string) $item['file_size'] : null;
             } else {
                 continue;
             }
@@ -76,6 +102,7 @@ class LessonResource extends JsonResource
                 'url' => $this->resolveUrl($url),
                 'type' => mb_strtolower($type),
                 'size_bytes' => $size,
+                'file_size' => $fileSize,
             ];
         }
 

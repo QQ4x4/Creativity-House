@@ -9,11 +9,12 @@
  * Errors are never swallowed: callers get an ApiError to surface in the UI.
  */
 
-import { apiDelete, apiGet, apiPost, apiPut } from '@/lib/api';
+import { apiClient, apiDelete, apiGet, apiPost, apiPut, ApiError, getCsrfCookie } from '@/lib/api';
 import { ADMIN_ENDPOINTS } from './endpoints';
 import type {
   AdminCourseDto,
   AdminLessonDto,
+  AdminLessonResourceDto,
   AdminModuleDto,
   BunnyCollection,
   BunnyVideo,
@@ -161,5 +162,46 @@ export async function fetchBunnyVideos(search = ''): Promise<BunnyVideoListResul
     }
 
     throw error;
+  }
+}
+
+/**
+ * Multipart upload for a lesson attachment. Returns metadata to embed in the
+ * curriculum JSON sync — files themselves are never sent through PUT curriculum.
+ */
+export async function uploadAdminLessonResource(
+  file: File,
+  title?: string
+): Promise<AdminLessonResourceDto> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (title?.trim()) {
+    formData.append('title', title.trim());
+  }
+
+  await getCsrfCookie();
+
+  try {
+    const response = await apiClient.request({
+      method: 'post',
+      url: ADMIN_ENDPOINTS.lessonResourceUpload,
+      data: formData,
+      headers: { 'Content-Type': undefined },
+    });
+
+    return unwrap<AdminLessonResourceDto>(response.data);
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    const status = (error as { response?: { status?: number } })?.response?.status ?? 0;
+    const data = (error as { response?: { data?: unknown } })?.response?.data;
+    const message =
+      (data && typeof data === 'object' && 'message' in data
+        ? String((data as { message?: unknown }).message ?? '')
+        : '') ||
+      (error as { message?: string })?.message ||
+      'Resource upload failed.';
+
+    throw new ApiError(message, status, null);
   }
 }

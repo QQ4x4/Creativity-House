@@ -4,11 +4,13 @@ use App\Http\Controllers\Api\Admin\BunnyController;
 use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\CurriculumController;
 use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
+use App\Http\Controllers\Api\Admin\LessonResourceUploadController;
 use App\Http\Controllers\Api\Admin\ModuleController as AdminModuleController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\CourseInquiryController;
+use App\Http\Controllers\Api\LessonResourceController;
 use App\Http\Controllers\Api\OrganizationInquiryController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PublicCatalogController;
@@ -199,6 +201,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () use ($s
     Route::prefix('v1')->name('api.v1.')->group($studentRoutes);
 
     Route::prefix('student')->name('api.student.')->group($studentRoutes);
+
+    // Forced download for lesson attachments (files only; links redirect).
+    Route::get('/v1/resources/{id}/download', [LessonResourceController::class, 'download'])
+        ->whereNumber('id')
+        ->name('api.v1.resources.download');
 });
 
 /*
@@ -219,6 +226,8 @@ Route::middleware(['auth:sanctum', 'admin', 'throttle:120,1'])
     ->scopeBindings()
     ->group(function (): void {
         Route::get('/bunny/videos', [BunnyController::class, 'videos'])->name('bunny.videos');
+        Route::post('/lesson-resources/upload', [LessonResourceUploadController::class, 'store'])
+            ->name('lesson-resources.upload');
 
         Route::get('/courses', [AdminCourseController::class, 'index'])->name('courses.index');
         Route::post('/courses', [AdminCourseController::class, 'store'])->name('courses.store');
