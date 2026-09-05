@@ -32,6 +32,16 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,12 +51,16 @@ import { cn } from '@/lib/utils';
 import { formatDuration } from './BunnyVideoPicker';
 import { LessonDialog } from './LessonDialog';
 
+type PendingDelete =
+  | { kind: 'lesson'; index: number; title: string }
+  | { kind: 'module'; title: string; lessonCount: number };
+
 interface SortableLessonRowProps {
   id: string;
   lessonIndex: number;
   lesson: LessonFormValues | undefined;
   onEdit: () => void;
-  onRemove: () => void;
+  onRequestRemove: () => void;
 }
 
 function SortableLessonRow({
@@ -54,7 +68,7 @@ function SortableLessonRow({
   lessonIndex,
   lesson,
   onEdit,
-  onRemove,
+  onRequestRemove,
 }: SortableLessonRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
@@ -134,7 +148,7 @@ function SortableLessonRow({
           type="button"
           variant="ghost"
           size="icon"
-          onClick={onRemove}
+          onClick={onRequestRemove}
           aria-label={`Remove lesson ${lessonIndex + 1}`}
           className="text-gray-400 hover:text-red-600 dark:hover:text-red-400"
         >
@@ -169,6 +183,7 @@ function ModuleCard({
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 
   const moduleTitle = useWatch({ control, name: `modules.${moduleIndex}.title_en` });
   const lessons = useWatch({ control, name: `modules.${moduleIndex}.lessons` });
@@ -223,6 +238,28 @@ function ModuleCard({
     move(oldIndex, newIndex);
   };
 
+  const confirmPendingDelete = () => {
+    if (!pendingDelete) return;
+
+    if (pendingDelete.kind === 'lesson') {
+      remove(pendingDelete.index);
+    } else {
+      onRemove();
+    }
+
+    setPendingDelete(null);
+  };
+
+  const deleteDialogTitle =
+    pendingDelete?.kind === 'module' ? 'Delete this module?' : 'Delete this lesson?';
+
+  const deleteDialogDescription =
+    pendingDelete?.kind === 'module'
+      ? `“${pendingDelete.title || 'Untitled module'}” and its ${pendingDelete.lessonCount} lesson${
+          pendingDelete.lessonCount === 1 ? '' : 's'
+        } will be removed from the editor. Save the course to make this permanent.`
+      : `“${pendingDelete?.title || 'Untitled lesson'}” will be removed from the editor. Save the course to make this permanent.`;
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/[0.02]">
       <div className="flex flex-wrap items-start justify-between gap-3 p-4">
@@ -271,7 +308,13 @@ function ModuleCard({
             type="button"
             variant="ghost"
             size="icon"
-            onClick={onRemove}
+            onClick={() =>
+              setPendingDelete({
+                kind: 'module',
+                title: moduleTitle || 'Untitled module',
+                lessonCount: fields.length,
+              })
+            }
             aria-label={`Remove module ${moduleIndex + 1}`}
             className="text-gray-400 hover:text-red-600 dark:hover:text-red-400"
           >
@@ -361,7 +404,13 @@ function ModuleCard({
                       lessonIndex={lessonIndex}
                       lesson={lessons?.[lessonIndex]}
                       onEdit={() => openEdit(lessonIndex)}
-                      onRemove={() => remove(lessonIndex)}
+                      onRequestRemove={() =>
+                        setPendingDelete({
+                          kind: 'lesson',
+                          index: lessonIndex,
+                          title: lessons?.[lessonIndex]?.title || 'Untitled lesson',
+                        })
+                      }
                     />
                   ))}
                 </ul>
@@ -379,6 +428,26 @@ function ModuleCard({
         defaultLibraryId={defaultLibraryId}
         onSubmit={handleSubmitLesson}
       />
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{deleteDialogTitle}</AlertDialogTitle>
+            <AlertDialogDescription>{deleteDialogDescription}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+            <AlertDialogAction type="button" onClick={confirmPendingDelete}>
+              {pendingDelete?.kind === 'module' ? 'Delete module' : 'Delete lesson'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
