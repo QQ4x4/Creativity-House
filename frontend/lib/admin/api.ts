@@ -15,6 +15,7 @@ import type {
   AdminCourseDto,
   AdminLessonDto,
   AdminModuleDto,
+  BunnyCollection,
   BunnyVideo,
   BunnyVideoListResult,
 } from './types';
@@ -134,12 +135,14 @@ export async function fetchBunnyVideos(search = ''): Promise<BunnyVideoListResul
     const payload = (await apiGet(`${ADMIN_ENDPOINTS.bunnyVideos}${query}`)) as {
       configured?: boolean;
       data?: BunnyVideo[];
+      collections?: BunnyCollection[];
       meta?: { total?: number; library_id?: string | null };
     };
 
     return {
       configured: payload?.configured !== false,
       videos: Array.isArray(payload?.data) ? payload.data : [],
+      collections: Array.isArray(payload?.collections) ? payload.collections : [],
       libraryId: payload?.meta?.library_id ?? null,
       total: payload?.meta?.total ?? 0,
     };
@@ -150,6 +153,7 @@ export async function fetchBunnyVideos(search = ''): Promise<BunnyVideoListResul
       return {
         configured: false,
         videos: [],
+        collections: [],
         libraryId: null,
         total: 0,
         message: (error as { message?: string })?.message ?? 'Bunny Stream is unavailable.',

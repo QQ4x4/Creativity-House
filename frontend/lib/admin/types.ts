@@ -121,11 +121,21 @@ export interface BunnyVideo {
   views: number;
   created_at: string | null;
   thumbnail_url: string | null;
+  /** Bunny collection GUID, or null when the video is uncategorized. */
+  collection_id: string | null;
+}
+
+/** One Bunny Stream collection (folder) for the media-library tabs. */
+export interface BunnyCollection {
+  guid: string;
+  name: string;
+  video_count: number;
 }
 
 export interface BunnyVideoListResult {
   configured: boolean;
   videos: BunnyVideo[];
+  collections: BunnyCollection[];
   libraryId: string | null;
   total: number;
   /** Present when Bunny is unreachable or unconfigured. */

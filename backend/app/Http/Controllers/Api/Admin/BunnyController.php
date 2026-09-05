@@ -12,7 +12,7 @@ use RuntimeException;
  * Secure proxy for the admin video picker.
  *
  * Bunny's AccessKey grants full read/write over the library, so it stays
- * server-side; the browser only ever sees the reduced video list.
+ * server-side; the browser only ever sees the reduced video + collection list.
  */
 class BunnyController extends Controller
 {
@@ -22,6 +22,9 @@ class BunnyController extends Controller
 
     /**
      * GET /api/v1/admin/bunny/videos?search=&page=&per_page=
+     *
+     * Returns videos (with collection_id) plus the library's collections so the
+     * frontend can render collection tabs / grouped grids.
      */
     public function videos(Request $request): JsonResponse
     {
@@ -36,12 +39,13 @@ class BunnyController extends Controller
                 'message' => 'Bunny Stream is not configured on this environment.',
                 'configured' => false,
                 'data' => [],
+                'collections' => [],
                 'meta' => ['total' => 0, 'page' => 1, 'per_page' => 0, 'library_id' => null],
             ], 503);
         }
 
         try {
-            $result = $this->bunny->videos(
+            $result = $this->bunny->library(
                 (string) ($validated['search'] ?? ''),
                 (int) ($validated['page'] ?? 1),
                 (int) ($validated['per_page'] ?? 100),
@@ -51,6 +55,7 @@ class BunnyController extends Controller
                 'message' => $exception->getMessage(),
                 'configured' => true,
                 'data' => [],
+                'collections' => [],
                 'meta' => ['total' => 0, 'page' => 1, 'per_page' => 0, 'library_id' => $this->bunny->libraryId()],
             ], 502);
         }
@@ -58,6 +63,7 @@ class BunnyController extends Controller
         return response()->json([
             'configured' => true,
             'data' => $result['videos'],
+            'collections' => $result['collections'],
             'meta' => [
                 'total' => $result['total'],
                 'page' => $result['page'],

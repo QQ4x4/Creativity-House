@@ -94,7 +94,7 @@ export function LessonDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto overscroll-contain">
         <DialogHeader>
           <DialogTitle>{initialValue ? 'Edit lesson' : 'Add lesson'}</DialogTitle>
           <DialogDescription>
