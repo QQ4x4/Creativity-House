@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   DndContext,
@@ -58,6 +58,7 @@ import { ApiError } from '@/lib/api';
 import {
   emptyModule,
   emptySubModule,
+  lessonSortableId,
   type CourseFormValues,
   type LessonFormValues,
 } from '@/lib/admin/schema';
@@ -115,123 +116,213 @@ function LessonDragPreview({ lesson }: { lesson: LessonFormValues }) {
   );
 }
 
+interface LessonRowContentProps {
+  lessonIndex: number;
+  subModuleIndex: number;
+  lesson: LessonFormValues;
+  dragHandleProps: {
+    attributes: ReturnType<typeof useSortable>['attributes'];
+    listeners: ReturnType<typeof useSortable>['listeners'];
+  };
+  isDragging: boolean;
+  onEdit: (subModuleIndex: number, lessonIndex: number) => void;
+  onMove: (subModuleIndex: number, lessonIndex: number) => void;
+  onRequestRemove: (subModuleIndex: number, lessonIndex: number, title: string) => void;
+}
+
+/**
+ * Presentational lesson row — aggressively memoized so sibling rows do not
+ * re-render when another lesson is dragged or the parent array is rewritten.
+ */
+const LessonRowContent = memo(
+  function LessonRowContent({
+    lessonIndex,
+    subModuleIndex,
+    lesson,
+    dragHandleProps,
+    isDragging,
+    onEdit,
+    onMove,
+    onRequestRemove,
+  }: LessonRowContentProps) {
+    const missingVideo = !lesson.bunny_video_id?.trim() && !lesson.video_url?.trim();
+
+    return (
+      <div
+        className={cn(
+          'flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-2 py-2.5 dark:border-white/10 dark:bg-white/[0.02] sm:gap-3 sm:px-3',
+          isDragging &&
+            'border-plum-400 opacity-40 shadow-lg ring-2 ring-plum-400/30 dark:border-gold-400/50 dark:ring-gold-400/20'
+        )}
+      >
+        <button
+          type="button"
+          className="inline-flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 active:cursor-grabbing dark:hover:bg-white/10 dark:hover:text-gray-200"
+          aria-label={`Drag to reorder lesson ${lessonIndex + 1}`}
+          {...dragHandleProps.attributes}
+          {...dragHandleProps.listeners}
+        >
+          <GripVertical className="h-4 w-4" aria-hidden />
+        </button>
+
+        <span className="w-5 shrink-0 text-xs tabular-nums text-gray-400 sm:w-6">
+          {lessonIndex + 1}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+            {lesson.title || 'Untitled lesson'}
+          </p>
+          <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <span className="inline-flex items-center gap-1">
+              <Clock className="h-3 w-3" aria-hidden />
+              {formatDuration(Number(lesson.duration) || 0)}
+            </span>
+            {lesson.bunny_video_id ? (
+              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <Video className="h-3 w-3" aria-hidden />
+                Bunny
+              </span>
+            ) : null}
+            {lesson.is_locked ? (
+              <span className="inline-flex items-center gap-1">
+                <Lock className="h-3 w-3" aria-hidden />
+                Locked
+              </span>
+            ) : null}
+            {missingVideo ? (
+              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                <TriangleAlert className="h-3 w-3" aria-hidden />
+                No video
+              </span>
+            ) : null}
+          </p>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => onMove(subModuleIndex, lessonIndex)}
+            aria-label={`Move lesson ${lessonIndex + 1}`}
+            title="Move to another sub-module"
+          >
+            <FolderInput className="h-4 w-4" aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => onEdit(subModuleIndex, lessonIndex)}
+            aria-label={`Edit lesson ${lessonIndex + 1}`}
+          >
+            <Pencil className="h-4 w-4" aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              onRequestRemove(subModuleIndex, lessonIndex, lesson.title || 'Untitled lesson')
+            }
+            aria-label={`Remove lesson ${lessonIndex + 1}`}
+            className="text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+          >
+            <Trash2 className="h-4 w-4" aria-hidden />
+          </Button>
+        </div>
+      </div>
+    );
+  },
+  (prev, next) =>
+    prev.lessonIndex === next.lessonIndex &&
+    prev.subModuleIndex === next.subModuleIndex &&
+    prev.isDragging === next.isDragging &&
+    prev.lesson.id === next.lesson.id &&
+    prev.lesson.client_key === next.lesson.client_key &&
+    prev.lesson.title === next.lesson.title &&
+    prev.lesson.duration === next.lesson.duration &&
+    prev.lesson.bunny_video_id === next.lesson.bunny_video_id &&
+    prev.lesson.video_url === next.lesson.video_url &&
+    prev.lesson.is_locked === next.lesson.is_locked &&
+    prev.onEdit === next.onEdit &&
+    prev.onMove === next.onMove &&
+    prev.onRequestRemove === next.onRequestRemove &&
+    prev.dragHandleProps.attributes === next.dragHandleProps.attributes &&
+    prev.dragHandleProps.listeners === next.dragHandleProps.listeners
+);
+
 interface SortableLessonRowProps {
   id: string;
   lessonIndex: number;
-  lesson: LessonFormValues | undefined;
-  onEdit: () => void;
-  onMove: () => void;
-  onRequestRemove: () => void;
+  subModuleIndex: number;
+  lesson: LessonFormValues;
+  onEdit: (subModuleIndex: number, lessonIndex: number) => void;
+  onMove: (subModuleIndex: number, lessonIndex: number) => void;
+  onRequestRemove: (subModuleIndex: number, lessonIndex: number, title: string) => void;
 }
 
-function SortableLessonRow({
-  id,
-  lessonIndex,
-  lesson,
-  onEdit,
-  onMove,
-  onRequestRemove,
-}: SortableLessonRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+const SortableLessonRow = memo(
+  function SortableLessonRow({
     id,
-    data: { type: 'lesson' as const },
-  });
+    lessonIndex,
+    subModuleIndex,
+    lesson,
+    onEdit,
+    onMove,
+    onRequestRemove,
+  }: SortableLessonRowProps) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+      id,
+      data: { type: 'lesson' as const },
+    });
 
-  const missingVideo = !lesson?.bunny_video_id?.trim() && !lesson?.video_url?.trim();
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    };
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+    const dragHandleProps = useMemo(
+      () => ({ attributes, listeners }),
+      [attributes, listeners]
+    );
 
-  return (
-    <li
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        'flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-2 py-2.5 dark:border-white/10 dark:bg-white/[0.02] sm:gap-3 sm:px-3',
-        isDragging &&
-          'z-10 opacity-60 border-plum-400 shadow-lg ring-2 ring-plum-400/30 dark:border-gold-400/50 dark:ring-gold-400/20'
-      )}
-    >
-      <button
-        type="button"
-        className="inline-flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 active:cursor-grabbing dark:hover:bg-white/10 dark:hover:text-gray-200"
-        aria-label={`Drag to reorder lesson ${lessonIndex + 1}`}
-        {...attributes}
-        {...listeners}
+    return (
+      <li
+        ref={setNodeRef}
+        style={style}
+        className={cn('list-none', isDragging && 'z-10')}
+        aria-hidden={isDragging ? true : undefined}
       >
-        <GripVertical className="h-4 w-4" aria-hidden />
-      </button>
-
-      <span className="w-5 shrink-0 text-xs tabular-nums text-gray-400 sm:w-6">
-        {lessonIndex + 1}
-      </span>
-
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-          {lesson?.title || 'Untitled lesson'}
-        </p>
-        <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-          <span className="inline-flex items-center gap-1">
-            <Clock className="h-3 w-3" aria-hidden />
-            {formatDuration(Number(lesson?.duration) || 0)}
-          </span>
-          {lesson?.bunny_video_id ? (
-            <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-              <Video className="h-3 w-3" aria-hidden />
-              Bunny
-            </span>
-          ) : null}
-          {lesson?.is_locked ? (
-            <span className="inline-flex items-center gap-1">
-              <Lock className="h-3 w-3" aria-hidden />
-              Locked
-            </span>
-          ) : null}
-          {missingVideo ? (
-            <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-              <TriangleAlert className="h-3 w-3" aria-hidden />
-              No video
-            </span>
-          ) : null}
-        </p>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={onMove}
-          aria-label={`Move lesson ${lessonIndex + 1}`}
-          title="Move to another sub-module"
-        >
-          <FolderInput className="h-4 w-4" aria-hidden />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={onEdit}
-          aria-label={`Edit lesson ${lessonIndex + 1}`}
-        >
-          <Pencil className="h-4 w-4" aria-hidden />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={onRequestRemove}
-          aria-label={`Remove lesson ${lessonIndex + 1}`}
-          className="text-gray-400 hover:text-red-600 dark:hover:text-red-400"
-        >
-          <Trash2 className="h-4 w-4" aria-hidden />
-        </Button>
-      </div>
-    </li>
-  );
-}
+        <LessonRowContent
+          lessonIndex={lessonIndex}
+          subModuleIndex={subModuleIndex}
+          lesson={lesson}
+          dragHandleProps={dragHandleProps}
+          isDragging={isDragging}
+          onEdit={onEdit}
+          onMove={onMove}
+          onRequestRemove={onRequestRemove}
+        />
+      </li>
+    );
+  },
+  (prev, next) =>
+    prev.id === next.id &&
+    prev.lessonIndex === next.lessonIndex &&
+    prev.subModuleIndex === next.subModuleIndex &&
+    prev.lesson.id === next.lesson.id &&
+    prev.lesson.client_key === next.lesson.client_key &&
+    prev.lesson.title === next.lesson.title &&
+    prev.lesson.duration === next.lesson.duration &&
+    prev.lesson.bunny_video_id === next.lesson.bunny_video_id &&
+    prev.lesson.video_url === next.lesson.video_url &&
+    prev.lesson.is_locked === next.lesson.is_locked &&
+    prev.onEdit === next.onEdit &&
+    prev.onMove === next.onMove &&
+    prev.onRequestRemove === next.onRequestRemove
+);
 
 interface SubModuleAccordionProps {
   id: string;
@@ -239,9 +330,9 @@ interface SubModuleAccordionProps {
   subModuleIndex: number;
   lessonIds: string[];
   onRequestRemove: () => void;
-  onEditLesson: (lessonIndex: number) => void;
-  onMoveLesson: (lessonIndex: number) => void;
-  onRequestRemoveLesson: (lessonIndex: number, title: string) => void;
+  onEditLesson: (subModuleIndex: number, lessonIndex: number) => void;
+  onMoveLesson: (subModuleIndex: number, lessonIndex: number) => void;
+  onRequestRemoveLesson: (subModuleIndex: number, lessonIndex: number, title: string) => void;
   onAddLesson: () => void;
 }
 
@@ -402,9 +493,14 @@ function SubModuleAccordion({
           <div
             ref={setDroppableRef}
             className={cn(
-              'min-h-[3rem] rounded-xl transition-colors',
+              'min-h-[3.5rem] rounded-xl transition-colors',
               isOver && 'bg-plum-50/80 ring-2 ring-plum-400/40 dark:bg-gold-400/10 dark:ring-gold-400/30'
             )}
+            style={{
+              // Hold approximate height so removing a dragged lesson does not
+              // collapse the section and yank the viewport upward.
+              minHeight: Math.max(56, lessons.length * 56),
+            }}
           >
             {lessons.length === 0 ? (
               <p className="rounded-xl border border-dashed border-gray-300 px-3 py-5 text-center text-xs text-gray-500 dark:border-white/10 dark:text-gray-400">
@@ -413,22 +509,21 @@ function SubModuleAccordion({
             ) : (
               <SortableContext items={lessonIds} strategy={verticalListSortingStrategy}>
                 <ul className="space-y-2">
-                  {lessonIds.map((lessonId, lessonIndex) => (
-                    <SortableLessonRow
-                      key={lessonId}
-                      id={lessonId}
-                      lessonIndex={lessonIndex}
-                      lesson={lessons[lessonIndex]}
-                      onEdit={() => onEditLesson(lessonIndex)}
-                      onMove={() => onMoveLesson(lessonIndex)}
-                      onRequestRemove={() =>
-                        onRequestRemoveLesson(
-                          lessonIndex,
-                          lessons[lessonIndex]?.title || 'Untitled lesson'
-                        )
-                      }
-                    />
-                  ))}
+                  {lessons.map((lesson, lessonIndex) => {
+                    const lessonId = lessonIds[lessonIndex] ?? lessonSortableId(lesson);
+                    return (
+                      <SortableLessonRow
+                        key={lessonId}
+                        id={lessonId}
+                        lessonIndex={lessonIndex}
+                        subModuleIndex={subModuleIndex}
+                        lesson={lesson}
+                        onEdit={onEditLesson}
+                        onMove={onMoveLesson}
+                        onRequestRemove={onRequestRemoveLesson}
+                      />
+                    );
+                  })}
                 </ul>
               </SortableContext>
             )}
@@ -491,27 +586,26 @@ function ModuleCard({
 
   const subModuleIds = useMemo(() => fields.map((field) => field.id), [fields]);
 
-  // Lesson sortable ids must be unique across the module. Encode location.
+  // Stable lesson ids (client_key / db id) — never encode array index or every
+  // sibling remounts when one lesson moves.
   const lessonIdMap = useMemo(() => {
-    /** @type {Map<string, { subModuleIndex: number; lessonIndex: number; fieldId: string }>} */
-    const map = new Map();
+    const map = new Map<string, { subModuleIndex: number; lessonIndex: number }>();
     (subModules ?? []).forEach((sub, subModuleIndex) => {
-      (sub?.lessons ?? []).forEach((_, lessonIndex) => {
-        const id = `lesson-${moduleIndex}-${subModuleIndex}-${lessonIndex}`;
-        map.set(id, { subModuleIndex, lessonIndex, fieldId: id });
+      (sub?.lessons ?? []).forEach((lesson, lessonIndex) => {
+        map.set(lessonSortableId(lesson), { subModuleIndex, lessonIndex });
       });
     });
     return map;
-  }, [moduleIndex, subModules]);
+  }, [subModules]);
 
   const lessonIdsBySubModule = useMemo(() => {
-    return (subModules ?? []).map((sub, subModuleIndex) =>
-      (sub?.lessons ?? []).map((_, lessonIndex) => `lesson-${moduleIndex}-${subModuleIndex}-${lessonIndex}`)
+    return (subModules ?? []).map((sub) =>
+      (sub?.lessons ?? []).map((lesson) => lessonSortableId(lesson))
     );
-  }, [moduleIndex, subModules]);
+  }, [subModules]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
@@ -523,9 +617,55 @@ function ModuleCard({
     });
   };
 
-  const applyModules = (next: CourseFormValues['modules']) => {
-    setValue('modules', next, { shouldDirty: true, shouldValidate: true });
-  };
+  const applyModules = useCallback(
+    (next: CourseFormValues['modules']) => {
+      // Skip full-schema revalidation during drag moves — validating 160+
+      // lessons freezes the main thread and feeds the auto-scroll loop.
+      setValue('modules', next, { shouldDirty: true, shouldValidate: false });
+    },
+    [setValue]
+  );
+
+  const lockScrollDuringUpdate = useCallback((update: () => void) => {
+    const scrollY = window.scrollY;
+    const html = document.documentElement;
+    const previous = html.style.scrollBehavior;
+    html.style.scrollBehavior = 'auto';
+    update();
+    // Restore immediately and once more after React commit / layout.
+    window.scrollTo(0, scrollY);
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollY);
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollY);
+        html.style.scrollBehavior = previous;
+      });
+    });
+  }, []);
+
+  const onEditLesson = useCallback((subModuleIndex: number, lessonIndex: number) => {
+    setLessonDialog({ subModuleIndex, lessonIndex });
+  }, []);
+
+  const onMoveLesson = useCallback(
+    (subModuleIndex: number, lessonIndex: number) => {
+      setMoveTarget({ moduleIndex, subModuleIndex, lessonIndex });
+    },
+    [moduleIndex]
+  );
+
+  const onRequestRemoveLesson = useCallback(
+    (subModuleIndex: number, lessonIndex: number, title: string) => {
+      setPendingDelete({
+        kind: 'lesson',
+        moduleIndex,
+        subModuleIndex,
+        lessonIndex,
+        title,
+      });
+    },
+    [moduleIndex]
+  );
 
   const persistLessonMove = async (
     lesson: LessonFormValues,
@@ -650,7 +790,9 @@ function ModuleCard({
     const next = relocateLessonInModules(modules, from, to);
     if (!next) return;
 
-    applyModules(next);
+    lockScrollDuringUpdate(() => {
+      applyModules(next);
+    });
 
     const crossed =
       from.moduleIndex !== to.moduleIndex || from.subModuleIndex !== to.subModuleIndex;
@@ -856,11 +998,9 @@ function ModuleCard({
             <DndContext
               sensors={sensors}
               collisionDetection={closestCorners}
-              autoScroll={{
-                threshold: { x: 0.15, y: 0.15 },
-                acceleration: 12,
-                interval: 5,
-              }}
+              // Disabled: with 160+ lessons, layout thrash after a drop makes the
+              // auto-scroller think the pointer is out of bounds and loop-scroll.
+              autoScroll={false}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
@@ -882,21 +1022,9 @@ function ModuleCard({
                           lessonCount: subModules?.[subModuleIndex]?.lessons?.length ?? 0,
                         })
                       }
-                      onEditLesson={(lessonIndex) =>
-                        setLessonDialog({ subModuleIndex, lessonIndex })
-                      }
-                      onMoveLesson={(lessonIndex) =>
-                        setMoveTarget({ moduleIndex, subModuleIndex, lessonIndex })
-                      }
-                      onRequestRemoveLesson={(lessonIndex, title) =>
-                        setPendingDelete({
-                          kind: 'lesson',
-                          moduleIndex,
-                          subModuleIndex,
-                          lessonIndex,
-                          title,
-                        })
-                      }
+                      onEditLesson={onEditLesson}
+                      onMoveLesson={onMoveLesson}
+                      onRequestRemoveLesson={onRequestRemoveLesson}
                       onAddLesson={() => setLessonDialog({ subModuleIndex, lessonIndex: null })}
                     />
                   ))}
@@ -971,7 +1099,9 @@ function ModuleCard({
           onMoved={(from, to) => {
             const modules = getValues('modules');
             const next = relocateLessonInModules(modules, from, to);
-            if (next) applyModules(next);
+            if (next) {
+              lockScrollDuringUpdate(() => applyModules(next));
+            }
             setMoveTarget(null);
           }}
         />

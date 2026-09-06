@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { uploadAdminLessonResource } from '@/lib/admin/api';
 import {
+  emptyLesson as createEmptyLesson,
   emptyLessonResource,
   type LessonFormValues,
   type LessonResourceFormValues,
@@ -39,16 +40,7 @@ const ACCEPT_EXTENSIONS =
   '.ogg,audio/ogg,audio/*,.mp3,.wav,.m4a,.aac,.flac,.zip,.rar,.pdf,.doc,.docx,.xlsx,.xls,image/*,.png,.jpg,.jpeg,.webp';
 
 export function emptyLesson(defaultLibraryId: string): LessonFormValues {
-  return {
-    id: null,
-    title: '',
-    video_url: '',
-    bunny_video_id: '',
-    bunny_library_id: defaultLibraryId,
-    duration: 0,
-    is_locked: false,
-    resources: [],
-  };
+  return createEmptyLesson({ bunny_library_id: defaultLibraryId });
 }
 
 interface LessonDialogProps {

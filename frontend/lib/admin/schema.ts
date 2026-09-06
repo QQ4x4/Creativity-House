@@ -50,6 +50,8 @@ export const lessonResourceSchema = z.object({
 
 export const lessonSchema = z.object({
   id: z.number().int().positive().nullable(),
+  /** Stable DnD / React key — never sent to the API. */
+  client_key: z.string().min(1),
   title: z.string().trim().min(1, 'Lesson title is required.').max(200),
   video_url: z.string().max(2048),
   bunny_video_id: z.string().max(64),
@@ -281,9 +283,14 @@ export function emptyLessonResource(partial?: Partial<LessonResourceFormValues>)
   };
 }
 
+export function lessonSortableId(lesson: Pick<LessonFormValues, 'id' | 'client_key'>): string {
+  return lesson.client_key || (lesson.id ? `lesson-${lesson.id}` : newClientKey());
+}
+
 export function emptyLesson(partial?: Partial<LessonFormValues>): LessonFormValues {
   return {
     id: null,
+    client_key: newClientKey(),
     title: '',
     video_url: '',
     bunny_video_id: '',
@@ -506,6 +513,7 @@ export function toFormValues(course: AdminCourseDto): CourseFormValues {
           is_open: true,
           lessons: (subModule.lessons ?? []).map((lesson) => ({
             id: lesson.id,
+            client_key: lesson.id ? `lesson-${lesson.id}` : newClientKey(),
             title: lesson.title ?? '',
             video_url: lesson.video_url ?? '',
             bunny_video_id: lesson.bunny_video_id ?? '',
