@@ -34,6 +34,15 @@ class LessonController extends Controller
         $data['sort_order'] ??= (int) $course->lessons()->max('sort_order') + 1;
         $data['bunny_library_id'] ??= config('services.bunny.library_id');
 
+        if (empty($data['sub_module_id'])) {
+            $subModule = $module->subModules()->ordered()->first()
+                ?? $module->subModules()->create([
+                    'title_en' => 'Default Section',
+                    'sort_order' => 0,
+                ]);
+            $data['sub_module_id'] = $subModule->id;
+        }
+
         $lesson = $course->lessons()->create($data);
 
         if (is_array($resources)) {

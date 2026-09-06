@@ -15,4 +15,5 @@ export const ADMIN_ENDPOINTS = {
     `/v1/admin/courses/${courseId}/lessons/${lessonId}`,
   bunnyVideos: '/v1/admin/bunny/videos',
   lessonResourceUpload: '/v1/admin/lesson-resources/upload',
+  imageUpload: '/v1/admin/upload-image',
 } as const;

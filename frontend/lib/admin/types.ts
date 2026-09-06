@@ -43,6 +43,7 @@ export interface AdminLessonResourceDto {
 export interface AdminLessonDto {
   id: number;
   module_id: number | null;
+  sub_module_id?: number | null;
   title: string;
   video_url: string | null;
   bunny_video_id: string | null;
@@ -55,6 +56,15 @@ export interface AdminLessonDto {
   pdf_resource_urls?: string[];
 }
 
+export interface AdminSubModuleDto {
+  id: number;
+  module_id?: number | null;
+  title_en: string;
+  title_ar: string | null;
+  sort_order: number;
+  lessons: AdminLessonDto[];
+}
+
 export interface AdminModuleDto {
   id: number;
   title_en: string;
@@ -62,7 +72,9 @@ export interface AdminModuleDto {
   duration_label_en: string | null;
   duration_label_ar: string | null;
   sort_order: number;
-  lessons: AdminLessonDto[];
+  sub_modules?: AdminSubModuleDto[];
+  /** Flattened BC mirror of all lessons under sub_modules. */
+  lessons?: AdminLessonDto[];
 }
 
 export interface AdminCourseDto {

@@ -26,6 +26,7 @@ class Lesson extends Model
     protected $fillable = [
         'course_id',
         'module_id',
+        'sub_module_id',
         'module_name',
         'title',
         'video_url',
@@ -45,6 +46,7 @@ class Lesson extends Model
         return [
             'course_id' => 'integer',
             'module_id' => 'integer',
+            'sub_module_id' => 'integer',
             'duration' => 'integer',
             'pdf_resource_urls' => 'array',
             'is_locked' => 'boolean',
@@ -66,6 +68,14 @@ class Lesson extends Model
     public function module(): BelongsTo
     {
         return $this->belongsTo(Module::class);
+    }
+
+    /**
+     * @return BelongsTo<SubModule, $this>
+     */
+    public function subModule(): BelongsTo
+    {
+        return $this->belongsTo(SubModule::class);
     }
 
     /**
@@ -95,5 +105,36 @@ class Lesson extends Model
         $slug = Str::slug($this->module_name);
 
         return $slug !== '' ? $slug : 'module-1';
+    }
+
+    /**
+     * Stable client-side key for nesting lessons under a sub-module chapter.
+     */
+    public function subModuleKey(): string
+    {
+        $title = $this->relationLoaded('subModule') && $this->subModule
+            ? $this->subModule->title_en
+            : '';
+
+        $slug = Str::slug($title);
+
+        if ($slug !== '') {
+            return $slug;
+        }
+
+        if ($this->sub_module_id) {
+            return 'sub-module-'.$this->sub_module_id;
+        }
+
+        return 'default-section';
+    }
+
+    public function subModuleName(): string
+    {
+        if ($this->relationLoaded('subModule') && $this->subModule) {
+            return (string) $this->subModule->title_en;
+        }
+
+        return 'Default Section';
     }
 }

@@ -76,6 +76,8 @@
  * @property {string|number} id
  * @property {string|number} moduleId
  * @property {string} moduleName
+ * @property {string|number} [subModuleId]
+ * @property {string} [subModuleName]
  * @property {string} title
  * @property {string} videoUrl
  * @property {string|null} bunnyVideoId Bunny Stream video GUID (iframe embed).
@@ -88,10 +90,18 @@
  */
 
 /**
- * @typedef {Object} CourseModule
+ * @typedef {Object} CourseSubModule
  * @property {string|number} id
  * @property {string} name
  * @property {CourseLesson[]} lessons
+ */
+
+/**
+ * @typedef {Object} CourseModule
+ * @property {string|number} id
+ * @property {string} name
+ * @property {CourseLesson[]} lessons Flattened list (all chapters) for BC consumers.
+ * @property {CourseSubModule[]} [subModules]
  */
 
 /**
@@ -289,6 +299,15 @@ export function normalizeCourseLesson(raw, index = 0, completedLessonIds = []) {
     id,
     moduleId: firstDefined(source.moduleId, source.module_id, source.module, 'module-1'),
     moduleName: toText(firstDefined(source.moduleName, source.module_name), ''),
+    subModuleId: firstDefined(
+      source.subModuleId,
+      source.sub_module_id,
+      'default-section'
+    ),
+    subModuleName: toText(
+      firstDefined(source.subModuleName, source.sub_module_name),
+      'Default Section'
+    ),
     title: toText(firstDefined(source.title, source.name)),
     videoUrl: toText(firstDefined(source.videoUrl, source.video_url, source.video)),
     bunnyVideoId:
@@ -310,13 +329,13 @@ export function normalizeCourseLesson(raw, index = 0, completedLessonIds = []) {
 }
 
 /**
- * Flat lesson list → grouped modules, preserving lesson order.
+ * Flat lesson list → grouped modules (with nested sub-modules), preserving order.
  *
  * @param {CourseLesson[]} lessons
  * @returns {CourseModule[]}
  */
 export function groupLessonsByModule(lessons = []) {
-  /** @type {Map<string, CourseModule>} */
+  /** @type {Map<string, any>} */
   const modules = new Map();
 
   lessons.forEach((lesson) => {
@@ -327,13 +346,29 @@ export function groupLessonsByModule(lessons = []) {
         id: lesson.moduleId,
         name: lesson.moduleName || '',
         lessons: [],
+        subModules: [],
+        _subMap: new Map(),
       });
     }
 
-    modules.get(key).lessons.push(lesson);
+    const mod = modules.get(key);
+    mod.lessons.push(lesson);
+
+    const subKey = String(lesson.subModuleId || 'default-section');
+    if (!mod._subMap.has(subKey)) {
+      const sub = {
+        id: lesson.subModuleId || 'default-section',
+        name: lesson.subModuleName || 'Default Section',
+        lessons: [],
+      };
+      mod._subMap.set(subKey, sub);
+      mod.subModules.push(sub);
+    }
+
+    mod._subMap.get(subKey).lessons.push(lesson);
   });
 
-  return [...modules.values()];
+  return [...modules.values()].map(({ _subMap, ...rest }) => rest);
 }
 
 /** @returns {EnrolledCourse} */

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Admin\BunnyController;
 use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\CurriculumController;
+use App\Http\Controllers\Api\Admin\ImageUploadController;
 use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Api\Admin\LessonResourceUploadController;
 use App\Http\Controllers\Api\Admin\ModuleController as AdminModuleController;
@@ -234,6 +235,7 @@ Route::middleware(['auth:sanctum', 'admin', 'throttle:120,1'])
         Route::get('/bunny/videos', [BunnyController::class, 'videos'])->name('bunny.videos');
         Route::post('/lesson-resources/upload', [LessonResourceUploadController::class, 'store'])
             ->name('lesson-resources.upload');
+        Route::post('/upload-image', ImageUploadController::class)->name('upload-image');
 
         Route::get('/courses', [AdminCourseController::class, 'index'])->name('courses.index');
         Route::post('/courses', [AdminCourseController::class, 'store'])->name('courses.store');

@@ -26,6 +26,8 @@ class LessonResource extends JsonResource
             'course_id' => $this->course_id,
             'module_id' => $this->moduleKey(),
             'module_name' => $this->module_name,
+            'sub_module_id' => $this->subModuleKey(),
+            'sub_module_name' => $this->subModuleName(),
             'title' => $this->title,
             'video_url' => $this->video_url,
             'bunny_video_id' => $this->bunny_video_id,

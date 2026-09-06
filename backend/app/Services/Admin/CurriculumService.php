@@ -5,12 +5,13 @@ namespace App\Services\Admin;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
+use App\Models\SubModule;
 use App\Services\Student\ProgressService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Owns every admin write to `modules` + `lessons`.
+ * Owns every admin write to `modules` + `sub_modules` + `lessons`.
  *
  * The editor submits the whole tree at once, so this diffs the payload against
  * the stored rows: matched ids are updated, unmatched ids are created, and rows
@@ -31,37 +32,68 @@ class CurriculumService
      */
     public function sync(Course $course, array $modules): EloquentCollection
     {
+        $modules = $this->normalizeModulesPayload($modules);
+
         DB::transaction(function () use ($course, $modules): void {
             $existingModuleIds = $course->modules()->pluck('id')->all();
+            $existingSubModuleIds = SubModule::query()
+                ->whereIn('module_id', $existingModuleIds)
+                ->pluck('id')
+                ->all();
             $existingLessonIds = $course->lessons()->pluck('id')->all();
 
             $keptModuleIds = [];
+            $keptSubModuleIds = [];
             $keptLessonIds = [];
+            $globalLessonOrder = 0;
 
             foreach (array_values($modules) as $moduleIndex => $modulePayload) {
                 $module = $this->upsertModule($course, $modulePayload, $moduleIndex, $existingModuleIds);
                 $keptModuleIds[] = $module->id;
 
-                $lessons = is_array($modulePayload['lessons'] ?? null) ? $modulePayload['lessons'] : [];
+                $subModules = is_array($modulePayload['sub_modules'] ?? null)
+                    ? $modulePayload['sub_modules']
+                    : [];
 
-                foreach (array_values($lessons) as $lessonIndex => $lessonPayload) {
-                    $lesson = $this->upsertLesson(
-                        $course,
+                foreach (array_values($subModules) as $subModuleIndex => $subModulePayload) {
+                    $subModule = $this->upsertSubModule(
                         $module,
-                        $lessonPayload,
-                        $this->globalLessonOrder($modules, $moduleIndex, $lessonIndex),
-                        $existingLessonIds,
+                        $subModulePayload,
+                        $subModuleIndex,
+                        $existingSubModuleIds,
                     );
+                    $keptSubModuleIds[] = $subModule->id;
 
-                    $this->syncLessonResources($lesson, $lessonPayload);
+                    $lessons = is_array($subModulePayload['lessons'] ?? null)
+                        ? $subModulePayload['lessons']
+                        : [];
 
-                    $keptLessonIds[] = $lesson->id;
+                    foreach (array_values($lessons) as $lessonPayload) {
+                        $lesson = $this->upsertLesson(
+                            $course,
+                            $module,
+                            $subModule,
+                            $lessonPayload,
+                            $globalLessonOrder,
+                            $existingLessonIds,
+                        );
+
+                        $this->syncLessonResources($lesson, $lessonPayload);
+
+                        $keptLessonIds[] = $lesson->id;
+                        $globalLessonOrder++;
+                    }
                 }
             }
 
             $removedLessonIds = array_diff($existingLessonIds, $keptLessonIds);
             if ($removedLessonIds !== []) {
                 Lesson::query()->whereIn('id', $removedLessonIds)->delete();
+            }
+
+            $removedSubModuleIds = array_diff($existingSubModuleIds, $keptSubModuleIds);
+            if ($removedSubModuleIds !== []) {
+                SubModule::query()->whereIn('id', $removedSubModuleIds)->delete();
             }
 
             $removedModuleIds = array_diff($existingModuleIds, $keptModuleIds);
@@ -76,12 +108,7 @@ class CurriculumService
     }
 
     /**
-     * Rebuild `modules` from the legacy `lessons.module_name` labels.
-     *
-     * Seeders and the bulk-import commands write lessons directly with a module
-     * label and no module row. Calling this afterwards promotes those labels
-     * into real modules so the public syllabus preview stays in sync with the
-     * player sidebar.
+     * Rebuild `modules` (+ default sub-modules) from the legacy `lessons.module_name` labels.
      */
     public function rebuildFromLessonLabels(Course $course): void
     {
@@ -96,27 +123,73 @@ class CurriculumService
                 $title = trim((string) $lesson->module_name) ?: 'Module 1';
 
                 if (! array_key_exists($title, $modules)) {
-                    $modules[$title] = $course->modules()->create([
+                    $module = $course->modules()->create([
                         'title_en' => mb_substr($title, 0, 200),
                         'sort_order' => $sortOrder++,
                     ]);
+
+                    $subModule = $module->subModules()->create([
+                        'title_en' => 'Default Section',
+                        'sort_order' => 0,
+                    ]);
+
+                    $modules[$title] = [$module, $subModule];
                 }
 
-                $lesson->forceFill(['module_id' => $modules[$title]->id])->save();
+                /** @var Module $module */
+                /** @var SubModule $subModule */
+                [$module, $subModule] = $modules[$title];
+
+                $lesson->forceFill([
+                    'module_id' => $module->id,
+                    'sub_module_id' => $subModule->id,
+                ])->save();
             }
         });
     }
 
     /**
-     * Modules with their lessons, ordered — the shape both the admin editor and
+     * Modules → sub-modules → lessons — the shape both the admin editor and
      * PublicCourseResource read.
      */
     public function tree(Course $course): EloquentCollection
     {
         return $course->modules()
-            ->with(['lessons' => fn ($relation) => $relation->ordered()->with('resources')])
+            ->with([
+                'subModules' => fn ($relation) => $relation->ordered()->with([
+                    'lessons' => fn ($lessons) => $lessons->ordered()->with('resources'),
+                ]),
+                'lessons' => fn ($relation) => $relation->ordered()->with('resources'),
+            ])
             ->ordered()
             ->get();
+    }
+
+    /**
+     * Accept legacy `modules[].lessons` by wrapping them in a default sub-module.
+     *
+     * @param  list<array<string, mixed>>  $modules
+     * @return list<array<string, mixed>>
+     */
+    private function normalizeModulesPayload(array $modules): array
+    {
+        return array_map(static function (array $module): array {
+            if (array_key_exists('sub_modules', $module) && is_array($module['sub_modules'])) {
+                return $module;
+            }
+
+            $lessons = is_array($module['lessons'] ?? null) ? $module['lessons'] : [];
+            unset($module['lessons']);
+
+            $module['sub_modules'] = [[
+                'id' => null,
+                'title_en' => 'Default Section',
+                'title_ar' => null,
+                'lessons' => $lessons,
+            ]];
+
+            return $module;
+        }, array_values($modules));
     }
 
     /**
@@ -135,8 +208,6 @@ class CurriculumService
 
         $id = $payload['id'] ?? null;
 
-        // An id the course doesn't own is treated as "create new" rather than
-        // an error, so a stale client cache can't reassign another course's module.
         if ($id !== null && in_array((int) $id, $existingModuleIds, true)) {
             /** @var Module $module */
             $module = Module::query()->whereKey($id)->firstOrFail();
@@ -150,17 +221,54 @@ class CurriculumService
 
     /**
      * @param  array<string, mixed>  $payload
+     * @param  list<int>  $existingSubModuleIds
+     */
+    private function upsertSubModule(
+        Module $module,
+        array $payload,
+        int $sortOrder,
+        array $existingSubModuleIds,
+    ): SubModule {
+        $attributes = [
+            'title_en' => (string) ($payload['title_en'] ?? 'Default Section'),
+            'title_ar' => $payload['title_ar'] ?? null,
+            'sort_order' => $sortOrder,
+        ];
+
+        $id = $payload['id'] ?? null;
+
+        if ($id !== null && in_array((int) $id, $existingSubModuleIds, true)) {
+            /** @var SubModule $subModule */
+            $subModule = SubModule::query()->whereKey($id)->firstOrFail();
+
+            // Guard against moving a sub-module onto another module via a stale id.
+            if ((int) $subModule->module_id !== (int) $module->id) {
+                return $module->subModules()->create($attributes);
+            }
+
+            $subModule->update($attributes);
+
+            return $subModule;
+        }
+
+        return $module->subModules()->create($attributes);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
      * @param  list<int>  $existingLessonIds
      */
     private function upsertLesson(
         Course $course,
         Module $module,
+        SubModule $subModule,
         array $payload,
         int $sortOrder,
         array $existingLessonIds,
     ): Lesson {
         $attributes = [
             'module_id' => $module->id,
+            'sub_module_id' => $subModule->id,
             // Mirrored so LessonResource's derived grouping key keeps working.
             'module_name' => $module->title_en,
             'title' => (string) $payload['title'],
@@ -169,7 +277,6 @@ class CurriculumService
             'bunny_library_id' => $this->nullIfBlank($payload['bunny_library_id'] ?? null),
             'duration' => (int) ($payload['duration'] ?? 0),
             'is_locked' => (bool) ($payload['is_locked'] ?? false),
-            // Kept for BC; authoritative rows live in lesson_resources via syncLessonResources().
             'pdf_resource_urls' => $payload['pdf_resource_urls'] ?? $payload['resources'] ?? null,
             'sort_order' => $sortOrder,
         ];
@@ -198,7 +305,6 @@ class CurriculumService
             return;
         }
 
-        // Legacy editors still send flat URL strings.
         if (array_key_exists('pdf_resource_urls', $payload) && is_array($payload['pdf_resource_urls'])) {
             $legacy = [];
 
@@ -224,31 +330,6 @@ class CurriculumService
         }
     }
 
-    /**
-     * Lessons keep a course-wide `sort_order` (the student sidebar orders by it
-     * across modules), so flatten the tree position into a single sequence.
-     *
-     * @param  list<array<string, mixed>>  $modules
-     */
-    private function globalLessonOrder(array $modules, int $moduleIndex, int $lessonIndex): int
-    {
-        $offset = 0;
-
-        foreach (array_values($modules) as $index => $module) {
-            if ($index >= $moduleIndex) {
-                break;
-            }
-
-            $offset += count(is_array($module['lessons'] ?? null) ? $module['lessons'] : []);
-        }
-
-        return $offset + $lessonIndex;
-    }
-
-    /**
-     * Adding or removing lessons changes the denominator for every enrolled
-     * student, and can leave completed ids pointing at deleted rows.
-     */
     private function recalculateStudentProgress(Course $course): void
     {
         $course->progress()

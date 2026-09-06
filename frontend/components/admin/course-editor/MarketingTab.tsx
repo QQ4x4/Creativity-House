@@ -1,13 +1,14 @@
 'use client';
 
-import { useWatch, useFormContext } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 
+import { ImageUploader } from '@/components/admin/ImageUploader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CourseFormValues } from '@/lib/admin/schema';
 import { BilingualBulletList, BilingualField, BulletList, TextField } from './fields';
 
 export function MarketingTab() {
-  const { control } = useFormContext<CourseFormValues>();
+  const { control, setValue } = useFormContext<CourseFormValues>();
   const coverImage = useWatch({ control, name: 'cover_image' });
 
   return (
@@ -68,12 +69,21 @@ export function MarketingTab() {
           <CardDescription>Cover image used on catalog cards and social previews.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <ImageUploader
+            label="Upload cover image"
+            variant="cover"
+            value={coverImage}
+            onUploaded={(url) =>
+              setValue('cover_image', url, { shouldDirty: true, shouldValidate: true })
+            }
+          />
+
           <TextField
             name="cover_image"
             label="Cover image URL"
             type="url"
             placeholder="https://images.unsplash.com/…"
-            description="An absolute URL, or a path on the public disk."
+            description="Upload above, or paste an absolute URL / public disk path."
           />
 
           {coverImage ? (

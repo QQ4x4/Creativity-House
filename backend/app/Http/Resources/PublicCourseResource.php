@@ -102,8 +102,25 @@ class PublicCourseResource extends JsonResource
         }
 
         return $modules->map(function ($module): array {
-            $titles = $module->lessons->pluck('title')->map(strval(...))->values()->all();
-            $seconds = (int) $module->lessons->sum('duration');
+            $lessons = $module->relationLoaded('subModules') && $module->subModules->isNotEmpty()
+                ? $module->subModules->flatMap(fn ($sub) => $sub->lessons)
+                : $module->lessons;
+
+            $titles = $lessons->pluck('title')->map(strval(...))->values()->all();
+            $seconds = (int) $lessons->sum('duration');
+
+            $subModules = $module->relationLoaded('subModules')
+                ? $module->subModules->map(function ($subModule): array {
+                    $subTitles = $subModule->lessons->pluck('title')->map(strval(...))->values()->all();
+
+                    return [
+                        'title_en' => $subModule->title_en,
+                        'title_ar' => $subModule->title_ar ?: $subModule->title_en,
+                        'lessons_en' => $subTitles,
+                        'lessons_ar' => $subTitles,
+                    ];
+                })->values()->all()
+                : [];
 
             return [
                 'title_en' => $module->title_en,
@@ -111,9 +128,10 @@ class PublicCourseResource extends JsonResource
                 'duration_en' => $module->duration_label_en ?: $this->durationLabel($seconds, 'en'),
                 'duration_ar' => $module->duration_label_ar
                     ?: ($module->duration_label_en ?: $this->durationLabel($seconds, 'ar')),
-                // Lesson titles are single-language in the lessons table.
+                // Flat lesson titles kept for marketing pages that expect 2 levels.
                 'lessons_en' => $titles,
                 'lessons_ar' => $titles,
+                'sub_modules' => $subModules,
             ];
         })->values()->all();
     }

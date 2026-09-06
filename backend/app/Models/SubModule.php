@@ -7,29 +7,26 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * A curriculum module. Single source of truth for both the student player
- * sidebar and the public course page syllabus preview.
+ * A chapter / section inside a Module. Lessons hang off SubModules so large
+ * modules stay navigable in the admin editor and student sidebar.
  *
  * @property int $id
- * @property int $course_id
+ * @property int $module_id
  * @property string $title_en
  * @property string|null $title_ar
  * @property int $sort_order
  */
-class Module extends Model
+class SubModule extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'course_id',
+        'module_id',
         'title_en',
         'title_ar',
-        'duration_label_en',
-        'duration_label_ar',
         'sort_order',
     ];
 
@@ -39,32 +36,20 @@ class Module extends Model
     protected function casts(): array
     {
         return [
-            'course_id' => 'integer',
+            'module_id' => 'integer',
             'sort_order' => 'integer',
         ];
     }
 
     /**
-     * @return BelongsTo<Course, $this>
+     * @return BelongsTo<Module, $this>
      */
-    public function course(): BelongsTo
+    public function module(): BelongsTo
     {
-        return $this->belongsTo(Course::class);
+        return $this->belongsTo(Module::class);
     }
 
     /**
-     * Chapters / sections inside this module.
-     *
-     * @return HasMany<SubModule, $this>
-     */
-    public function subModules(): HasMany
-    {
-        return $this->hasMany(SubModule::class)->ordered();
-    }
-
-    /**
-     * Lessons still keep a direct `module_id` for BC / progress queries.
-     *
      * @return HasMany<Lesson, $this>
      */
     public function lessons(): HasMany
@@ -73,17 +58,7 @@ class Module extends Model
     }
 
     /**
-     * Lessons via their owning sub-module (preferred tree walk).
-     *
-     * @return HasManyThrough<Lesson, SubModule>
-     */
-    public function lessonsThroughSubModules(): HasManyThrough
-    {
-        return $this->hasManyThrough(Lesson::class, SubModule::class);
-    }
-
-    /**
-     * @param  Builder<Module>  $query
+     * @param  Builder<SubModule>  $query
      */
     public function scopeOrdered(Builder $query): void
     {
@@ -91,7 +66,7 @@ class Module extends Model
     }
 
     /**
-     * Arabic falls back to English so the public page never renders blanks.
+     * Arabic falls back to English so UI never renders a blank chapter title.
      */
     public function title(string $locale = 'en'): string
     {

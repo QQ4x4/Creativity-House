@@ -23,6 +23,7 @@ class AdminLessonResource extends JsonResource
         return [
             'id' => $this->id,
             'module_id' => $this->module_id,
+            'sub_module_id' => $this->sub_module_id,
             'title' => $this->title,
             'video_url' => $this->video_url,
             'bunny_video_id' => $this->bunny_video_id,

@@ -24,7 +24,16 @@ class ModuleController extends Controller
         $data['sort_order'] ??= (int) $course->modules()->max('sort_order') + 1;
 
         $module = $course->modules()->create($data);
-        $module->load('lessons');
+
+        $module->subModules()->create([
+            'title_en' => 'Default Section',
+            'sort_order' => 0,
+        ]);
+
+        $module->load([
+            'subModules.lessons.resources',
+            'lessons.resources',
+        ]);
 
         return (new AdminModuleResource($module))->response()->setStatusCode(Response::HTTP_CREATED);
     }
@@ -38,7 +47,10 @@ class ModuleController extends Controller
             $module->lessons()->update(['module_name' => $module->title_en]);
         }
 
-        $module->load('lessons');
+        $module->load([
+            'subModules.lessons.resources',
+            'lessons.resources',
+        ]);
 
         return new AdminModuleResource($module);
     }
@@ -50,6 +62,7 @@ class ModuleController extends Controller
     public function destroy(Course $course, Module $module): Response
     {
         $module->lessons()->delete();
+        $module->subModules()->delete();
         $module->delete();
 
         return response()->noContent();

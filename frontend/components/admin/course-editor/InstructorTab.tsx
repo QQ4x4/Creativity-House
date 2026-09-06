@@ -1,13 +1,14 @@
 'use client';
 
-import { useWatch, useFormContext } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 
+import { ImageUploader } from '@/components/admin/ImageUploader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CourseFormValues } from '@/lib/admin/schema';
 import { BilingualBulletList, BilingualField, NumberField, TextField } from './fields';
 
 export function InstructorTab() {
-  const { control } = useFormContext<CourseFormValues>();
+  const { control, setValue } = useFormContext<CourseFormValues>();
   const photo = useWatch({ control, name: 'instructor_photo' });
   const name = useWatch({ control, name: 'instructor_name' });
 
@@ -51,11 +52,11 @@ export function InstructorTab() {
         <CardHeader>
           <CardTitle>Photo</CardTitle>
           <CardDescription>
-            Square image, shown as a 112px circle. Paste a URL or a path under /public.
+            Square image, shown as a 112px circle. Upload a file or paste a URL / public path.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-start gap-5">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
             <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100 dark:border-white/10 dark:bg-white/5">
               {photo ? (
                 // Arbitrary host or /public path, so next/image is skipped here.
@@ -75,12 +76,22 @@ export function InstructorTab() {
               )}
             </div>
 
-            <div className="flex-1">
+            <div className="min-w-0 flex-1 space-y-4">
+              <ImageUploader
+                label="Upload instructor photo"
+                variant="avatar"
+                value={photo}
+                onUploaded={(url) =>
+                  setValue('instructor_photo', url, { shouldDirty: true, shouldValidate: true })
+                }
+              />
+
               <TextField
                 name="instructor_photo"
                 label="Photo URL"
                 type="url"
                 placeholder="/images/DR.jpg"
+                description="Upload above, or paste a URL / path under /public."
               />
             </div>
           </div>

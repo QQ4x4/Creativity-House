@@ -205,3 +205,38 @@ export async function uploadAdminLessonResource(
     throw new ApiError(message, status, null);
   }
 }
+
+/**
+ * Multipart upload for course cover / instructor photo. Returns a permanent
+ * public-disk URL to store on the course row.
+ */
+export async function uploadAdminImage(file: File): Promise<{ url: string; path: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  await getCsrfCookie();
+
+  try {
+    const response = await apiClient.request({
+      method: 'post',
+      url: ADMIN_ENDPOINTS.imageUpload,
+      data: formData,
+      headers: { 'Content-Type': undefined },
+    });
+
+    return unwrap<{ url: string; path: string }>(response.data);
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+
+    const status = (error as { response?: { status?: number } })?.response?.status ?? 0;
+    const data = (error as { response?: { data?: unknown } })?.response?.data;
+    const message =
+      (data && typeof data === 'object' && 'message' in data
+        ? String((data as { message?: unknown }).message ?? '')
+        : '') ||
+      (error as { message?: string })?.message ||
+      'Image upload failed.';
+
+    throw new ApiError(message, status, null);
+  }
+}

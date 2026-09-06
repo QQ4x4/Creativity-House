@@ -4,6 +4,7 @@ import {
   COURSE_CATEGORIES,
   DELIVERY_MODES,
   type AdminCourseDto,
+  type AdminLessonDto,
   type BilingualList,
 } from './types';
 
@@ -62,13 +63,22 @@ export const lessonSchema = z.object({
   resources: z.array(lessonResourceSchema),
 });
 
+export const subModuleSchema = z.object({
+  id: z.number().int().positive().nullable(),
+  title_en: z.string().trim().min(1, 'Sub-module title (EN) is required.').max(200),
+  title_ar: z.string().max(200),
+  sort_order: z.number().int().min(0),
+  is_open: z.boolean(),
+  lessons: z.array(lessonSchema),
+});
+
 export const moduleSchema = z.object({
   id: z.number().int().positive().nullable(),
   title_en: z.string().trim().min(1, 'Module title (EN) is required.').max(200),
   title_ar: z.string().max(200),
   duration_label_en: z.string().max(80),
   duration_label_ar: z.string().max(80),
-  lessons: z.array(lessonSchema),
+  sub_modules: z.array(subModuleSchema),
 });
 
 export const catalogModeSchema = z.object({
@@ -182,20 +192,31 @@ export const courseFormSchema = z
     // A lesson with neither a Bunny video nor a fallback URL renders the
     // student player's "video unavailable" state, so flag the exact row.
     values.modules.forEach((module, moduleIndex) => {
-      module.lessons.forEach((lesson, lessonIndex) => {
-        if (!lesson.bunny_video_id.trim() && !lesson.video_url.trim()) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['modules', moduleIndex, 'lessons', lessonIndex, 'bunny_video_id'],
-            message: 'Pick a Bunny video or provide a fallback video URL.',
-          });
-        }
+      module.sub_modules.forEach((subModule, subModuleIndex) => {
+        subModule.lessons.forEach((lesson, lessonIndex) => {
+          if (!lesson.bunny_video_id.trim() && !lesson.video_url.trim()) {
+            ctx.addIssue({
+              code: 'custom',
+              path: [
+                'modules',
+                moduleIndex,
+                'sub_modules',
+                subModuleIndex,
+                'lessons',
+                lessonIndex,
+                'bunny_video_id',
+              ],
+              message: 'Pick a Bunny video or provide a fallback video URL.',
+            });
+          }
+        });
       });
     });
   });
 
 export type CourseFormValues = z.infer<typeof courseFormSchema>;
 export type ModuleFormValues = z.infer<typeof moduleSchema>;
+export type SubModuleFormValues = z.infer<typeof subModuleSchema>;
 export type LessonFormValues = z.infer<typeof lessonSchema>;
 export type LessonResourceFormValues = z.infer<typeof lessonResourceSchema>;
 
@@ -208,7 +229,7 @@ function newClientKey(): string {
 
 /** Normalize admin API / legacy PDF URL lists into form resource rows. */
 export function toLessonResourceFormValues(lesson: {
-  resources?: AdminCourseDto['modules'][number]['lessons'][number]['resources'];
+  resources?: AdminLessonDto['resources'];
   pdf_resource_urls?: string[];
 }): LessonResourceFormValues[] {
   const fromRelation = Array.isArray(lesson.resources) ? lesson.resources : [];
@@ -256,6 +277,44 @@ export function emptyLessonResource(partial?: Partial<LessonResourceFormValues>)
     file_path: null,
     file_size: null,
     size_bytes: null,
+    ...partial,
+  };
+}
+
+export function emptyLesson(partial?: Partial<LessonFormValues>): LessonFormValues {
+  return {
+    id: null,
+    title: '',
+    video_url: '',
+    bunny_video_id: '',
+    bunny_library_id: '',
+    duration: 0,
+    is_locked: false,
+    resources: [],
+    ...partial,
+  };
+}
+
+export function emptySubModule(partial?: Partial<SubModuleFormValues>): SubModuleFormValues {
+  return {
+    id: null,
+    title_en: 'Default Section',
+    title_ar: '',
+    sort_order: 0,
+    is_open: true,
+    lessons: [],
+    ...partial,
+  };
+}
+
+export function emptyModule(partial?: Partial<ModuleFormValues>): ModuleFormValues {
+  return {
+    id: null,
+    title_en: '',
+    title_ar: '',
+    duration_label_en: '',
+    duration_label_ar: '',
+    sub_modules: [emptySubModule()],
     ...partial,
   };
 }
@@ -419,23 +478,45 @@ export function toFormValues(course: AdminCourseDto): CourseFormValues {
     seo_description: course.seo_description ?? '',
     seo_keywords: toBullets(course.seo_keywords),
 
-    modules: (course.modules ?? []).map((module) => ({
-      id: module.id,
-      title_en: module.title_en ?? '',
-      title_ar: module.title_ar ?? '',
-      duration_label_en: module.duration_label_en ?? '',
-      duration_label_ar: module.duration_label_ar ?? '',
-      lessons: (module.lessons ?? []).map((lesson) => ({
-        id: lesson.id,
-        title: lesson.title ?? '',
-        video_url: lesson.video_url ?? '',
-        bunny_video_id: lesson.bunny_video_id ?? '',
-        bunny_library_id: lesson.bunny_library_id ?? '',
-        duration: lesson.duration ?? 0,
-        is_locked: Boolean(lesson.is_locked),
-        resources: toLessonResourceFormValues(lesson),
-      })),
-    })),
+    modules: (course.modules ?? []).map((module) => {
+      const rawSubModules =
+        Array.isArray(module.sub_modules) && module.sub_modules.length > 0
+          ? module.sub_modules
+          : [
+              {
+                id: null as unknown as number,
+                title_en: 'Default Section',
+                title_ar: null,
+                sort_order: 0,
+                lessons: module.lessons ?? [],
+              },
+            ];
+
+      return {
+        id: module.id,
+        title_en: module.title_en ?? '',
+        title_ar: module.title_ar ?? '',
+        duration_label_en: module.duration_label_en ?? '',
+        duration_label_ar: module.duration_label_ar ?? '',
+        sub_modules: rawSubModules.map((subModule, subIndex) => ({
+          id: typeof subModule.id === 'number' ? subModule.id : null,
+          title_en: subModule.title_en ?? 'Default Section',
+          title_ar: subModule.title_ar ?? '',
+          sort_order: subModule.sort_order ?? subIndex,
+          is_open: true,
+          lessons: (subModule.lessons ?? []).map((lesson) => ({
+            id: lesson.id,
+            title: lesson.title ?? '',
+            video_url: lesson.video_url ?? '',
+            bunny_video_id: lesson.bunny_video_id ?? '',
+            bunny_library_id: lesson.bunny_library_id ?? '',
+            duration: lesson.duration ?? 0,
+            is_locked: Boolean(lesson.is_locked),
+            resources: toLessonResourceFormValues(lesson),
+          })),
+        })),
+      };
+    }),
   };
 }
 
@@ -517,22 +598,27 @@ export function toCurriculumPayload(values: CourseFormValues): Record<string, un
       title_ar: nullable(module.title_ar),
       duration_label_en: nullable(module.duration_label_en),
       duration_label_ar: nullable(module.duration_label_ar),
-      lessons: module.lessons.map((lesson) => ({
-        id: lesson.id,
-        title: lesson.title.trim(),
-        video_url: nullable(lesson.video_url),
-        bunny_video_id: nullable(lesson.bunny_video_id),
-        bunny_library_id: nullable(lesson.bunny_library_id),
-        duration: lesson.duration,
-        is_locked: lesson.is_locked,
-        resources: lesson.resources.map((resource) => ({
-          id: resource.id,
-          title: resource.title.trim(),
-          type: resource.type,
-          url: resource.url.trim(),
-          file_path: resource.file_path ?? null,
-          file_size: resource.file_size ?? null,
-          size_bytes: resource.size_bytes ?? null,
+      sub_modules: module.sub_modules.map((subModule) => ({
+        id: subModule.id,
+        title_en: subModule.title_en.trim(),
+        title_ar: nullable(subModule.title_ar),
+        lessons: subModule.lessons.map((lesson) => ({
+          id: lesson.id,
+          title: lesson.title.trim(),
+          video_url: nullable(lesson.video_url),
+          bunny_video_id: nullable(lesson.bunny_video_id),
+          bunny_library_id: nullable(lesson.bunny_library_id),
+          duration: lesson.duration,
+          is_locked: lesson.is_locked,
+          resources: lesson.resources.map((resource) => ({
+            id: resource.id,
+            title: resource.title.trim(),
+            type: resource.type,
+            url: resource.url.trim(),
+            file_path: resource.file_path ?? null,
+            file_size: resource.file_size ?? null,
+            size_bytes: resource.size_bytes ?? null,
+          })),
         })),
       })),
     })),
