@@ -9,6 +9,7 @@ use App\Http\Resources\Admin\AdminLessonResource;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
+use App\Models\SubModule;
 use App\Services\Admin\LessonResourceUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
@@ -60,8 +61,34 @@ class LessonController extends Controller
         $resources = array_key_exists('resources', $data) ? $data['resources'] : null;
         unset($data['resources']);
 
-        // Moving between modules must keep the mirrored label in step.
-        if (array_key_exists('module_id', $data)) {
+        // Reparenting to a sub-module also syncs module_id / module_name and
+        // appends the lesson to the end of that chapter unless sort_order is explicit.
+        if (array_key_exists('sub_module_id', $data)) {
+            /** @var SubModule $subModule */
+            $subModule = SubModule::query()
+                ->with('module')
+                ->whereKey($data['sub_module_id'])
+                ->firstOrFail();
+
+            $parentModule = $subModule->module;
+            abort_unless(
+                $parentModule && (int) $parentModule->course_id === (int) $course->id,
+                422,
+                'That sub-module does not belong to this course.'
+            );
+
+            $data['module_id'] = $parentModule->id;
+            $data['module_name'] = $parentModule->title_en;
+
+            if (! array_key_exists('sort_order', $data)) {
+                $max = Lesson::query()
+                    ->where('sub_module_id', $subModule->id)
+                    ->whereKeyNot($lesson->id)
+                    ->max('sort_order');
+
+                $data['sort_order'] = $max === null ? 0 : ((int) $max + 1);
+            }
+        } elseif (array_key_exists('module_id', $data)) {
             $target = $course->modules()->whereKey($data['module_id'])->firstOrFail();
             $data['module_name'] = $target->title_en;
         }

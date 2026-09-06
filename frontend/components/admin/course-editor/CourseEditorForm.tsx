@@ -343,7 +343,10 @@ export function CourseEditorForm({ course, lang, defaultLibraryId }: CourseEdito
           </TabsContent>
 
           <TabsContent value="curriculum">
-            <CurriculumTab defaultLibraryId={defaultLibraryId} />
+            <CurriculumTab
+              defaultLibraryId={defaultLibraryId}
+              courseId={course?.id ?? 0}
+            />
           </TabsContent>
         </Tabs>
       </form>

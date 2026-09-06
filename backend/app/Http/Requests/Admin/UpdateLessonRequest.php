@@ -46,6 +46,22 @@ class UpdateLessonRequest extends FormRequest
                 'integer',
                 Rule::exists('modules', 'id')->where('course_id', $courseId)->whereNull('deleted_at'),
             ],
+
+            // Moving a lesson between sub-modules (chapters) within the course.
+            'sub_module_id' => [
+                'sometimes',
+                'required',
+                'integer',
+                Rule::exists('sub_modules', 'id')->where(function ($query) use ($courseId): void {
+                    $query->whereNull('deleted_at')
+                        ->whereIn('module_id', function ($sub) use ($courseId): void {
+                            $sub->select('id')
+                                ->from('modules')
+                                ->where('course_id', $courseId)
+                                ->whereNull('deleted_at');
+                        });
+                }),
+            ],
         ];
     }
 }
