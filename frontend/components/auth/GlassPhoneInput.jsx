@@ -43,6 +43,22 @@ function splitValue(value, fallbackCountry) {
   } catch {
     // ignore
   }
+
+  // Incomplete E.164 (e.g. "+9677") must not use /^\+\d+/ — that swallows the
+  // national digits into the country-code match and wipes the input.
+  try {
+    const cc = getCountryCallingCode(fallbackCountry);
+    const prefix = `+${cc}`;
+    if (String(value).startsWith(prefix)) {
+      return {
+        country: fallbackCountry,
+        national: String(value).slice(prefix.length),
+      };
+    }
+  } catch {
+    // ignore
+  }
+
   return { country: fallbackCountry, national: String(value).replace(/^\+\d+\s*/, '') };
 }
 
@@ -78,7 +94,7 @@ export default function GlassPhoneInput({
   const isPortal = variant === 'portal';
   const countries = useMemo(() => getCountries(), []);
 
-  const initial = splitValue(value, defaultCountry);
+  const initial = splitValue(value ?? '', defaultCountry);
   const [country, setCountry] = useState(initial.country || defaultCountry);
   const [national, setNational] = useState(initial.national);
   const [open, setOpen] = useState(false);
@@ -87,13 +103,21 @@ export default function GlassPhoneInput({
 
   const rootRef = useRef(null);
   const searchRef = useRef(null);
+  // Skip re-deriving national digits from our own onChange echo — that race
+  // was dropping the first keystroke when the parent re-rendered with E.164.
+  const lastEmittedRef = useRef(value ?? '');
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    const next = splitValue(value, defaultCountry);
+    const incoming = value ?? '';
+    if (incoming === lastEmittedRef.current) {
+      return;
+    }
+    lastEmittedRef.current = incoming;
+    const next = splitValue(incoming, defaultCountry);
     setCountry(next.country || defaultCountry);
     setNational(next.national);
   }, [value, defaultCountry]);
@@ -158,7 +182,9 @@ export default function GlassPhoneInput({
   }, [sortedCountries, query, labels]);
 
   const emit = (nextCountry, nextNational) => {
-    onChange?.(buildE164(nextCountry, nextNational));
+    const e164 = buildE164(nextCountry, nextNational);
+    lastEmittedRef.current = e164;
+    onChange?.(e164);
   };
 
   const selectCountry = (code) => {
@@ -180,7 +206,9 @@ export default function GlassPhoneInput({
         <span>{label}</span>
       </label>
 
-      <div className="relative">
+      {/* Elevate the whole field when open so the menu stacks above sibling
+          form controls (submit buttons) — z-index on the menu alone is not enough. */}
+      <div className={`relative ${open ? 'z-50' : 'z-0'}`}>
         <div
           dir="ltr"
           className={`flex ${FIELD_H} w-full max-w-full items-stretch overflow-hidden rounded-2xl border transition-all duration-200 ${
@@ -258,10 +286,10 @@ export default function GlassPhoneInput({
         {/* Custom country list — client-only to avoid hydration mismatch */}
         {mounted && open ? (
           <div
-            className="absolute left-0 top-[calc(100%+0.5rem)] z-[60] w-[min(100%,20rem)] overflow-hidden rounded-xl border border-gray-700/50 bg-[#181124]/95 text-gray-200 shadow-xl shadow-black/50 backdrop-blur-md"
+            className="absolute left-0 top-[calc(100%+0.5rem)] z-50 w-[min(100%,20rem)] overflow-hidden rounded-xl border border-white/15 bg-[#0b0612] text-gray-200 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.85)] ring-1 ring-white/10 backdrop-blur-xl"
             role="presentation"
           >
-            <div className="border-b border-white/10 bg-[#120a1c]/80 px-3 py-2.5">
+            <div className="border-b border-white/10 bg-[#120a1c] px-3 py-2.5">
               <div className="relative">
                 <Search
                   className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
@@ -273,7 +301,7 @@ export default function GlassPhoneInput({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={lang === 'ar' ? 'ابحث عن دولة...' : 'Search country...'}
-                  className="w-full rounded-lg border border-white/10 bg-slate-900/80 py-2 pe-3 ps-9 text-sm text-gray-200 placeholder:text-gray-500 outline-none transition-colors duration-200 focus:border-amber-400/40 focus:ring-2 focus:ring-amber-400/15"
+                  className="w-full rounded-lg border border-white/10 bg-[#181124] py-2 pe-3 ps-9 text-sm text-gray-200 placeholder:text-gray-500 outline-none transition-colors duration-200 focus:border-amber-400/40 focus:ring-2 focus:ring-amber-400/15"
                   aria-label={lang === 'ar' ? 'بحث الدولة' : 'Search country'}
                 />
               </div>
@@ -282,7 +310,7 @@ export default function GlassPhoneInput({
             <ul
               role="listbox"
               aria-label="Countries"
-              className="glass-country-dropdown-scroll max-h-64 overflow-y-auto py-1"
+              className="glass-country-dropdown-scroll max-h-60 overflow-y-auto overscroll-contain py-1"
             >
               {filteredCountries.length === 0 ? (
                 <li className="px-3 py-3 text-sm text-gray-400">

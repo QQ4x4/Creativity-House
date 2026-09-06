@@ -56,13 +56,13 @@ class OtpService
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'mailer' => config('mail.default'),
-                'host' => config('mail.mailers.smtp.host'),
+                'from' => config('mail.from.address'),
                 'message' => $e->getMessage(),
                 'exception' => $e::class,
             ]);
 
             if (app()->environment('local')) {
-                Log::warning('OTP code available in logs because SMTP failed (local only).', [
+                Log::warning('OTP code available in logs because mail delivery failed (local only).', [
                     'email' => $user->email,
                     'code' => $code,
                 ]);

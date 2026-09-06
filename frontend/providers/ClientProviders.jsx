@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/providers/AuthProvider';
 import AuthSuccessHandler from '@/providers/AuthSuccessHandler';
+import CompleteProfileGate from '@/providers/CompleteProfileGate';
 
 export default function ClientProviders({ children, lang }) {
   return (
@@ -21,7 +22,7 @@ export default function ClientProviders({ children, lang }) {
       <Suspense fallback={null}>
         <AuthSuccessHandler />
       </Suspense>
-      {children}
+      <CompleteProfileGate lang={lang}>{children}</CompleteProfileGate>
     </AuthProvider>
   );
 }

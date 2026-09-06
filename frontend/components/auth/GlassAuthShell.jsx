@@ -61,7 +61,7 @@ export default function GlassAuthShell({
             aria-hidden
             className="pointer-events-none absolute inset-0 rounded-[32px] bg-gradient-to-b from-plum-500/70 via-gold-400/35 to-white/10 opacity-90"
           />
-          <div className="relative overflow-hidden rounded-[31px] border border-white/15 bg-[#0d0514]/70 p-6 backdrop-blur-3xl sm:p-8 md:p-10">
+          <div className="relative overflow-visible rounded-[31px] border border-white/15 bg-[#0d0514]/70 p-6 backdrop-blur-3xl sm:p-8 md:p-10">
             <div
               aria-hidden
               className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-gold-300/80 to-transparent"

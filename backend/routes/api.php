@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Api\Admin\LessonResourceUploadController;
 use App\Http\Controllers\Api\Admin\ModuleController as AdminModuleController;
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\Auth\GoogleAuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\CourseInquiryController;
@@ -46,11 +47,16 @@ Route::prefix('auth')->group(function () {
         Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
         Route::post('/forgot-password', [PasswordResetController::class, 'forgot']);
         Route::post('/reset-password', [PasswordResetController::class, 'reset']);
+        // One-time handoff after Google OAuth (Vercel ↔ Railway session bridge).
+        Route::post('/google/exchange', [GoogleAuthController::class, 'exchange'])
+            ->name('auth.google.exchange');
     });
 
     Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
+        Route::match(['patch', 'put'], '/complete-profile', [AuthController::class, 'completeProfile'])
+            ->name('auth.complete-profile');
     });
 });
 

@@ -378,6 +378,10 @@ export async function apiPut(endpoint, data = {}) {
   return request('put', endpoint, data);
 }
 
+export async function apiPatch(endpoint, data = {}) {
+  return request('patch', endpoint, data);
+}
+
 export async function apiDelete(endpoint) {
   return request('delete', endpoint);
 }
