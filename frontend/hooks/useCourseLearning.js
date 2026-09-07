@@ -34,7 +34,7 @@ function pickInitialLessonId(lessons, resumeLessonId) {
   return (firstUnlocked || lessons[0]).id;
 }
 
-export function useCourseLearning(courseId) {
+export function useCourseLearning(courseId, lang = 'en') {
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [progress, setProgress] = useState(null);
@@ -102,7 +102,7 @@ export function useCourseLearning(courseId) {
     load();
   }, [load]);
 
-  const modules = useMemo(() => groupLessonsByModule(lessons), [lessons]);
+  const modules = useMemo(() => groupLessonsByModule(lessons, lang), [lessons, lang]);
 
   const activeIndex = useMemo(
     () => lessons.findIndex((lesson) => String(lesson.id) === String(activeLessonId)),

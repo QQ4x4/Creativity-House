@@ -10,7 +10,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { formatDuration } from '@/lib/student/types';
+import { formatDuration, lessonSubModuleTitle } from '@/lib/student/types';
 
 /** Fallback Bunny library when a lesson omits bunny_library_id. */
 const DEFAULT_BUNNY_LIBRARY_ID = '739576';
@@ -22,7 +22,7 @@ const DEFAULT_BUNNY_LIBRARY_ID = '739576';
  * Sidebar lesson clicks change `lesson`; remounting via `key` keeps the
  * Bunny iframe / video source in sync with the active lesson.
  */
-export default function LessonPlayer({ lesson, labels, isRTL = false }) {
+export default function LessonPlayer({ lesson, labels, isRTL = false, lang = 'en' }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -184,9 +184,9 @@ export default function LessonPlayer({ lesson, labels, isRTL = false }) {
               isPlaying ? 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100' : 'opacity-100'
             }`}
           >
-            {lesson?.moduleName ? (
+            {lesson ? (
               <p className="text-[11px] font-semibold uppercase tracking-wider text-gold-300/90">
-                {lesson.moduleName}
+                {lessonSubModuleTitle(lesson, lang)}
               </p>
             ) : null}
             <p className="mt-0.5 line-clamp-2 text-sm font-bold text-white sm:text-base">

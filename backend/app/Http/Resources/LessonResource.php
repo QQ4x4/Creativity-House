@@ -21,13 +21,25 @@ class LessonResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $module = $this->relationLoaded('module') ? $this->module : null;
+        $subModule = $this->relationLoaded('subModule') ? $this->subModule : null;
+
+        $moduleTitleEn = (string) ($module?->title_en ?: $this->module_name);
+        $moduleTitleAr = (string) ($module?->title_ar ?: '');
+        $subModuleTitleEn = (string) ($subModule?->title_en ?: $this->subModuleName());
+        $subModuleTitleAr = (string) ($subModule?->title_ar ?: '');
+
         return [
             'id' => $this->id,
             'course_id' => $this->course_id,
             'module_id' => $this->moduleKey(),
-            'module_name' => $this->module_name,
+            'module_name' => $moduleTitleEn,
+            'module_title_en' => $moduleTitleEn,
+            'module_title_ar' => $moduleTitleAr !== '' ? $moduleTitleAr : null,
             'sub_module_id' => $this->subModuleKey(),
-            'sub_module_name' => $this->subModuleName(),
+            'sub_module_name' => $subModuleTitleEn,
+            'sub_module_title_en' => $subModuleTitleEn,
+            'sub_module_title_ar' => $subModuleTitleAr !== '' ? $subModuleTitleAr : null,
             'title' => $this->title,
             'video_url' => $this->video_url,
             'bunny_video_id' => $this->bunny_video_id,

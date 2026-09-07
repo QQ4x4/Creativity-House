@@ -76,8 +76,12 @@
  * @property {string|number} id
  * @property {string|number} moduleId
  * @property {string} moduleName
+ * @property {string} [moduleTitleEn]
+ * @property {string|null} [moduleTitleAr]
  * @property {string|number} [subModuleId]
  * @property {string} [subModuleName]
+ * @property {string} [subModuleTitleEn]
+ * @property {string|null} [subModuleTitleAr]
  * @property {string} title
  * @property {string} videoUrl
  * @property {string|null} bunnyVideoId Bunny Stream video GUID (iframe embed).
@@ -295,19 +299,39 @@ export function normalizeCourseLesson(raw, index = 0, completedLessonIds = []) {
     (completedId) => String(completedId) === String(id)
   );
 
+  const moduleTitleEn = toText(
+    firstDefined(source.moduleTitleEn, source.module_title_en, source.moduleName, source.module_name),
+    ''
+  );
+  const moduleTitleArRaw = firstDefined(source.moduleTitleAr, source.module_title_ar);
+  const moduleTitleAr = moduleTitleArRaw ? toText(moduleTitleArRaw) : null;
+
+  const subModuleTitleEn = toText(
+    firstDefined(
+      source.subModuleTitleEn,
+      source.sub_module_title_en,
+      source.subModuleName,
+      source.sub_module_name
+    ),
+    'Default Section'
+  );
+  const subModuleTitleArRaw = firstDefined(source.subModuleTitleAr, source.sub_module_title_ar);
+  const subModuleTitleAr = subModuleTitleArRaw ? toText(subModuleTitleArRaw) : null;
+
   return {
     id,
     moduleId: firstDefined(source.moduleId, source.module_id, source.module, 'module-1'),
-    moduleName: toText(firstDefined(source.moduleName, source.module_name), ''),
+    moduleName: moduleTitleEn,
+    moduleTitleEn,
+    moduleTitleAr,
     subModuleId: firstDefined(
       source.subModuleId,
       source.sub_module_id,
       'default-section'
     ),
-    subModuleName: toText(
-      firstDefined(source.subModuleName, source.sub_module_name),
-      'Default Section'
-    ),
+    subModuleName: subModuleTitleEn,
+    subModuleTitleEn,
+    subModuleTitleAr,
     title: toText(firstDefined(source.title, source.name)),
     videoUrl: toText(firstDefined(source.videoUrl, source.video_url, source.video)),
     bunnyVideoId:
@@ -329,12 +353,53 @@ export function normalizeCourseLesson(raw, index = 0, completedLessonIds = []) {
 }
 
 /**
+ * Pick Arabic title when locale is `ar` and a non-empty translation exists.
+ *
+ * @param {string|null|undefined} titleEn
+ * @param {string|null|undefined} titleAr
+ * @param {string} [fallback='']
+ * @param {string} [locale='en']
+ * @returns {string}
+ */
+export function pickLocalizedTitle(titleEn, titleAr, fallback = '', locale = 'en') {
+  if (locale === 'ar' && titleAr && String(titleAr).trim() !== '') {
+    return String(titleAr).trim();
+  }
+  const en = titleEn && String(titleEn).trim() !== '' ? String(titleEn).trim() : '';
+  return en || fallback || '';
+}
+
+/** @param {CourseLesson} lesson @param {string} [locale='en'] */
+export function lessonModuleTitle(lesson, locale = 'en') {
+  if (!lesson) return '';
+  return pickLocalizedTitle(
+    lesson.moduleTitleEn ?? lesson.moduleName,
+    lesson.moduleTitleAr,
+    lesson.moduleName || '',
+    locale
+  );
+}
+
+/** @param {CourseLesson} lesson @param {string} [locale='en'] */
+export function lessonSubModuleTitle(lesson, locale = 'en') {
+  if (!lesson) return '';
+  return pickLocalizedTitle(
+    lesson.subModuleTitleEn ?? lesson.subModuleName,
+    lesson.subModuleTitleAr,
+    lesson.subModuleName || 'Default Section',
+    locale
+  );
+}
+
+/**
  * Flat lesson list → grouped modules (with nested sub-modules), preserving order.
+ * Display names respect `locale` (`ar` prefers `*_title_ar` when present).
  *
  * @param {CourseLesson[]} lessons
+ * @param {string} [locale='en']
  * @returns {CourseModule[]}
  */
-export function groupLessonsByModule(lessons = []) {
+export function groupLessonsByModule(lessons = [], locale = 'en') {
   /** @type {Map<string, any>} */
   const modules = new Map();
 
@@ -344,7 +409,7 @@ export function groupLessonsByModule(lessons = []) {
     if (!modules.has(key)) {
       modules.set(key, {
         id: lesson.moduleId,
-        name: lesson.moduleName || '',
+        name: lessonModuleTitle(lesson, locale),
         lessons: [],
         subModules: [],
         _subMap: new Map(),
@@ -358,7 +423,7 @@ export function groupLessonsByModule(lessons = []) {
     if (!mod._subMap.has(subKey)) {
       const sub = {
         id: lesson.subModuleId || 'default-section',
-        name: lesson.subModuleName || 'Default Section',
+        name: lessonSubModuleTitle(lesson, locale),
         lessons: [],
       };
       mod._subMap.set(subKey, sub);

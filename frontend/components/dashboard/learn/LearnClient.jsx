@@ -13,7 +13,7 @@ import LessonSidebar from './LessonSidebar';
 import LessonActionBar from './LessonActionBar';
 import LessonResources from './LessonResources';
 import { useCourseLearning } from '@/hooks/useCourseLearning';
-import { formatDuration } from '@/lib/student/types';
+import { formatDuration, lessonModuleTitle, lessonSubModuleTitle } from '@/lib/student/types';
 import { toastApiError } from '@/lib/toast';
 
 /** Distraction-free learning screen: player + lesson directory + lesson actions. */
@@ -42,7 +42,20 @@ export default function LearnClient({ dictionary, lang, courseId }) {
     goToPrevious,
     goToNext,
     toggleLessonCompletion,
-  } = useCourseLearning(courseId);
+  } = useCourseLearning(courseId, lang);
+
+  const videoHeaderTitle = useMemo(() => {
+    if (!activeLesson) {
+      return course?.title || labels.courseNotFound;
+    }
+    const subModuleTitle = lessonSubModuleTitle(activeLesson, lang);
+    return `${subModuleTitle} - ${activeLesson.title}`;
+  }, [activeLesson, course?.title, labels.courseNotFound, lang]);
+
+  const activeModuleLabel = useMemo(
+    () => (activeLesson ? lessonModuleTitle(activeLesson, lang) : ''),
+    [activeLesson, lang]
+  );
 
   // Mobile drawer: lock page scroll, close on Escape, move focus into the panel.
   useEffect(() => {
@@ -111,7 +124,7 @@ export default function LearnClient({ dictionary, lang, courseId }) {
             {isLoading ? (
               <span className="inline-block h-7 w-56 animate-pulse rounded-lg bg-gray-200 align-middle dark:bg-white/10" />
             ) : (
-              course?.title || labels.courseNotFound
+              videoHeaderTitle
             )}
           </h1>
         </div>
@@ -158,7 +171,7 @@ export default function LearnClient({ dictionary, lang, courseId }) {
       ) : (
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
           <div className="min-w-0 space-y-5">
-            <LessonPlayer lesson={activeLesson} labels={labels} isRTL={isRTL} />
+            <LessonPlayer lesson={activeLesson} labels={labels} isRTL={isRTL} lang={lang} />
 
             <LessonActionBar
               lesson={activeLesson}
@@ -211,7 +224,7 @@ export default function LearnClient({ dictionary, lang, courseId }) {
                         {labels.module}
                       </dt>
                       <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">
-                        {activeLesson?.moduleName || '—'}
+                        {activeModuleLabel || '—'}
                       </dd>
                     </div>
                     <div>
