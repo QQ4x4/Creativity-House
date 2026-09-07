@@ -105,7 +105,7 @@ class GoogleAuthController extends Controller
                     'name' => mb_substr($name !== '' ? $name : "{$firstName} {$lastName}", 0, 100),
                     'email' => $email,
                     'phone_number' => null,
-                    'avatar_url' => null,
+                    'avatar' => null,
                     'google_id' => $googleId,
                     'password' => null,
                     'is_active' => true,

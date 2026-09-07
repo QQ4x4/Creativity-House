@@ -24,6 +24,20 @@ export default function AvatarUploader({
   const [isDragging, setIsDragging] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
 
+  // Drop the local blob preview once the server URL is available so we never
+  // keep a device-local object URL as the "source of truth".
+  useEffect(() => {
+    if (!avatarUrl) return undefined;
+
+    setPreview((current) => {
+      if (!current) return current;
+      URL.revokeObjectURL(current);
+      return null;
+    });
+    setImageFailed(false);
+    return undefined;
+  }, [avatarUrl]);
+
   // Release the object URL when the preview is replaced or unmounted.
   useEffect(() => {
     return () => {

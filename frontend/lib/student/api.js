@@ -82,8 +82,22 @@ export async function uploadStudentAvatar(file) {
       data: formData,
       headers: { 'Content-Type': undefined },
     });
-    const body = unwrap(response.data, 'avatar_url', 'avatarUrl', 'url');
-    const url = typeof body === 'string' ? body : normalizeUserProfile(response.data).avatarUrl;
+    const payload = response.data || {};
+    const url =
+      (typeof payload.avatar_url === 'string' && payload.avatar_url) ||
+      (typeof payload.avatarUrl === 'string' && payload.avatarUrl) ||
+      (typeof payload.user?.avatar_url === 'string' && payload.user.avatar_url) ||
+      (typeof payload.user?.avatarUrl === 'string' && payload.user.avatarUrl) ||
+      (typeof unwrap(payload, 'avatar_url', 'avatarUrl', 'url') === 'string'
+        ? unwrap(payload, 'avatar_url', 'avatarUrl', 'url')
+        : null) ||
+      normalizeUserProfile(payload).avatarUrl ||
+      null;
+
+    if (!url) {
+      throw new ApiError('Avatar upload succeeded but no avatar_url was returned.', 500, payload);
+    }
+
     return { data: url, source: 'api' };
   } catch (error) {
     throw new ApiError(

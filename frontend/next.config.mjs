@@ -1,16 +1,62 @@
 /** @type {import('next').NextConfig} */
+
+function backendImageRemotePatterns() {
+  const patterns = [
+    {
+      protocol: 'https',
+      hostname: 'image.qwenlm.ai',
+    },
+    {
+      protocol: 'https',
+      hostname: '**.up.railway.app',
+    },
+    {
+      protocol: 'http',
+      hostname: 'localhost',
+      port: '8000',
+    },
+    {
+      protocol: 'http',
+      hostname: '127.0.0.1',
+      port: '8000',
+    },
+  ];
+
+  const raw =
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    '';
+
+  try {
+    const cleaned = String(raw)
+      .trim()
+      .replace(/^(?:NEXT_PUBLIC_[A-Z0-9_]+=)+/i, '')
+      .replace(/\/+$/, '')
+      .replace(/\/api\/v\d+$/i, '')
+      .replace(/\/api$/i, '');
+
+    if (cleaned && /^https?:\/\//i.test(cleaned)) {
+      const parsed = new URL(cleaned);
+      patterns.push({
+        protocol: parsed.protocol.replace(':', ''),
+        hostname: parsed.hostname,
+        ...(parsed.port ? { port: parsed.port } : {}),
+      });
+    }
+  } catch {
+    // Ignore malformed env URLs — static patterns above still apply.
+  }
+
+  return patterns;
+}
+
 const nextConfig = {
   // Use the default `.next` output directory. A custom `distDir` (e.g.
   // `.next-build`) on Windows causes aggressive file-locking (errno -4094
   // UNKNOWN) on compiled CSS under static/css/app/[lang]/layout.css and
   // contributes to Watchpack escaping the project boundary.
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'image.qwenlm.ai',
-      },
-    ],
+    remotePatterns: backendImageRemotePatterns(),
   },
 
   // Keep Watchpack scoped to the project. Only relative / filename patterns —

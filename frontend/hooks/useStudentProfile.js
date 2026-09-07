@@ -55,7 +55,7 @@ function syncAuthUser(setUser, patch) {
  *   until auth resolves, so the hub never flashes empty profile data.
  */
 export function useStudentProfile(authUser = null, { enabled = true } = {}) {
-  const { setUser } = useAuth();
+  const { setUser, refreshUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -148,12 +148,18 @@ export function useStudentProfile(authUser = null, { enabled = true } = {}) {
       const { data: avatarUrl, source: origin } = await uploadStudentAvatar(file);
       if (mountedRef.current && avatarUrl) {
         setProfile((current) => (current ? { ...current, avatarUrl } : current));
-        // Instant upload: push the new URL into global auth so Header updates now.
+        // Push into global auth immediately so Header updates without a full reload.
         syncAuthUser(setUser, { avatar_url: avatarUrl, avatarUrl });
+        // Re-fetch /auth/me so we trust the absolute URL from the backend.
+        try {
+          await refreshUser();
+        } catch {
+          // Non-fatal — local patch above already updated the Header.
+        }
       }
       return { avatarUrl, source: origin };
     },
-    [setUser]
+    [setUser, refreshUser]
   );
 
   const savePassword = useCallback(async (values) => {

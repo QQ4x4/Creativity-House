@@ -30,7 +30,7 @@ class User extends Authenticatable implements FilamentUser
         'name',
         'email',
         'phone_number',
-        'avatar_url',
+        'avatar',
         'notification_preferences',
         'password',
         'google_id',
@@ -42,6 +42,15 @@ class User extends Authenticatable implements FilamentUser
     ];
 
     /**
+     * Always include the absolute public avatar URL in JSON responses.
+     *
+     * @var list<string>
+     */
+    protected $appends = [
+        'avatar_url',
+    ];
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
@@ -50,6 +59,8 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'remember_token',
         'verification_code',
+        // Relative disk path — clients must use `avatar_url` only.
+        'avatar',
     ];
 
     /**
@@ -180,21 +191,47 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Public avatar URL. Absolute URLs (e.g. Google) pass through untouched;
-     * relative disk paths are resolved against the public disk.
+     * Absolute public avatar URL (appended as `avatar_url`).
+     * DB column `avatar` stores a relative public-disk path (e.g. avatars/1-abc.jpg).
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->resolveAvatarUrl();
+    }
+
+    /**
+     * Public helper used by API resources / auth payloads.
      */
     public function avatarUrl(): ?string
     {
-        $value = $this->avatar_url;
+        return $this->resolveAvatarUrl();
+    }
+
+    /**
+     * Resolve the absolute avatar URL from the stored path (or absolute URL).
+     * Relative Storage URLs are forced through `url()` so Next.js never gets
+     * a host-relative `/storage/...` that resolves against the frontend origin.
+     */
+    private function resolveAvatarUrl(): ?string
+    {
+        $value = $this->attributes['avatar'] ?? null;
 
         if (blank($value)) {
             return null;
         }
 
+        $value = (string) $value;
+
         if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
             return $value;
         }
 
-        return Storage::disk('public')->url($value);
+        $storageUrl = Storage::disk('public')->url($value);
+
+        if (str_starts_with($storageUrl, 'http://') || str_starts_with($storageUrl, 'https://')) {
+            return $storageUrl;
+        }
+
+        return url($storageUrl);
     }
 }

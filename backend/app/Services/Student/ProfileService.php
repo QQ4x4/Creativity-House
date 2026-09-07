@@ -41,7 +41,7 @@ class ProfileService
             }
 
             if ($avatar !== null) {
-                $user->avatar_url = $this->storeAvatar($user, $avatar);
+                $user->avatar = $this->storeAvatar($user, $avatar);
             }
 
             $user->save();
@@ -51,13 +51,13 @@ class ProfileService
     }
 
     /**
-     * Store a new avatar and return the public URL.
+     * Store a new avatar and return the absolute public URL.
      */
     public function updateAvatar(User $user, UploadedFile $avatar): string
     {
         $path = $this->storeAvatar($user, $avatar);
 
-        $user->forceFill(['avatar_url' => $path])->save();
+        $user->forceFill(['avatar' => $path])->save();
 
         return (string) $user->refresh()->avatarUrl();
     }
@@ -116,7 +116,7 @@ class ProfileService
      */
     private function deletePreviousAvatar(User $user): void
     {
-        $previous = $user->getOriginal('avatar_url') ?? $user->avatar_url;
+        $previous = $user->getOriginal('avatar') ?? ($user->attributes['avatar'] ?? null);
 
         if (blank($previous) || str_starts_with((string) $previous, 'http')) {
             return;
