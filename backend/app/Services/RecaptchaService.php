@@ -26,7 +26,7 @@ class RecaptchaService
             return false;
         }
 
-        if (blank($token) || mb_strlen($token) > 2000) {
+        if (blank($token) || mb_strlen($token) > (int) config('field_limits.recaptcha', 10000)) {
             return false;
         }
 

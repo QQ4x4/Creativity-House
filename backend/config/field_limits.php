@@ -15,7 +15,7 @@ return [
     'long' => 2000,
     // Bounded non-user-prose fields (still capped for DoS).
     'url' => 2048,
-    'recaptcha' => 2000,
+    'recaptcha' => 10000,
     'otp' => 12,
     'currency' => 3,
     'slug' => 255,

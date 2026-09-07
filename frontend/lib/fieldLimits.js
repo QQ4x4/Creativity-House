@@ -11,7 +11,7 @@ export const FIELD_LIMITS = Object.freeze({
   medium: 255,
   long: 2000,
   url: 2048,
-  recaptcha: 2000,
+  recaptcha: 10000,
   otp: 12,
   currency: 3,
   slug: 255,
