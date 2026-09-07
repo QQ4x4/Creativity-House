@@ -44,6 +44,8 @@ return [
     'recaptcha' => [
         'secret' => env('RECAPTCHA_SECRET_KEY'),
         'site_key' => env('RECAPTCHA_SITE_KEY'),
+        // reCAPTCHA v3 score threshold (0.0 = bot, 1.0 = human).
+        'min_score' => (float) env('RECAPTCHA_MIN_SCORE', 0.5),
     ],
 
     'stripe' => [

@@ -29,19 +29,7 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request): JsonResponse
     {
-        $recaptchaToken = $request->input('recaptcha_token');
-
-        // Skip verify when local secret is empty (matches nullable RegisterRequest rule).
-        if (filled(config('services.recaptcha.secret'))) {
-            if (! $this->recaptcha->verify(
-                is_string($recaptchaToken) ? $recaptchaToken : null,
-                $request->ip()
-            )) {
-                throw ValidationException::withMessages([
-                    'recaptcha_token' => ['reCAPTCHA verification failed. Please try again.'],
-                ]);
-            }
-        }
+        $this->assertRecaptchaPasses($request, 'register');
 
         $data = $request->safe()->only([
             'first_name',
@@ -153,6 +141,8 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
+        $this->assertRecaptchaPasses($request, 'login');
+
         $email = mb_strtolower($request->string('email')->toString());
         $password = $request->string('password')->toString();
 
@@ -268,5 +258,27 @@ class AuthController extends Controller
             // decides whether the UI is offered.
             'is_admin' => $user->isAdmin(),
         ];
+    }
+
+    /**
+     * Skip when secret is empty (local WAMP). Otherwise require success + score.
+     */
+    private function assertRecaptchaPasses(Request $request, string $action): void
+    {
+        if (! filled(config('services.recaptcha.secret'))) {
+            return;
+        }
+
+        $recaptchaToken = $request->input('recaptcha_token');
+
+        if (! $this->recaptcha->verify(
+            is_string($recaptchaToken) ? $recaptchaToken : null,
+            $request->ip(),
+            $action
+        )) {
+            throw ValidationException::withMessages([
+                'recaptcha_token' => ['Automated bot behavior detected. Please try again.'],
+            ]);
+        }
     }
 }

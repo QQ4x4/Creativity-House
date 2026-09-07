@@ -1,3 +1,5 @@
+import AuthRecaptchaProvider from '@/providers/AuthRecaptchaProvider';
+
 export default function AuthLayout({ children }) {
-  return children;
+  return <AuthRecaptchaProvider>{children}</AuthRecaptchaProvider>;
 }

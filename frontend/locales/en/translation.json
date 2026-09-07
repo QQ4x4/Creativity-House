@@ -266,7 +266,7 @@
     "registerSuccess": "Account created! Please check your email for the verification code.",
     "registerMailWarning": "Account created, but the verification email could not be sent. Use Resend code.",
     "loginSuccess": "Welcome back! You are signed in.",
-    "recaptchaRequired": "Please complete the reCAPTCHA challenge.",
+    "recaptchaRequired": "Security check failed. Please refresh and try again.",
     "recaptchaSkipped": "reCAPTCHA site key is not configured — local verification will be skipped.",
     "genericError": "Something went wrong. Please try again.",
     "otpSentTo": "We sent a code to",

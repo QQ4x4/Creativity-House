@@ -57,3 +57,29 @@ export function sanitizeRegisterPayload(values, recaptchaToken) {
     recaptcha_token: recaptchaToken || 'local-dev-token',
   };
 }
+
+/**
+ * Execute invisible reCAPTCHA v3 when a site key is configured.
+ * Returns a local stub token when the key is empty (local WAMP skip path).
+ *
+ * @param {((action?: string) => Promise<string>) | undefined} executeRecaptcha
+ * @param {'login' | 'register'} action
+ * @returns {Promise<string>}
+ */
+export async function obtainRecaptchaToken(executeRecaptcha, action) {
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
+  if (!siteKey) {
+    return 'local-dev-token';
+  }
+
+  if (typeof executeRecaptcha !== 'function') {
+    throw new Error('reCAPTCHA is not ready. Please refresh and try again.');
+  }
+
+  const token = await executeRecaptcha(action);
+  if (!token || typeof token !== 'string') {
+    throw new Error('reCAPTCHA token could not be generated. Please try again.');
+  }
+
+  return token;
+}

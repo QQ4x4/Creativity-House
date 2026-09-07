@@ -1,36 +1,34 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
-import dynamic from 'next/dynamic';
 import { User, Mail, Lock } from 'lucide-react';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import GlassAuthInput from '@/components/auth/GlassAuthInput';
 import GlassPhoneInput from '@/components/auth/GlassPhoneInput';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
 import PasswordRequirements from '@/components/auth/PasswordRequirements';
-import { applyServerErrors, formatValidationErrors, sanitizeRegisterPayload } from '@/lib/auth';
+import {
+  applyServerErrors,
+  formatValidationErrors,
+  obtainRecaptchaToken,
+  sanitizeRegisterPayload,
+} from '@/lib/auth';
 import { ApiError, apiPost, getCsrfCookie } from '@/lib/api';
 import { createRegisterSchema } from '@/lib/validations/auth';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
 
-const ReCAPTCHA = dynamic(() => import('react-google-recaptcha'), {
-  ssr: false,
-  loading: () => <div className="h-[78px] animate-pulse rounded-2xl bg-white/[0.05]" />,
-});
-
 export default function RegisterForm({ dictionary, lang }) {
   const router = useRouter();
-  const recaptchaRef = useRef(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
   const [formError, setFormError] = useState('');
-  const [recaptchaToken, setRecaptchaToken] = useState('');
   const [mounted, setMounted] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
-  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
   const t = dictionary.auth;
 
   useEffect(() => {
@@ -64,15 +62,11 @@ export default function RegisterForm({ dictionary, lang }) {
   const onSubmit = async (values) => {
     setFormError('');
 
-    if (siteKey && !recaptchaToken) {
-      setFormError(t.recaptchaRequired);
-      toast.error(t.recaptchaRequired);
-      return;
-    }
-
     try {
+      const recaptchaToken = await obtainRecaptchaToken(executeRecaptcha, 'register');
+
       await getCsrfCookie();
-      const payload = sanitizeRegisterPayload(values, recaptchaToken || 'local-dev-token');
+      const payload = sanitizeRegisterPayload(values, recaptchaToken);
       const data = await apiPost('/auth/register', payload);
 
       if (data?.email_sent === false) {
@@ -113,15 +107,11 @@ export default function RegisterForm({ dictionary, lang }) {
 
         toastApiError(error, t.genericError);
 
-        // Always show the concrete backend message in the form banner (never hide 422s).
         setFormError(
           error.status === 422
             ? detailed || 'Validation failed. Check the highlighted fields.'
             : detailed || t.genericError
         );
-
-        recaptchaRef.current?.reset?.();
-        setRecaptchaToken('');
         return;
       }
 
@@ -237,22 +227,6 @@ export default function RegisterForm({ dictionary, lang }) {
         error={errors.password_confirmation?.message}
         {...register('password_confirmation')}
       />
-
-      {siteKey && mounted ? (
-        <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-          <ReCAPTCHA
-            ref={recaptchaRef}
-            sitekey={siteKey}
-            onChange={(token) => setRecaptchaToken(token || '')}
-            onExpired={() => setRecaptchaToken('')}
-            hl={lang === 'ar' ? 'ar' : 'en'}
-          />
-        </div>
-      ) : (
-        <p className="rounded-2xl border border-gold-400/30 bg-gold-400/10 px-3 py-2.5 text-xs text-gold-200">
-          {t.recaptchaSkipped}
-        </p>
-      )}
 
       {formError ? (
         <p className="text-sm text-red-300" role="alert">

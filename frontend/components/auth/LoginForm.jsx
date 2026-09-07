@@ -7,9 +7,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
 import { Mail, Lock } from 'lucide-react';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import GlassAuthInput from '@/components/auth/GlassAuthInput';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
-import { applyServerErrors } from '@/lib/auth';
+import { applyServerErrors, obtainRecaptchaToken } from '@/lib/auth';
 import { ApiError, apiPost, getCsrfCookie } from '@/lib/api';
 import { createLoginSchema } from '@/lib/validations/auth';
 import { useAuth } from '@/providers/AuthProvider';
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 export default function LoginForm({ dictionary, lang }) {
   const router = useRouter();
   const { setUser, refreshUser } = useAuth();
+  const { executeRecaptcha } = useGoogleReCaptcha();
   const [formError, setFormError] = useState('');
   const t = dictionary.auth;
 
@@ -39,10 +41,13 @@ export default function LoginForm({ dictionary, lang }) {
     setFormError('');
 
     try {
+      const recaptchaToken = await obtainRecaptchaToken(executeRecaptcha, 'login');
+
       await getCsrfCookie();
       const data = await apiPost('/auth/login', {
         email: values.email.trim().toLowerCase().slice(0, 50),
         password: values.password.slice(0, 50),
+        recaptcha_token: recaptchaToken,
       });
 
       if (data?.user) {
@@ -71,11 +76,15 @@ export default function LoginForm({ dictionary, lang }) {
         toastApiError(error, t.genericError);
         if (!fieldMessage) {
           setFormError(error.data?.message || error.message || t.genericError);
+        } else {
+          setFormError(fieldMessage);
         }
         return;
       }
-      toast.error(t.genericError);
-      setFormError(t.genericError);
+
+      const message = error?.message || t.genericError;
+      toast.error(message);
+      setFormError(message);
     }
   };
 
