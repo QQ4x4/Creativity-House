@@ -1,5 +1,6 @@
 import { apiPost, getCsrfCookie } from '@/lib/api';
 import { sanitizeInquiryText } from '@/lib/validations/organization';
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
 
 export const COURSE_INQUIRY_ENDPOINT = '/v1/course-inquiries';
 
@@ -16,15 +17,15 @@ export async function submitCourseInquiry(data) {
   await getCsrfCookie();
 
   const payload = {
-    name: sanitizeInquiryText(data.name, 255),
-    email: sanitizeInquiryText(data.email, 255).toLowerCase(),
-    message: sanitizeInquiryText(data.message, 5000),
+    name: sanitizeInquiryText(data.name, FIELD_LIMITS.name),
+    email: sanitizeInquiryText(data.email, FIELD_LIMITS.email).toLowerCase(),
+    message: sanitizeInquiryText(data.message, FIELD_LIMITS.long),
   };
 
   const phone = String(data.phone || '')
     .trim()
     .replace(/[^\d+]/g, '')
-    .slice(0, 20);
+    .slice(0, FIELD_LIMITS.phone);
   if (phone) {
     payload.phone = phone;
   }

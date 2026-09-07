@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import {
   COURSE_CATEGORIES,
   DELIVERY_MODES,
@@ -29,7 +30,11 @@ import {
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const bulletItemSchema = z.object({
-  value: z.string().trim().min(1, 'Cannot be empty.').max(300, 'Keep this under 300 characters.'),
+  value: z
+    .string()
+    .trim()
+    .min(1, 'Cannot be empty.')
+    .max(FIELD_LIMITS.medium, `Keep this under ${FIELD_LIMITS.medium} characters.`),
 });
 
 const bilingualBulletsSchema = z.object({
@@ -40,10 +45,10 @@ const bilingualBulletsSchema = z.object({
 export const lessonResourceSchema = z.object({
   id: z.number().int().positive().nullable(),
   client_key: z.string().min(1),
-  title: z.string().trim().min(1, 'Resource name is required.').max(200),
+  title: z.string().trim().min(1, 'Resource name is required.').max(FIELD_LIMITS.medium),
   type: z.enum(['file', 'link']),
-  url: z.string().trim().min(1, 'A URL or uploaded file is required.').max(2048),
-  file_path: z.string().max(2048).nullable().optional(),
+  url: z.string().trim().min(1, 'A URL or uploaded file is required.').max(FIELD_LIMITS.url),
+  file_path: z.string().max(FIELD_LIMITS.url).nullable().optional(),
   file_size: z.string().max(40).nullable().optional(),
   size_bytes: z.number().int().min(0).nullable().optional(),
 });
@@ -52,8 +57,8 @@ export const lessonSchema = z.object({
   id: z.number().int().positive().nullable(),
   /** Stable DnD / React key — never sent to the API. */
   client_key: z.string().min(1),
-  title: z.string().trim().min(1, 'Lesson title is required.').max(200),
-  video_url: z.string().max(2048),
+  title: z.string().trim().min(1, 'Lesson title is required.').max(FIELD_LIMITS.medium),
+  video_url: z.string().max(FIELD_LIMITS.url),
   bunny_video_id: z.string().max(64),
   bunny_library_id: z.string().max(32),
   duration: z
@@ -67,8 +72,8 @@ export const lessonSchema = z.object({
 
 export const subModuleSchema = z.object({
   id: z.number().int().positive().nullable(),
-  title_en: z.string().trim().min(1, 'Sub-module title (EN) is required.').max(200),
-  title_ar: z.string().max(200),
+  title_en: z.string().trim().min(1, 'Sub-module title (EN) is required.').max(FIELD_LIMITS.medium),
+  title_ar: z.string().max(FIELD_LIMITS.medium),
   sort_order: z.number().int().min(0),
   is_open: z.boolean(),
   lessons: z.array(lessonSchema),
@@ -76,18 +81,18 @@ export const subModuleSchema = z.object({
 
 export const moduleSchema = z.object({
   id: z.number().int().positive().nullable(),
-  title_en: z.string().trim().min(1, 'Module title (EN) is required.').max(200),
-  title_ar: z.string().max(200),
-  duration_label_en: z.string().max(80),
-  duration_label_ar: z.string().max(80),
+  title_en: z.string().trim().min(1, 'Module title (EN) is required.').max(FIELD_LIMITS.medium),
+  title_ar: z.string().max(FIELD_LIMITS.medium),
+  duration_label_en: z.string().max(FIELD_LIMITS.short),
+  duration_label_ar: z.string().max(FIELD_LIMITS.short),
   sub_modules: z.array(subModuleSchema),
 });
 
 export const catalogModeSchema = z.object({
   price: z.number().min(0).nullable(),
   original_price: z.number().min(0).nullable(),
-  duration_en: z.string().max(120),
-  duration_ar: z.string().max(120),
+  duration_en: z.string().max(FIELD_LIMITS.short),
+  duration_ar: z.string().max(FIELD_LIMITS.short),
   features_en: z.array(bulletItemSchema),
   features_ar: z.array(bulletItemSchema),
 });
@@ -95,23 +100,23 @@ export const catalogModeSchema = z.object({
 export const courseFormSchema = z
   .object({
     /* ─── General ──────────────────────────────────────────────────────── */
-    title_en: z.string().trim().min(1, 'English title is required.').max(200),
-    title_ar: z.string().max(200),
-    subtitle_en: z.string().max(300),
-    subtitle_ar: z.string().max(300),
+    title_en: z.string().trim().min(1, 'English title is required.').max(FIELD_LIMITS.medium),
+    title_ar: z.string().max(FIELD_LIMITS.medium),
+    subtitle_en: z.string().max(FIELD_LIMITS.medium),
+    subtitle_ar: z.string().max(FIELD_LIMITS.medium),
     slug: z
       .string()
       .trim()
-      .max(200)
+      .max(FIELD_LIMITS.slug)
       .refine(
         (val) => val === '' || SLUG_PATTERN.test(val),
         'Use lowercase letters, numbers and single hyphens only.'
       ),
-    badge: z.string().max(80),
-    badge_ar: z.string().max(80),
+    badge: z.string().max(FIELD_LIMITS.short),
+    badge_ar: z.string().max(FIELD_LIMITS.short),
     category: z.enum(COURSE_CATEGORIES).nullable(),
-    language_en: z.string().max(80),
-    language_ar: z.string().max(80),
+    language_en: z.string().max(FIELD_LIMITS.short),
+    language_ar: z.string().max(FIELD_LIMITS.short),
     level: z.string().max(40),
 
     is_published: z.boolean(),
@@ -126,37 +131,37 @@ export const courseFormSchema = z
     catalog_modes: z.record(z.string(), catalogModeSchema),
 
     /* ─── Marketing ────────────────────────────────────────────────────── */
-    description_en: z.string().max(20000),
-    description_ar: z.string().max(20000),
-    schedule_en: z.string().max(20000),
-    schedule_ar: z.string().max(20000),
+    description_en: z.string().max(FIELD_LIMITS.long),
+    description_ar: z.string().max(FIELD_LIMITS.long),
+    schedule_en: z.string().max(FIELD_LIMITS.long),
+    schedule_ar: z.string().max(FIELD_LIMITS.long),
     target_audience: bilingualBulletsSchema,
     learning_outcomes: bilingualBulletsSchema,
 
     /* ─── Media & stats ────────────────────────────────────────────────── */
-    cover_image: z.string().max(2048),
+    cover_image: z.string().max(FIELD_LIMITS.url),
     rating: z.number().min(0).max(5, 'Rating is out of 5.').nullable(),
     students_count: z.number().int().min(0),
     total_hours: z.number().min(0).nullable(),
-    duration_label_en: z.string().max(80),
-    duration_label_ar: z.string().max(80),
+    duration_label_en: z.string().max(FIELD_LIMITS.short),
+    duration_label_ar: z.string().max(FIELD_LIMITS.short),
     last_updated_at: z.string(),
 
     /* ─── Instructor ───────────────────────────────────────────────────── */
-    instructor_name: z.string().max(150),
-    instructor_name_ar: z.string().max(150),
-    instructor_title_en: z.string().max(200),
-    instructor_title_ar: z.string().max(200),
-    instructor_bio_en: z.string().max(5000),
-    instructor_bio_ar: z.string().max(5000),
-    instructor_photo: z.string().max(2048),
+    instructor_name: z.string().max(FIELD_LIMITS.name),
+    instructor_name_ar: z.string().max(FIELD_LIMITS.name),
+    instructor_title_en: z.string().max(FIELD_LIMITS.medium),
+    instructor_title_ar: z.string().max(FIELD_LIMITS.medium),
+    instructor_bio_en: z.string().max(FIELD_LIMITS.long),
+    instructor_bio_ar: z.string().max(FIELD_LIMITS.long),
+    instructor_photo: z.string().max(FIELD_LIMITS.url),
     instructor_trained: z.string().max(40),
     instructor_countries: z.number().int().min(0).max(500).nullable(),
     instructor_credentials: bilingualBulletsSchema,
 
     /* ─── SEO ──────────────────────────────────────────────────────────── */
-    seo_title: z.string().max(200),
-    seo_description: z.string().max(500),
+    seo_title: z.string().max(FIELD_LIMITS.medium),
+    seo_description: z.string().max(FIELD_LIMITS.medium),
     seo_keywords: z.array(bulletItemSchema),
 
     /* ─── Curriculum ───────────────────────────────────────────────────── */

@@ -14,6 +14,7 @@ import {
   createAccountInfoSchema,
   remapServerErrors,
 } from '@/lib/validations/profile';
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { applyServerErrors } from '@/lib/auth';
 import { toastApiError } from '@/lib/toast';
 
@@ -103,6 +104,7 @@ export default function AccountInfoTab({ profile, labels, lang, onSave, onSaveAv
             id="profile-first-name"
             label={labels.firstName}
             icon={User}
+            maxLength={FIELD_LIMITS.name}
             autoComplete="given-name"
             error={errors.firstName?.message}
             variant="portal"
@@ -112,6 +114,7 @@ export default function AccountInfoTab({ profile, labels, lang, onSave, onSaveAv
             id="profile-last-name"
             label={labels.lastName}
             icon={User}
+            maxLength={FIELD_LIMITS.name}
             autoComplete="family-name"
             error={errors.lastName?.message}
             variant="portal"
@@ -125,6 +128,7 @@ export default function AccountInfoTab({ profile, labels, lang, onSave, onSaveAv
           label={labels.email}
           icon={Mail}
           dir="ltr"
+          maxLength={FIELD_LIMITS.email}
           autoComplete="email"
           error={errors.email?.message}
           variant="portal"

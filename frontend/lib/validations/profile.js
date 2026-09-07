@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js';
+import { FIELD_LIMITS, maxMessage } from '@/lib/fieldLimits';
 
 /**
  * Student Portal form schemas. Field names are camelCase to match the
@@ -12,7 +13,6 @@ const messages = {
     required: 'This field is required.',
     firstNameMin: 'First name must be at least 2 characters.',
     lastNameMin: 'Last name must be at least 2 characters.',
-    max50: 'Must be 50 characters or fewer.',
     email: 'Enter a valid email address.',
     phone: 'Enter a valid international phone number.',
     phoneRequired: 'Phone number is required.',
@@ -26,7 +26,6 @@ const messages = {
     required: 'هذا الحقل مطلوب.',
     firstNameMin: 'يجب أن يكون الاسم الأول حرفين على الأقل.',
     lastNameMin: 'يجب أن يكون اسم العائلة حرفين على الأقل.',
-    max50: 'يجب ألا يتجاوز 50 حرفًا.',
     email: 'أدخل بريدًا إلكترونيًا صالحًا.',
     phone: 'أدخل رقم هاتف دولي صالحًا.',
     phoneRequired: 'رقم الهاتف مطلوب.',
@@ -44,8 +43,9 @@ function t(lang) {
 
 const nameRegex = /^[\p{L}\s'\-]+$/u;
 const e164Regex = /^\+[1-9]\d{6,14}$/;
-const passwordComplexityRegex =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,50}$/;
+const passwordComplexityRegex = new RegExp(
+  `^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,${FIELD_LIMITS.password}}$`
+);
 
 /**
  * Laravel returns validation keys in snake_case; these maps translate them back
@@ -79,6 +79,9 @@ export function remapServerErrors(errorData, fieldMap) {
 
 export function createAccountInfoSchema(lang = 'en') {
   const m = t(lang);
+  const maxName = maxMessage(FIELD_LIMITS.name, lang);
+  const maxEmail = maxMessage(FIELD_LIMITS.email, lang);
+  const maxPhone = maxMessage(FIELD_LIMITS.phone, lang);
 
   return z.object({
     firstName: z
@@ -86,21 +89,26 @@ export function createAccountInfoSchema(lang = 'en') {
       .trim()
       .min(1, m.required)
       .min(2, m.firstNameMin)
-      .max(50, m.max50)
+      .max(FIELD_LIMITS.name, maxName)
       .regex(nameRegex, m.firstNameMin),
     lastName: z
       .string()
       .trim()
       .min(1, m.required)
       .min(2, m.lastNameMin)
-      .max(50, m.max50)
+      .max(FIELD_LIMITS.name, maxName)
       .regex(nameRegex, m.lastNameMin),
-    email: z.string().trim().min(1, m.required).max(50, m.max50).email(m.email),
+    email: z
+      .string()
+      .trim()
+      .min(1, m.required)
+      .max(FIELD_LIMITS.email, maxEmail)
+      .email(m.email),
     phoneNumber: z
       .string()
       .trim()
       .min(1, m.phoneRequired)
-      .max(20, m.max50)
+      .max(FIELD_LIMITS.phone, maxPhone)
       .refine((value) => e164Regex.test(value) && isValidPhoneNumber(value), {
         message: m.phone,
       }),
@@ -109,17 +117,18 @@ export function createAccountInfoSchema(lang = 'en') {
 
 export function createPasswordChangeSchema(lang = 'en') {
   const m = t(lang);
+  const maxPassword = maxMessage(FIELD_LIMITS.password, lang);
 
   return z
     .object({
-      currentPassword: z.string().min(1, m.required).max(50, m.max50),
+      currentPassword: z.string().min(1, m.required).max(FIELD_LIMITS.password, maxPassword),
       newPassword: z
         .string()
         .min(1, m.required)
         .min(8, m.passwordMin)
-        .max(50, m.max50)
+        .max(FIELD_LIMITS.password, maxPassword)
         .regex(passwordComplexityRegex, m.passwordComplexity),
-      confirmPassword: z.string().min(1, m.required).max(50, m.max50),
+      confirmPassword: z.string().min(1, m.required).max(FIELD_LIMITS.password, maxPassword),
     })
     .refine((data) => data.newPassword === data.confirmPassword, {
       message: m.passwordMatch,

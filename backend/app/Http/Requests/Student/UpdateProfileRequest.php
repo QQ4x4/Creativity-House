@@ -47,20 +47,21 @@ class UpdateProfileRequest extends FormRequest
         $userId = $this->user()?->id;
 
         return [
-            'first_name' => ['required', 'string', 'max:50', 'regex:/^[\p{L}\s\'\-]+$/u'],
-            'last_name' => ['required', 'string', 'max:50', 'regex:/^[\p{L}\s\'\-]+$/u'],
+            'first_name' => ['required', 'string', 'max:'.config('field_limits.name'), 'regex:/^[\p{L}\s\'\-]+$/u'],
+            'last_name' => ['required', 'string', 'max:'.config('field_limits.name'), 'regex:/^[\p{L}\s\'\-]+$/u'],
             'email' => [
                 'required',
                 'string',
                 'email:filter',
-                'max:50',
+                'max:'.config('field_limits.email'),
                 Rule::unique('users', 'email')->ignore($userId),
             ],
             // E.164: leading + required, 7–15 digits total.
-            'phone_number' => ['required', 'string', 'max:50', 'regex:/^\+[1-9]\d{6,14}$/'],
+            'phone_number' => ['required', 'string', 'max:'.config('field_limits.phone'), 'regex:/^\+[1-9]\d{6,14}$/'],
 
             // Optional inline avatar so a single multipart PUT can update everything.
             // The dedicated POST /profile/avatar endpoint uses UpdateAvatarRequest.
+            // max:2048 here is kilobytes (file upload), not field_limits.url.
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }

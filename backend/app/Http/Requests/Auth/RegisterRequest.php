@@ -44,25 +44,25 @@ class RegisterRequest extends FormRequest
         $recaptchaRequired = filled(config('services.recaptcha.secret'));
 
         return [
-            'first_name' => ['required', 'string', 'max:50', 'regex:/^[\p{L}\s\'\-]+$/u'],
-            'last_name' => ['required', 'string', 'max:50', 'regex:/^[\p{L}\s\'\-]+$/u'],
-            'email' => ['required', 'string', 'email:filter', 'max:50', 'unique:users,email'],
+            'first_name' => ['required', 'string', 'max:'.config('field_limits.name'), 'regex:/^[\p{L}\s\'\-]+$/u'],
+            'last_name' => ['required', 'string', 'max:'.config('field_limits.name'), 'regex:/^[\p{L}\s\'\-]+$/u'],
+            'email' => ['required', 'string', 'email:filter', 'max:'.config('field_limits.email'), 'unique:users,email'],
             // E.164: leading + required, 7–15 digits total after country indicator.
-            'phone_number' => ['required', 'string', 'max:50', 'regex:/^\+[1-9]\d{6,14}$/'],
+            'phone_number' => ['required', 'string', 'max:'.config('field_limits.phone'), 'regex:/^\+[1-9]\d{6,14}$/'],
             'password' => [
                 'required',
                 'string',
-                'max:50',
+                'max:'.config('field_limits.password'),
                 'confirmed',
                 Password::min(8)
-                    ->max(50)
+                    ->max((int) config('field_limits.password'))
                     ->mixedCase()
                     ->numbers()
                     ->symbols(),
             ],
             'recaptcha_token' => $recaptchaRequired
-                ? ['required', 'string', 'max:2000']
-                : ['nullable', 'string', 'max:2000'],
+                ? ['required', 'string', 'max:'.config('field_limits.recaptcha')]
+                : ['nullable', 'string', 'max:'.config('field_limits.recaptcha')],
         ];
     }
 

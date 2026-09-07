@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,8 +13,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Railway / reverse proxies terminate TLS; required for Secure cookies.
-        $middleware->trustProxies(at: '*');
+        // Railway / reverse proxies terminate TLS and set X-Forwarded-*.
+        // Trust all proxies so request()->ip() is the real client IP.
+        $middleware->trustProxies(
+            at: '*',
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO
+        );
+
+        // Attach named `throttle:api` (see AppServiceProvider) to the api group.
+        $middleware->throttleApi('api');
+
         $middleware->statefulApi();
         $middleware->validateCsrfTokens(except: [
             'api/v1/stripe/webhook',

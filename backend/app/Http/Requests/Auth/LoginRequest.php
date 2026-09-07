@@ -27,11 +27,11 @@ class LoginRequest extends FormRequest
         $recaptchaRequired = filled(config('services.recaptcha.secret'));
 
         return [
-            'email' => ['required', 'string', 'email:filter', 'max:50'],
-            'password' => ['required', 'string', 'max:50'],
+            'email' => ['required', 'string', 'email:filter', 'max:'.config('field_limits.email')],
+            'password' => ['required', 'string', 'max:'.config('field_limits.password')],
             'recaptcha_token' => $recaptchaRequired
-                ? ['required', 'string', 'max:2000']
-                : ['nullable', 'string', 'max:2000'],
+                ? ['required', 'string', 'max:'.config('field_limits.recaptcha')]
+                : ['nullable', 'string', 'max:'.config('field_limits.recaptcha')],
         ];
     }
 

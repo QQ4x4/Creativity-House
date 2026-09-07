@@ -31,15 +31,15 @@ class ResetPasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email:filter', 'max:50'],
-            'code' => ['required', 'string', 'digits:6'],
+            'email' => ['required', 'string', 'email:filter', 'max:'.config('field_limits.email')],
+            'code' => ['required', 'string', 'digits:6', 'max:'.config('field_limits.otp')],
             'password' => [
                 'required',
                 'string',
-                'max:50',
+                'max:'.config('field_limits.password'),
                 'confirmed',
                 Password::min(8)
-                    ->max(50)
+                    ->max((int) config('field_limits.password'))
                     ->mixedCase()
                     ->numbers()
                     ->symbols(),

@@ -20,10 +20,10 @@ class UpdateLessonRequest extends FormRequest
         $courseId = $this->route('course')?->id;
 
         return [
-            'title' => ['sometimes', 'required', 'string', 'max:200'],
-            'video_url' => ['sometimes', 'nullable', 'string', 'max:2048'],
-            'bunny_video_id' => ['sometimes', 'nullable', 'string', 'max:64'],
-            'bunny_library_id' => ['sometimes', 'nullable', 'string', 'max:32'],
+            'title' => ['sometimes', 'required', 'string', 'max:'.config('field_limits.medium')],
+            'video_url' => ['sometimes', 'nullable', 'string', 'max:'.config('field_limits.url')],
+            'bunny_video_id' => ['sometimes', 'nullable', 'string', 'max:'.config('field_limits.short')],
+            'bunny_library_id' => ['sometimes', 'nullable', 'string', 'max:'.config('field_limits.short')],
             'duration' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:86400'],
             'is_locked' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
@@ -31,11 +31,11 @@ class UpdateLessonRequest extends FormRequest
             'pdf_resource_urls.*' => ['nullable'],
             'resources' => ['sometimes', 'nullable', 'array', 'max:50'],
             'resources.*.id' => ['nullable', 'integer'],
-            'resources.*.title' => ['required_with:resources', 'string', 'max:200'],
+            'resources.*.title' => ['required_with:resources', 'string', 'max:'.config('field_limits.medium')],
             'resources.*.type' => ['nullable', 'string', 'in:file,link'],
-            'resources.*.url' => ['required_with:resources', 'string', 'max:2048'],
-            'resources.*.file_path' => ['nullable', 'string', 'max:2048'],
-            'resources.*.file_size' => ['nullable', 'string', 'max:40'],
+            'resources.*.url' => ['required_with:resources', 'string', 'max:'.config('field_limits.url')],
+            'resources.*.file_path' => ['nullable', 'string', 'max:'.config('field_limits.url')],
+            'resources.*.file_size' => ['nullable', 'string', 'max:'.config('field_limits.short')],
             'resources.*.size_bytes' => ['nullable', 'integer', 'min:0'],
 
             // Moving a lesson between modules — the target must belong to the

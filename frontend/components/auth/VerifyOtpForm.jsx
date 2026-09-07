@@ -10,6 +10,7 @@ import { ApiError, apiPost, getCsrfCookie } from '@/lib/api';
 import { useAuth } from '@/providers/AuthProvider';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
 
 const RESEND_SECONDS = 60;
 
@@ -17,7 +18,7 @@ export default function VerifyOtpForm({ dictionary, lang }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser, refreshUser } = useAuth();
-  const email = (searchParams.get('email') || '').slice(0, 50);
+  const email = (searchParams.get('email') || '').slice(0, FIELD_LIMITS.email);
   const t = dictionary.auth;
 
   const [code, setCode] = useState('');

@@ -36,7 +36,7 @@ class CompleteProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'phone_number' => ['required', 'string', 'max:50', 'regex:/^\+[1-9]\d{6,14}$/'],
+            'phone_number' => ['required', 'string', 'max:'.config('field_limits.phone'), 'regex:/^\+[1-9]\d{6,14}$/'],
         ];
     }
 

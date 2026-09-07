@@ -19,15 +19,15 @@ class UpdatePasswordRequest extends FormRequest
     {
         return [
             // `current_password` verifies against the authenticated user's hash.
-            'current_password' => ['required', 'string', 'max:50', 'current_password:web'],
+            'current_password' => ['required', 'string', 'max:'.config('field_limits.password'), 'current_password:web'],
             'password' => [
                 'required',
                 'string',
-                'max:50',
+                'max:'.config('field_limits.password'),
                 'confirmed',
                 'different:current_password',
                 Password::min(8)
-                    ->max(50)
+                    ->max((int) config('field_limits.password'))
                     ->mixedCase()
                     ->numbers()
                     ->symbols(),

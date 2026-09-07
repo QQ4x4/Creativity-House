@@ -30,6 +30,7 @@ import {
   createCheckoutCardSchema,
 } from '@/lib/validations/checkout';
 import { remapServerErrors } from '@/lib/validations/profile';
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { toastApiError } from '@/lib/toast';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -199,6 +200,7 @@ function CheckoutBody({ dictionary, lang }) {
                             id="checkout-first-name"
                             label={dictionary.auth.firstName}
                             icon={User}
+                            maxLength={FIELD_LIMITS.name}
                             autoComplete="given-name"
                             error={billingForm.formState.errors.firstName?.message}
                             variant="portal"
@@ -208,6 +210,7 @@ function CheckoutBody({ dictionary, lang }) {
                             id="checkout-last-name"
                             label={dictionary.auth.lastName}
                             icon={User}
+                            maxLength={FIELD_LIMITS.name}
                             autoComplete="family-name"
                             error={billingForm.formState.errors.lastName?.message}
                             variant="portal"
@@ -221,6 +224,7 @@ function CheckoutBody({ dictionary, lang }) {
                           label={dictionary.auth.email}
                           icon={Mail}
                           dir="ltr"
+                          maxLength={FIELD_LIMITS.email}
                           autoComplete="email"
                           error={billingForm.formState.errors.email?.message}
                           variant="portal"

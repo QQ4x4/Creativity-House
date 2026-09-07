@@ -26,21 +26,21 @@ class SyncCurriculumRequest extends FormRequest
     {
         $lessonRules = [
             'id' => ['nullable', 'integer'],
-            'title' => ['required', 'string', 'max:200'],
-            'video_url' => ['nullable', 'string', 'max:2048'],
-            'bunny_video_id' => ['nullable', 'string', 'max:64'],
-            'bunny_library_id' => ['nullable', 'string', 'max:32'],
+            'title' => ['required', 'string', 'max:'.config('field_limits.medium')],
+            'video_url' => ['nullable', 'string', 'max:'.config('field_limits.url')],
+            'bunny_video_id' => ['nullable', 'string', 'max:'.config('field_limits.short')],
+            'bunny_library_id' => ['nullable', 'string', 'max:'.config('field_limits.short')],
             'duration' => ['nullable', 'integer', 'min:0', 'max:86400'],
             'is_locked' => ['nullable', 'boolean'],
             'pdf_resource_urls' => ['nullable', 'array'],
             'pdf_resource_urls.*' => ['nullable'],
             'resources' => ['nullable', 'array', 'max:50'],
             'resources.*.id' => ['nullable', 'integer'],
-            'resources.*.title' => ['required_with:resources', 'string', 'max:200'],
+            'resources.*.title' => ['required_with:resources', 'string', 'max:'.config('field_limits.medium')],
             'resources.*.type' => ['nullable', 'string', 'in:file,link'],
-            'resources.*.url' => ['required_with:resources', 'string', 'max:2048'],
-            'resources.*.file_path' => ['nullable', 'string', 'max:2048'],
-            'resources.*.file_size' => ['nullable', 'string', 'max:40'],
+            'resources.*.url' => ['required_with:resources', 'string', 'max:'.config('field_limits.url')],
+            'resources.*.file_path' => ['nullable', 'string', 'max:'.config('field_limits.url')],
+            'resources.*.file_size' => ['nullable', 'string', 'max:'.config('field_limits.short')],
             'resources.*.size_bytes' => ['nullable', 'integer', 'min:0'],
         ];
 
@@ -54,16 +54,16 @@ class SyncCurriculumRequest extends FormRequest
             'modules' => ['present', 'array', 'max:200'],
 
             'modules.*.id' => ['nullable', 'integer'],
-            'modules.*.title_en' => ['required', 'string', 'max:200'],
-            'modules.*.title_ar' => ['nullable', 'string', 'max:200'],
-            'modules.*.duration_label_en' => ['nullable', 'string', 'max:80'],
-            'modules.*.duration_label_ar' => ['nullable', 'string', 'max:80'],
+            'modules.*.title_en' => ['required', 'string', 'max:'.config('field_limits.medium')],
+            'modules.*.title_ar' => ['nullable', 'string', 'max:'.config('field_limits.medium')],
+            'modules.*.duration_label_en' => ['nullable', 'string', 'max:'.config('field_limits.short')],
+            'modules.*.duration_label_ar' => ['nullable', 'string', 'max:'.config('field_limits.short')],
 
             // Preferred nest.
             'modules.*.sub_modules' => ['sometimes', 'array', 'max:200'],
             'modules.*.sub_modules.*.id' => ['nullable', 'integer'],
-            'modules.*.sub_modules.*.title_en' => ['required', 'string', 'max:200'],
-            'modules.*.sub_modules.*.title_ar' => ['nullable', 'string', 'max:200'],
+            'modules.*.sub_modules.*.title_en' => ['required', 'string', 'max:'.config('field_limits.medium')],
+            'modules.*.sub_modules.*.title_ar' => ['nullable', 'string', 'max:'.config('field_limits.medium')],
             'modules.*.sub_modules.*.lessons' => ['present', 'array', 'max:500'],
 
             // Legacy flat lessons (normalized server-side into a default section).

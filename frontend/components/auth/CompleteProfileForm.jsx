@@ -14,6 +14,7 @@ import { ApiError, apiPatch, getCsrfCookie } from '@/lib/api';
 import { toastApiError } from '@/lib/toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { toast } from 'sonner';
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
 
 const E164 = /^\+[1-9]\d{6,14}$/;
 
@@ -30,7 +31,7 @@ function createSchema(lang) {
       .string({ required_error: phoneRequired })
       .trim()
       .min(1, phoneRequired)
-      .max(20)
+      .max(FIELD_LIMITS.phone)
       .refine((value) => E164.test(value) && isValidPhoneNumber(value), {
         message: phoneInvalid,
       }),

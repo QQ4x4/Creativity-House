@@ -5,7 +5,7 @@ export default function AuthInput({
   label,
   error,
   type = 'text',
-  maxLength = 50,
+  maxLength,
   autoComplete,
   dir,
   ...props
@@ -18,7 +18,7 @@ export default function AuthInput({
       <input
         id={id}
         type={type}
-        maxLength={maxLength}
+        {...(maxLength != null ? { maxLength } : {})}
         autoComplete={autoComplete}
         dir={dir}
         className={`w-full max-w-full min-h-[44px] rounded-xl border bg-white/95 px-4 py-2.5 text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/30 dark:bg-slate-900/80 dark:text-white ${

@@ -15,6 +15,8 @@ import { submitCourseInquiry } from '@/lib/course-inquiry/api';
 import { applyServerErrors } from '@/lib/auth';
 import { ApiError } from '@/lib/api';
 import { createCourseInquirySchema } from '@/lib/validations/courseInquiry';
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
+import CharacterCounter from '@/components/ui/CharacterCounter';
 import { toastApiError } from '@/lib/toast';
 import { fadeUp, motionGpu, motionViewport } from '@/lib/motion';
 
@@ -75,6 +77,7 @@ function CourseInquiryBody({ dictionary, lang }) {
     setError,
     setValue,
     getValues,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(createCourseInquirySchema(lang)),
@@ -229,7 +232,7 @@ function CourseInquiryBody({ dictionary, lang }) {
                     label={labels.fullName}
                     placeholder={labels.fullNamePlaceholder}
                     autoComplete="name"
-                    maxLength={255}
+                    maxLength={FIELD_LIMITS.name}
                     icon={User}
                     variant="portal"
                     error={errors.name?.message}
@@ -242,7 +245,7 @@ function CourseInquiryBody({ dictionary, lang }) {
                     label={labels.email}
                     placeholder={labels.emailPlaceholder}
                     autoComplete="email"
-                    maxLength={255}
+                    maxLength={FIELD_LIMITS.email}
                     icon={Mail}
                     variant="portal"
                     error={errors.email?.message}
@@ -310,7 +313,7 @@ function CourseInquiryBody({ dictionary, lang }) {
                     <textarea
                       id="course-inquiry-message"
                       rows={5}
-                      maxLength={5000}
+                      maxLength={FIELD_LIMITS.long}
                       placeholder={labels.messagePlaceholder}
                       aria-invalid={Boolean(errors.message)}
                       className={`glass-country-dropdown-scroll min-h-[140px] w-full resize-y rounded-2xl border bg-gray-50 px-4 py-3.5 text-sm text-gray-900 outline-none transition-all duration-200 placeholder:text-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:bg-black/20 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-amber-400/60 dark:focus:ring-amber-400/20 ${
@@ -320,6 +323,7 @@ function CourseInquiryBody({ dictionary, lang }) {
                       }`}
                       {...register('message')}
                     />
+                    <CharacterCounter value={watch('message')} max={FIELD_LIMITS.long} />
                     {errors.message ? (
                       <p className="mt-1.5 ms-1 text-sm text-red-600 dark:text-red-300" role="alert">
                         {errors.message.message}

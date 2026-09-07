@@ -1,3 +1,5 @@
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
+
 /**
  * Map Laravel 422 validation errors onto react-hook-form fields.
  * Returns the first error message when any were applied.
@@ -45,15 +47,18 @@ export function sanitizeRegisterPayload(values, recaptchaToken) {
   const phone = String(values.phone_number || '')
     .trim()
     .replace(/[^\d+]/g, '')
-    .slice(0, 20);
+    .slice(0, FIELD_LIMITS.phone);
 
   return {
-    first_name: String(values.first_name || '').trim().slice(0, 50),
-    last_name: String(values.last_name || '').trim().slice(0, 50),
-    email: String(values.email || '').trim().toLowerCase().slice(0, 50),
+    first_name: String(values.first_name || '').trim().slice(0, FIELD_LIMITS.name),
+    last_name: String(values.last_name || '').trim().slice(0, FIELD_LIMITS.name),
+    email: String(values.email || '').trim().toLowerCase().slice(0, FIELD_LIMITS.email),
     phone_number: phone,
-    password: String(values.password || '').slice(0, 50),
-    password_confirmation: String(values.password_confirmation || '').slice(0, 50),
+    password: String(values.password || '').slice(0, FIELD_LIMITS.password),
+    password_confirmation: String(values.password_confirmation || '').slice(
+      0,
+      FIELD_LIMITS.password
+    ),
     recaptcha_token: recaptchaToken || 'local-dev-token',
   };
 }

@@ -13,6 +13,7 @@ import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
 import { applyServerErrors, obtainRecaptchaToken } from '@/lib/auth';
 import { ApiError, apiPost, getCsrfCookie } from '@/lib/api';
 import { createLoginSchema } from '@/lib/validations/auth';
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { useAuth } from '@/providers/AuthProvider';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
@@ -45,8 +46,8 @@ export default function LoginForm({ dictionary, lang }) {
 
       await getCsrfCookie();
       const data = await apiPost('/auth/login', {
-        email: values.email.trim().toLowerCase().slice(0, 50),
-        password: values.password.slice(0, 50),
+        email: values.email.trim().toLowerCase().slice(0, FIELD_LIMITS.email),
+        password: values.password.slice(0, FIELD_LIMITS.password),
         recaptcha_token: recaptchaToken,
       });
 
@@ -95,7 +96,7 @@ export default function LoginForm({ dictionary, lang }) {
         type="email"
         label={t.email}
         icon={Mail}
-        maxLength={50}
+        maxLength={FIELD_LIMITS.email}
         autoComplete="email"
         dir="ltr"
         error={errors.email?.message}
@@ -107,7 +108,7 @@ export default function LoginForm({ dictionary, lang }) {
         label={t.password}
         icon={Lock}
         showPasswordToggle
-        maxLength={50}
+        maxLength={FIELD_LIMITS.password}
         autoComplete="current-password"
         error={errors.password?.message}
         {...register('password')}

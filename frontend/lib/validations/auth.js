@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js';
+import { FIELD_LIMITS, maxMessage } from '@/lib/fieldLimits';
 
 const messages = {
   en: {
     required: 'This field is required.',
     firstNameMin: 'First name must be at least 2 characters.',
     lastNameMin: 'Last name must be at least 2 characters.',
-    max50: 'Must be 50 characters or fewer.',
     email: 'Enter a valid email address.',
     phone: 'Enter a valid international phone number.',
     phoneRequired: 'Phone number is required.',
@@ -20,7 +20,6 @@ const messages = {
     required: 'هذا الحقل مطلوب.',
     firstNameMin: 'يجب أن يكون الاسم الأول حرفين على الأقل.',
     lastNameMin: 'يجب أن يكون اسم العائلة حرفين على الأقل.',
-    max50: 'يجب ألا يتجاوز 50 حرفًا.',
     email: 'أدخل بريدًا إلكترونيًا صالحًا.',
     phone: 'أدخل رقم هاتف دولي صالحًا.',
     phoneRequired: 'رقم الهاتف مطلوب.',
@@ -38,11 +37,16 @@ function t(lang) {
 
 const nameRegex = /^[\p{L}\s'\-]+$/u;
 const e164Regex = /^\+[1-9]\d{6,14}$/;
-const passwordComplexityRegex =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,50}$/;
+const passwordComplexityRegex = new RegExp(
+  `^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,${FIELD_LIMITS.password}}$`
+);
 
 export function createRegisterSchema(lang = 'en') {
   const m = t(lang);
+  const maxName = maxMessage(FIELD_LIMITS.name, lang);
+  const maxEmail = maxMessage(FIELD_LIMITS.email, lang);
+  const maxPhone = maxMessage(FIELD_LIMITS.phone, lang);
+  const maxPassword = maxMessage(FIELD_LIMITS.password, lang);
 
   return z
     .object({
@@ -51,26 +55,26 @@ export function createRegisterSchema(lang = 'en') {
         .trim()
         .min(1, m.required)
         .min(2, m.firstNameMin)
-        .max(50, m.max50)
+        .max(FIELD_LIMITS.name, maxName)
         .regex(nameRegex, m.firstNameMin),
       last_name: z
         .string()
         .trim()
         .min(1, m.required)
         .min(2, m.lastNameMin)
-        .max(50, m.max50)
+        .max(FIELD_LIMITS.name, maxName)
         .regex(nameRegex, m.lastNameMin),
       email: z
         .string()
         .trim()
         .min(1, m.required)
-        .max(50, m.max50)
+        .max(FIELD_LIMITS.email, maxEmail)
         .email(m.email),
       phone_number: z
         .string({ required_error: m.phoneRequired })
         .trim()
         .min(1, m.phoneRequired)
-        .max(20, m.max50)
+        .max(FIELD_LIMITS.phone, maxPhone)
         .refine((value) => e164Regex.test(value) && isValidPhoneNumber(value), {
           message: m.phone,
         }),
@@ -78,9 +82,12 @@ export function createRegisterSchema(lang = 'en') {
         .string()
         .min(1, m.required)
         .min(8, m.passwordMin)
-        .max(50, m.max50)
+        .max(FIELD_LIMITS.password, maxPassword)
         .regex(passwordComplexityRegex, m.passwordComplexity),
-      password_confirmation: z.string().min(1, m.required).max(50, m.max50),
+      password_confirmation: z
+        .string()
+        .min(1, m.required)
+        .max(FIELD_LIMITS.password, maxPassword),
     })
     .refine((data) => data.password === data.password_confirmation, {
       message: m.passwordMatch,
@@ -96,9 +103,12 @@ export function createLoginSchema(lang = 'en') {
       .string()
       .trim()
       .min(1, m.required)
-      .max(50, m.max50)
+      .max(FIELD_LIMITS.email, maxMessage(FIELD_LIMITS.email, lang))
       .email(m.email),
-    password: z.string().min(1, m.required).max(50, m.max50),
+    password: z
+      .string()
+      .min(1, m.required)
+      .max(FIELD_LIMITS.password, maxMessage(FIELD_LIMITS.password, lang)),
   });
 }
 
@@ -121,13 +131,14 @@ export function createForgotPasswordSchema(lang = 'en') {
       .string()
       .trim()
       .min(1, m.required)
-      .max(50, m.max50)
+      .max(FIELD_LIMITS.email, maxMessage(FIELD_LIMITS.email, lang))
       .email(m.email),
   });
 }
 
 export function createResetPasswordSchema(lang = 'en') {
   const m = t(lang);
+  const maxPassword = maxMessage(FIELD_LIMITS.password, lang);
 
   return z
     .object({
@@ -139,9 +150,9 @@ export function createResetPasswordSchema(lang = 'en') {
         .string()
         .min(1, m.required)
         .min(8, m.passwordMin)
-        .max(50, m.max50)
+        .max(FIELD_LIMITS.password, maxPassword)
         .regex(passwordComplexityRegex, m.passwordComplexity),
-      password_confirmation: z.string().min(1, m.required).max(50, m.max50),
+      password_confirmation: z.string().min(1, m.required).max(FIELD_LIMITS.password, maxPassword),
     })
     .refine((data) => data.password === data.password_confirmation, {
       message: m.passwordMatch,

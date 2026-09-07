@@ -105,26 +105,26 @@ class CreateAdminUserCommand extends Command
 
     /**
      * Mirrors RegisterRequest so a CLI-created admin can never be weaker than a
-     * self-registered student. `email` is capped at 50 by the column itself.
+     * self-registered student.
      *
      * @return array<string, mixed>
      */
     private function rules(): array
     {
         $password = $this->option('force')
-            ? ['required', 'string', 'min:8', 'max:50']
+            ? ['required', 'string', 'min:8', 'max:'.config('field_limits.password')]
             : [
                 'required',
                 'string',
-                'max:50',
-                Password::min(8)->max(50)->mixedCase()->numbers()->symbols(),
+                'max:'.config('field_limits.password'),
+                Password::min(8)->max((int) config('field_limits.password'))->mixedCase()->numbers()->symbols(),
             ];
 
         return [
-            'email' => ['required', 'string', 'email:filter', 'max:50', 'unique:users,email'],
+            'email' => ['required', 'string', 'email:filter', 'max:'.config('field_limits.email'), 'unique:users,email'],
             'password' => $password,
-            'first_name' => ['required', 'string', 'max:50'],
-            'last_name' => ['required', 'string', 'max:50'],
+            'first_name' => ['required', 'string', 'max:'.config('field_limits.name')],
+            'last_name' => ['required', 'string', 'max:'.config('field_limits.name')],
         ];
     }
 

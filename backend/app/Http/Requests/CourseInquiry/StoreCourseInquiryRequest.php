@@ -53,11 +53,11 @@ class StoreCourseInquiryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\'\-]+$/u'],
-            'email' => ['required', 'string', 'email:filter', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:255', 'regex:/^\+[1-9]\d{6,14}$/'],
+            'name' => ['required', 'string', 'max:'.config('field_limits.name'), 'regex:/^[\p{L}\s\'\-]+$/u'],
+            'email' => ['required', 'string', 'email:filter', 'max:'.config('field_limits.email')],
+            'phone' => ['nullable', 'string', 'max:'.config('field_limits.phone'), 'regex:/^\+[1-9]\d{6,14}$/'],
             'course_id' => ['nullable', 'integer', Rule::exists('courses', 'id')->whereNull('deleted_at')],
-            'message' => ['required', 'string', 'min:20', 'max:5000'],
+            'message' => ['required', 'string', 'min:20', 'max:'.config('field_limits.long')],
         ];
     }
 

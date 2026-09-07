@@ -15,6 +15,7 @@ import {
   createForgotPasswordSchema,
   createResetPasswordSchema,
 } from '@/lib/validations/auth';
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
 
@@ -47,7 +48,7 @@ export default function ForgotPasswordForm({ dictionary, lang }) {
 
     try {
       await getCsrfCookie();
-      const normalizedEmail = values.email.trim().toLowerCase().slice(0, 50);
+      const normalizedEmail = values.email.trim().toLowerCase().slice(0, FIELD_LIMITS.email);
       await apiPost('/auth/forgot-password', { email: normalizedEmail });
       setEmail(normalizedEmail);
       setStep(2);
@@ -82,8 +83,8 @@ export default function ForgotPasswordForm({ dictionary, lang }) {
       await apiPost('/auth/reset-password', {
         email,
         code,
-        password: values.password.slice(0, 50),
-        password_confirmation: values.password_confirmation.slice(0, 50),
+        password: values.password.slice(0, FIELD_LIMITS.password),
+        password_confirmation: values.password_confirmation.slice(0, FIELD_LIMITS.password),
       });
       setSuccessMessage(t.resetSuccess);
       toast.success(t.resetSuccess);
@@ -123,7 +124,7 @@ export default function ForgotPasswordForm({ dictionary, lang }) {
               type="email"
               label={t.email}
               icon={Mail}
-              maxLength={50}
+              maxLength={FIELD_LIMITS.email}
               autoComplete="email"
               dir="ltr"
               error={requestForm.formState.errors.email?.message}
@@ -191,7 +192,7 @@ export default function ForgotPasswordForm({ dictionary, lang }) {
               label={t.newPassword}
               icon={Lock}
               showPasswordToggle
-              maxLength={50}
+              maxLength={FIELD_LIMITS.password}
               autoComplete="new-password"
               error={resetForm.formState.errors.password?.message}
               {...resetForm.register('password')}
@@ -202,7 +203,7 @@ export default function ForgotPasswordForm({ dictionary, lang }) {
               label={t.confirmNewPassword}
               icon={Lock}
               showPasswordToggle
-              maxLength={50}
+              maxLength={FIELD_LIMITS.password}
               autoComplete="new-password"
               error={resetForm.formState.errors.password_confirmation?.message}
               {...resetForm.register('password_confirmation')}

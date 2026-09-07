@@ -29,7 +29,7 @@ class BunnyController extends Controller
     public function videos(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'search' => ['nullable', 'string', 'max:200'],
+            'search' => ['nullable', 'string', 'max:'.config('field_limits.medium')],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);

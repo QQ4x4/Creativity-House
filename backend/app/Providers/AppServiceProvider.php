@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use GuzzleHttp\Client as GuzzleClient;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Resend\Client;
 use Resend\Contracts\Client as ClientContract;
@@ -52,6 +55,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        $this->configureRateLimiting();
+    }
+
+    /**
+     * Named limiters used by `throttle:api` / `throttle:auth` middleware.
+     * Keys use the client IP (TrustProxies must be configured for Railway).
+     */
+    private function configureRateLimiting(): void
+    {
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60)->by($request->ip());
+        });
+
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
     }
 }

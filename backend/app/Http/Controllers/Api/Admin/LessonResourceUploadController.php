@@ -30,7 +30,7 @@ class LessonResourceUploadController extends Controller
                 'max:51200', // 50 MB in kilobytes
                 'mimes:ogg,oga,mp3,wav,m4a,aac,flac,pdf,doc,docx,zip,rar,xlsx,xls,png,jpg,jpeg,webp',
             ],
-            'title' => ['nullable', 'string', 'max:200'],
+            'title' => ['nullable', 'string', 'max:'.config('field_limits.medium')],
         ]);
 
         try {

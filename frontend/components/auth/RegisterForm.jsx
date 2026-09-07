@@ -20,6 +20,7 @@ import {
 } from '@/lib/auth';
 import { ApiError, apiPost, getCsrfCookie } from '@/lib/api';
 import { createRegisterSchema } from '@/lib/validations/auth';
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
 
@@ -128,7 +129,7 @@ export default function RegisterForm({ dictionary, lang }) {
           id="first_name"
           label={t.firstName}
           icon={User}
-          maxLength={50}
+          maxLength={FIELD_LIMITS.name}
           autoComplete="given-name"
           error={errors.first_name?.message}
           {...register('first_name')}
@@ -137,7 +138,7 @@ export default function RegisterForm({ dictionary, lang }) {
           id="last_name"
           label={t.lastName}
           icon={User}
-          maxLength={50}
+          maxLength={FIELD_LIMITS.name}
           autoComplete="family-name"
           error={errors.last_name?.message}
           {...register('last_name')}
@@ -149,7 +150,7 @@ export default function RegisterForm({ dictionary, lang }) {
         type="email"
         label={t.email}
         icon={Mail}
-        maxLength={50}
+        maxLength={FIELD_LIMITS.email}
         autoComplete="email"
         dir="ltr"
         error={errors.email?.message}
@@ -180,7 +181,7 @@ export default function RegisterForm({ dictionary, lang }) {
           label={t.password}
           icon={Lock}
           showPasswordToggle
-          maxLength={50}
+          maxLength={FIELD_LIMITS.password}
           autoComplete="new-password"
           error={errors.password?.message}
           aria-describedby="password-requirements"
@@ -222,7 +223,7 @@ export default function RegisterForm({ dictionary, lang }) {
         label={t.confirmPassword}
         icon={Lock}
         showPasswordToggle
-        maxLength={50}
+        maxLength={FIELD_LIMITS.password}
         autoComplete="new-password"
         error={errors.password_confirmation?.message}
         {...register('password_confirmation')}

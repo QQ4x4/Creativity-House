@@ -17,10 +17,10 @@ class StoreModuleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title_en' => ['required', 'string', 'max:200'],
-            'title_ar' => ['nullable', 'string', 'max:200'],
-            'duration_label_en' => ['nullable', 'string', 'max:80'],
-            'duration_label_ar' => ['nullable', 'string', 'max:80'],
+            'title_en' => ['required', 'string', 'max:'.config('field_limits.medium')],
+            'title_ar' => ['nullable', 'string', 'max:'.config('field_limits.medium')],
+            'duration_label_en' => ['nullable', 'string', 'max:'.config('field_limits.short')],
+            'duration_label_ar' => ['nullable', 'string', 'max:'.config('field_limits.short')],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];
     }

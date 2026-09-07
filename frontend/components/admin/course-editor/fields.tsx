@@ -14,6 +14,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import CharacterCounter from '@/components/ui/CharacterCounter';
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import type { CourseFormValues } from '@/lib/admin/schema';
 import type {
   BooleanFieldPath,
@@ -33,6 +35,9 @@ interface TextFieldProps {
   rows?: number;
   type?: 'text' | 'date' | 'url';
   dir?: 'rtl' | 'ltr';
+  /** HTML / schema max length. Defaults: multiline → long (2000), else medium (255). */
+  maxLength?: number;
+  showCounter?: boolean;
 }
 
 export function TextField({
@@ -44,8 +49,13 @@ export function TextField({
   rows = 5,
   type = 'text',
   dir,
+  maxLength,
+  showCounter,
 }: TextFieldProps) {
   const { control } = useFormContext<CourseFormValues>();
+  const resolvedMax =
+    maxLength ?? (multiline ? FIELD_LIMITS.long : type === 'url' ? FIELD_LIMITS.url : FIELD_LIMITS.medium);
+  const shouldShowCounter = showCounter ?? multiline;
 
   return (
     <FormField
@@ -56,11 +66,26 @@ export function TextField({
           <FormLabel>{label}</FormLabel>
           <FormControl>
             {multiline ? (
-              <Textarea {...field} rows={rows} placeholder={placeholder} dir={dir} />
+              <Textarea
+                {...field}
+                rows={rows}
+                placeholder={placeholder}
+                dir={dir}
+                maxLength={resolvedMax}
+              />
             ) : (
-              <Input {...field} type={type} placeholder={placeholder} dir={dir} />
+              <Input
+                {...field}
+                type={type}
+                placeholder={placeholder}
+                dir={dir}
+                maxLength={resolvedMax}
+              />
             )}
           </FormControl>
+          {shouldShowCounter ? (
+            <CharacterCounter value={String(field.value ?? '')} max={resolvedMax} />
+          ) : null}
           {description ? <FormDescription>{description}</FormDescription> : null}
           <FormMessage />
         </FormItem>
@@ -145,6 +170,8 @@ interface BilingualFieldProps {
   placeholderAr?: string;
   multiline?: boolean;
   rows?: number;
+  maxLength?: number;
+  showCounter?: boolean;
 }
 
 /**
@@ -160,6 +187,8 @@ export function BilingualField({
   placeholderAr,
   multiline = false,
   rows = 5,
+  maxLength,
+  showCounter,
 }: BilingualFieldProps) {
   return (
     <div className="space-y-2">
@@ -176,6 +205,8 @@ export function BilingualField({
           placeholder={placeholderEn}
           multiline={multiline}
           rows={rows}
+          maxLength={maxLength}
+          showCounter={showCounter}
         />
         <TextField
           name={nameAr}
@@ -184,6 +215,8 @@ export function BilingualField({
           multiline={multiline}
           rows={rows}
           dir="rtl"
+          maxLength={maxLength}
+          showCounter={showCounter}
         />
       </div>
     </div>
@@ -243,6 +276,7 @@ export function BulletList({
                   {...register(`${name}.${index}.value` as const)}
                   placeholder={placeholder}
                   dir={dir}
+                  maxLength={FIELD_LIMITS.medium}
                 />
               </div>
 

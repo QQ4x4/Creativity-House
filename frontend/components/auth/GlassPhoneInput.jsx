@@ -11,6 +11,7 @@ import flags from 'react-phone-number-input/flags';
 import enLabels from 'react-phone-number-input/locale/en.json';
 import arLabels from 'react-phone-number-input/locale/ar.json';
 import { ChevronDown, Phone, Search } from 'lucide-react';
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
 
 const FIELD_H = 'h-[52px]';
 
@@ -275,7 +276,7 @@ export default function GlassPhoneInput({
               emit(country, digits);
             }}
             onBlur={onBlur}
-            maxLength={20}
+            maxLength={FIELD_LIMITS.phone}
             placeholder="7XX XXX XXX"
             className={`min-w-0 flex-1 bg-transparent px-4 text-sm outline-none placeholder:text-gray-400 disabled:cursor-not-allowed ${
               isPortal ? 'text-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500' : 'text-gray-100 placeholder:text-gray-500'

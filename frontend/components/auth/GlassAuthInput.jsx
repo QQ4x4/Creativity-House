@@ -13,7 +13,7 @@ const GlassAuthInput = forwardRef(function GlassAuthInput(
     label,
     error,
     type = 'text',
-    maxLength = 50,
+    maxLength,
     autoComplete,
     dir,
     icon: Icon,
@@ -51,7 +51,7 @@ const GlassAuthInput = forwardRef(function GlassAuthInput(
           ref={ref}
           id={id}
           type={inputType}
-          maxLength={maxLength}
+          {...(maxLength != null ? { maxLength } : {})}
           autoComplete={autoComplete}
           dir={dir}
           className={`w-full max-w-full min-h-[48px] rounded-2xl border py-3.5 outline-none transition-all duration-200 ${

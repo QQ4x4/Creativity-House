@@ -68,14 +68,14 @@ class CheckoutProcessRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => ['required', 'string', 'max:50', 'regex:/^[\p{L}\s\'\-]+$/u'],
-            'last_name' => ['required', 'string', 'max:50', 'regex:/^[\p{L}\s\'\-]+$/u'],
-            'email' => ['required', 'string', 'email:filter', 'max:50'],
-            'phone_number' => ['required', 'string', 'max:50', 'regex:/^\+[1-9]\d{6,14}$/'],
+            'first_name' => ['required', 'string', 'max:'.config('field_limits.name'), 'regex:/^[\p{L}\s\'\-]+$/u'],
+            'last_name' => ['required', 'string', 'max:'.config('field_limits.name'), 'regex:/^[\p{L}\s\'\-]+$/u'],
+            'email' => ['required', 'string', 'email:filter', 'max:'.config('field_limits.email')],
+            'phone_number' => ['required', 'string', 'max:'.config('field_limits.phone'), 'regex:/^\+[1-9]\d{6,14}$/'],
             'country' => ['required', 'string', 'size:2', 'regex:/^[A-Z]{2}$/'],
             'course_id' => ['required_without:course_slug', 'nullable', 'integer', 'exists:courses,id'],
-            'course_slug' => ['required_without:course_id', 'nullable', 'string', 'max:191', 'exists:courses,slug'],
-            'mode' => ['nullable', 'string', 'max:32', Rule::in(['live', 'recorded', 'simulator'])],
+            'course_slug' => ['required_without:course_id', 'nullable', 'string', 'max:'.config('field_limits.slug'), 'exists:courses,slug'],
+            'mode' => ['nullable', 'string', 'max:'.config('field_limits.short'), Rule::in(['live', 'recorded', 'simulator'])],
         ];
     }
 

@@ -28,7 +28,8 @@ use Illuminate\Support\Facades\Route;
 | API Routes
 |--------------------------------------------------------------------------
 |
-| Prefixed with /api. Auth mutation endpoints are throttled aggressively.
+| Prefixed with /api. The api middleware group applies `throttle:api` (60/min).
+| Auth mutation endpoints also use `throttle:auth` (5/min per IP).
 |
 */
 
@@ -41,7 +42,7 @@ Route::get('/health', function () {
 });
 
 Route::prefix('auth')->group(function () {
-    Route::middleware('throttle:5,1')->group(function () {
+    Route::middleware('throttle:auth')->group(function () {
         Route::post('/register', [AuthController::class, 'register']);
         Route::post('/login', [AuthController::class, 'login']);
         Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
@@ -53,7 +54,7 @@ Route::prefix('auth')->group(function () {
             ->name('auth.google.exchange');
     });
 
-    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+    Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
         Route::match(['patch', 'put'], '/complete-profile', [AuthController::class, 'completeProfile'])
@@ -72,12 +73,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 |
 | Unauthenticated. Do not nest these under /student or auth:sanctum —
 | enrolled-only listings stay on /api/student/courses and /api/v1/courses.
+| Global `throttle:api` (60/min) already applies via the api middleware group.
 |
 */
-Route::middleware('throttle:60,1')->group(function () {
-    Route::get('/courses', [PublicCatalogController::class, 'index']);
-    Route::get('/courses/{course}', [PublicCatalogController::class, 'show']);
-});
+Route::get('/courses', [PublicCatalogController::class, 'index']);
+Route::get('/courses/{course}', [PublicCatalogController::class, 'show']);
 
 /*
 |--------------------------------------------------------------------------
@@ -99,7 +99,6 @@ Route::middleware(['auth:sanctum', 'throttle:20,1'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::post('/v1/stripe/webhook', [PaymentController::class, 'webhook'])
-    ->middleware('throttle:60,1')
     ->name('api.v1.stripe.webhook');
 
 /*
@@ -204,7 +203,8 @@ $studentRoutes = function (): void {
         ->name('lessons.uncomplete');
 };
 
-Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () use ($studentRoutes) {
+// Global `throttle:api` (60/min) applies via the api middleware group.
+Route::middleware(['auth:sanctum'])->group(function () use ($studentRoutes) {
     Route::prefix('v1')->name('api.v1.')->group($studentRoutes);
 
     Route::prefix('student')->name('api.student.')->group($studentRoutes);
@@ -227,7 +227,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () use ($s
 | so an id belonging to another course 404s instead of being edited.
 |
 */
-Route::middleware(['auth:sanctum', 'admin', 'throttle:120,1'])
+Route::middleware(['auth:sanctum', 'admin'])
     ->prefix('v1/admin')
     ->name('api.v1.admin.')
     ->scopeBindings()

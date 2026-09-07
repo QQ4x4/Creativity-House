@@ -14,6 +14,7 @@ import {
   createPasswordChangeSchema,
   remapServerErrors,
 } from '@/lib/validations/profile';
+import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { applyServerErrors } from '@/lib/auth';
 import { toastApiError } from '@/lib/toast';
 
@@ -122,6 +123,7 @@ export default function SecurityTab({
             label={labels.currentPassword}
             icon={Lock}
             showPasswordToggle
+            maxLength={FIELD_LIMITS.password}
             autoComplete="current-password"
             error={errors.currentPassword?.message}
             variant="portal"
@@ -134,6 +136,7 @@ export default function SecurityTab({
               label={labels.newPassword}
               icon={Lock}
               showPasswordToggle
+              maxLength={FIELD_LIMITS.password}
               autoComplete="new-password"
               aria-describedby="profile-password-requirements"
               error={errors.newPassword?.message}
@@ -173,6 +176,7 @@ export default function SecurityTab({
             label={labels.confirmNewPassword}
             icon={Lock}
             showPasswordToggle
+            maxLength={FIELD_LIMITS.password}
             autoComplete="new-password"
             error={errors.confirmPassword?.message}
             variant="portal"
