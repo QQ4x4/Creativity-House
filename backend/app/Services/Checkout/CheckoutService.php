@@ -132,6 +132,14 @@ class CheckoutService
 
     private function resolveAmount(Course $course, string $mode): float
     {
+        $tier = $course->pricingTiers()
+            ->where('mode', $mode)
+            ->first();
+
+        if ($tier && is_numeric($tier->price)) {
+            return round((float) $tier->price, 2);
+        }
+
         $modes = $course->catalog_modes;
 
         if (is_array($modes) && isset($modes[$mode]) && is_array($modes[$mode])) {

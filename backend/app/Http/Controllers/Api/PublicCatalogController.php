@@ -17,7 +17,7 @@ class PublicCatalogController extends Controller
         return PublicCourseResource::collection(
             Course::query()
                 ->publicCatalog()
-                ->with(['modules.subModules.lessons', 'modules.lessons'])
+                ->with(['modules.subModules.lessons', 'modules.lessons', 'pricingTiers'])
                 ->orderBy('sort_order')
                 ->orderBy('id')
                 ->get()
@@ -31,7 +31,7 @@ class PublicCatalogController extends Controller
     {
         abort_unless($course->is_published && $course->is_public, 404);
 
-        $course->load(['modules.subModules.lessons', 'modules.lessons']);
+        $course->load(['modules.subModules.lessons', 'modules.lessons', 'pricingTiers']);
 
         return new PublicCourseResource($course);
     }

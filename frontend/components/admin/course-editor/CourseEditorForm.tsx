@@ -75,6 +75,7 @@ const FIELD_TAB: Record<string, (typeof TABS)[number]['value']> = {
   available_modes: 'pricing',
   default_mode: 'pricing',
   catalog_modes: 'pricing',
+  pricing_tiers: 'pricing',
   rating: 'pricing',
   students_count: 'pricing',
   total_hours: 'pricing',

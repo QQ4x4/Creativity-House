@@ -72,6 +72,23 @@ class UpdateCourseRequest extends FormRequest
             'catalog_modes.*.features_ar' => ['nullable', 'array'],
             'catalog_modes.*.features_ar.*' => ['string', 'max:'.config('field_limits.medium')],
 
+            // Preferred multi-tier pricing (synced to course_pricing_tiers).
+            'pricing_tiers' => ['sometimes', 'nullable', 'array'],
+            'pricing_tiers.*.mode' => ['required', 'string', Rule::in(self::MODES)],
+            'pricing_tiers.*.price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
+            'pricing_tiers.*.original_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'pricing_tiers.*.duration_hours' => ['nullable', 'integer', 'min:0', 'max:10000'],
+            'pricing_tiers.*.badge_text_en' => ['nullable', 'string', 'max:'.config('field_limits.medium')],
+            'pricing_tiers.*.badge_text_ar' => ['nullable', 'string', 'max:'.config('field_limits.medium')],
+            'pricing_tiers.*.features_en' => ['nullable', 'array'],
+            'pricing_tiers.*.features_en.*' => ['string', 'max:'.config('field_limits.medium')],
+            'pricing_tiers.*.features_ar' => ['nullable', 'array'],
+            'pricing_tiers.*.features_ar.*' => ['string', 'max:'.config('field_limits.medium')],
+            'pricing_tiers.*.guarantee_title_en' => ['nullable', 'string', 'max:'.config('field_limits.medium')],
+            'pricing_tiers.*.guarantee_title_ar' => ['nullable', 'string', 'max:'.config('field_limits.medium')],
+            'pricing_tiers.*.guarantee_text_en' => ['nullable', 'string', 'max:'.config('field_limits.long')],
+            'pricing_tiers.*.guarantee_text_ar' => ['nullable', 'string', 'max:'.config('field_limits.long')],
+
             /* ─── Marketing ──────────────────────────────────────────────── */
             'description_en' => ['sometimes', 'nullable', 'string', 'max:'.config('field_limits.long')],
             'description_ar' => ['sometimes', 'nullable', 'string', 'max:'.config('field_limits.long')],

@@ -46,6 +46,7 @@ function normalizePublicCourse(raw, lang) {
       last_updated: raw.last_updated ?? raw.lastUpdated,
       cover_image: raw.cover_image ?? raw.cover_image_url ?? raw.coverImage,
       modes: raw.modes ?? raw.catalog_modes,
+      pricing_tiers: raw.pricing_tiers ?? raw.pricingTiers,
       curriculum: raw.curriculum,
       target_audience_en: raw.target_audience_en ?? raw.target_audience,
       target_audience_ar: raw.target_audience_ar ?? raw.target_audience,

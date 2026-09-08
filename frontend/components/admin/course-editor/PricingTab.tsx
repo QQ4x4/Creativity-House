@@ -2,7 +2,6 @@
 
 import { useFormContext, useWatch } from 'react-hook-form';
 
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -21,8 +20,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DELIVERY_MODES, type DeliveryMode } from '@/lib/admin/types';
-import type { CourseFormValues } from '@/lib/admin/schema';
-import { NumberField, TextField } from './fields';
+import { emptyPricingTier, type CourseFormValues } from '@/lib/admin/schema';
+import { BilingualBulletList, NumberField, TextField } from './fields';
 
 const MODE_LABELS: Record<DeliveryMode, string> = {
   live: 'Live',
@@ -30,65 +29,166 @@ const MODE_LABELS: Record<DeliveryMode, string> = {
   simulator: 'Simulator',
 };
 
+function ModeTierCard({ mode, index }: { mode: DeliveryMode; index: number }) {
+  const prefix = `pricing_tiers.${index}` as const;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{MODE_LABELS[mode]} pricing</CardTitle>
+        <CardDescription>
+          Price, duration, badge, guarantee and feature checklist for the {MODE_LABELS[mode]} tab.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          <NumberField
+            name={`${prefix}.price`}
+            label="Price"
+            step="0.01"
+            min={0}
+            placeholder="599"
+          />
+          <NumberField
+            name={`${prefix}.original_price`}
+            label="Original price"
+            step="0.01"
+            min={0}
+            placeholder="799"
+            nullable
+            description="Leave empty for no discount."
+          />
+          <NumberField
+            name={`${prefix}.duration_hours`}
+            label="Duration (hours)"
+            step="1"
+            min={0}
+            placeholder="60"
+          />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextField
+            name={`${prefix}.badge_text_en`}
+            label="Badge (EN)"
+            placeholder="Best value"
+          />
+          <TextField
+            name={`${prefix}.badge_text_ar`}
+            label="Badge (AR)"
+            placeholder="أفضل قيمة"
+            dir="rtl"
+          />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextField
+            name={`${prefix}.guarantee_title_en`}
+            label="Guarantee title (EN)"
+            placeholder="30-Day Money-Back Guarantee"
+          />
+          <TextField
+            name={`${prefix}.guarantee_title_ar`}
+            label="Guarantee title (AR)"
+            placeholder="ضمان استرداد الأموال خلال 30 يومًا"
+            dir="rtl"
+          />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextField
+            name={`${prefix}.guarantee_text_en`}
+            label="Guarantee text (EN)"
+            multiline
+            rows={3}
+            placeholder="Full refund if you are not satisfied."
+          />
+          <TextField
+            name={`${prefix}.guarantee_text_ar`}
+            label="Guarantee text (AR)"
+            multiline
+            rows={3}
+            dir="rtl"
+            placeholder="استرداد كامل إذا لم تكن راضيًا."
+          />
+        </div>
+
+        <BilingualBulletList
+          nameEn={`${prefix}.features_en`}
+          nameAr={`${prefix}.features_ar`}
+          label="Included features"
+          description="Shown as the checklist under the buy button."
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
 export function PricingTab() {
-  const { control } = useFormContext<CourseFormValues>();
+  const { control, setValue, getValues } = useFormContext<CourseFormValues>();
 
-  const price = useWatch({ control, name: 'price' });
-  const originalPrice = useWatch({ control, name: 'original_price' });
-  const availableModes = useWatch({ control, name: 'available_modes' });
+  const availableModes = useWatch({ control, name: 'available_modes' }) ?? [];
+  const pricingTiers = useWatch({ control, name: 'pricing_tiers' }) ?? [];
+  const defaultMode = useWatch({ control, name: 'default_mode' });
 
-  const discount =
-    originalPrice !== null && originalPrice > price ? Math.round(originalPrice - price) : 0;
-  const discountPercent =
-    originalPrice !== null && originalPrice > 0 && originalPrice > price
-      ? Math.round(((originalPrice - price) / originalPrice) * 100)
-      : 0;
+  const syncCourseLevelFromDefault = (tiers: CourseFormValues['pricing_tiers'], mode: DeliveryMode | null) => {
+    const tier = tiers.find((item) => item.mode === mode) ?? tiers[0];
+    if (!tier) return;
+    setValue('price', tier.price, { shouldDirty: true });
+    setValue('original_price', tier.original_price, { shouldDirty: true });
+    setValue('total_hours', tier.duration_hours > 0 ? tier.duration_hours : null, {
+      shouldDirty: true,
+    });
+  };
+
+  const toggleMode = (mode: DeliveryMode, enabled: boolean) => {
+    const currentModes = getValues('available_modes') ?? [];
+    const currentTiers = getValues('pricing_tiers') ?? [];
+    const set = new Set(currentModes);
+
+    if (enabled) {
+      set.add(mode);
+    } else {
+      set.delete(mode);
+    }
+
+    const nextModes = DELIVERY_MODES.filter((item) => set.has(item));
+    let nextTiers = currentTiers.filter((tier) => set.has(tier.mode));
+
+    if (enabled && !nextTiers.some((tier) => tier.mode === mode)) {
+      nextTiers = [...nextTiers, emptyPricingTier(mode, { sort_order: nextTiers.length })];
+      // Keep canonical mode order so cards match the checkbox row.
+      nextTiers = DELIVERY_MODES.filter((item) => set.has(item))
+        .map((item) => nextTiers.find((tier) => tier.mode === item)!)
+        .filter(Boolean);
+    }
+
+    setValue('available_modes', nextModes, { shouldDirty: true, shouldValidate: true });
+    setValue('pricing_tiers', nextTiers, { shouldDirty: true, shouldValidate: true });
+
+    const currentDefault = getValues('default_mode');
+    if (currentDefault && !nextModes.includes(currentDefault)) {
+      const nextDefault = nextModes[0] ?? null;
+      setValue('default_mode', nextDefault, { shouldDirty: true, shouldValidate: true });
+      syncCourseLevelFromDefault(nextTiers, nextDefault);
+    } else if (enabled && mode === currentDefault) {
+      syncCourseLevelFromDefault(nextTiers, currentDefault);
+    }
+  };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Pricing</CardTitle>
+          <CardTitle>Currency & delivery modes</CardTitle>
           <CardDescription>
-            The pricing card shows a strike-through and a savings pill whenever the original price
-            is higher than the price.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <NumberField name="price" label="Price" step="0.01" min={0} placeholder="599" />
-            <NumberField
-              name="original_price"
-              label="Original price"
-              step="0.01"
-              min={0}
-              placeholder="799"
-              nullable
-              description="Leave empty for no discount."
-            />
-            <TextField name="currency" label="Currency" placeholder="USD" />
-          </div>
-
-          {discount > 0 ? (
-            <Badge variant="success">
-              Public page will show: Save ${discount} ({discountPercent}% off)
-            </Badge>
-          ) : (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              No discount pill will be shown.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Delivery modes</CardTitle>
-          <CardDescription>
-            Only the selected modes render as toggle buttons on the course page.
+            Enable the modes that appear as toggle buttons on the public course page. Each enabled
+            mode gets its own pricing card below.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <TextField name="currency" label="Currency" placeholder="USD" />
+
           <FormField
             control={control}
             name="available_modes"
@@ -107,14 +207,7 @@ export function PricingTab() {
                         <Checkbox
                           checked={checked}
                           onCheckedChange={(next) => {
-                            const set = new Set(field.value);
-                            if (next === true) {
-                              set.add(mode);
-                            } else {
-                              set.delete(mode);
-                            }
-                            // Preserve the canonical order the page renders in.
-                            field.onChange(DELIVERY_MODES.filter((item) => set.has(item)));
+                            toggleMode(mode, next === true);
                           }}
                         />
                         <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
@@ -137,7 +230,11 @@ export function PricingTab() {
                 <FormLabel>Default selected mode</FormLabel>
                 <Select
                   value={field.value ?? ''}
-                  onValueChange={(value) => field.onChange(value === '' ? null : value)}
+                  onValueChange={(value) => {
+                    const next = value === '' ? null : (value as DeliveryMode);
+                    field.onChange(next);
+                    syncCourseLevelFromDefault(getValues('pricing_tiers') ?? [], next);
+                  }}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -166,10 +263,19 @@ export function PricingTab() {
         </CardContent>
       </Card>
 
+      {availableModes.map((mode) => {
+        const index = pricingTiers.findIndex((tier) => tier.mode === mode);
+        if (index < 0) return null;
+        return <ModeTierCard key={mode} mode={mode} index={index} />;
+      })}
+
       <Card>
         <CardHeader>
           <CardTitle>Headline stats</CardTitle>
-          <CardDescription>Rating, students and duration shown under the title.</CardDescription>
+          <CardDescription>
+            Rating and students shown under the title. Total hours syncs from the default mode tier
+            on save{defaultMode ? ` (${MODE_LABELS[defaultMode]})` : ''}.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
           <NumberField
@@ -189,6 +295,7 @@ export function PricingTab() {
             min={0}
             placeholder="60"
             nullable
+            description="Mirrored from the default mode duration when you save."
           />
         </CardContent>
       </Card>

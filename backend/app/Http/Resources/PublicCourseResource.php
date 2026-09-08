@@ -70,7 +70,8 @@ class PublicCourseResource extends JsonResource
             'curriculum' => $this->syllabus(),
             'schedule_en' => $this->schedule_en,
             'schedule_ar' => $this->schedule_ar,
-            'modes' => $this->catalog_modes ?? [],
+            'modes' => $this->modesPayload(),
+            'pricing_tiers' => $this->pricingTiersPayload(),
             'seo' => [
                 'title' => $this->seo_title,
                 'description' => $this->seo_description,
@@ -189,5 +190,66 @@ class PublicCourseResource extends JsonResource
         }
 
         return Storage::disk('public')->url($value);
+    }
+
+    /**
+     * Prefer relational pricing tiers; fall back to legacy catalog_modes JSON.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function modesPayload(): array
+    {
+        $tiers = $this->pricingTiersPayload();
+        if ($tiers !== []) {
+            $map = [];
+            foreach ($tiers as $tier) {
+                $hours = (int) ($tier['duration_hours'] ?? 0);
+                $map[$tier['mode']] = [
+                    'price' => $tier['price'],
+                    'original_price' => $tier['original_price'] ?? $tier['price'],
+                    'duration_en' => $hours > 0 ? "{$hours} hours" : '',
+                    'duration_ar' => $hours > 0 ? "{$hours} ساعة" : '',
+                    'duration_hours' => $hours,
+                    'features_en' => $tier['features_en'],
+                    'features_ar' => $tier['features_ar'],
+                    'badge_text_en' => $tier['badge_text_en'],
+                    'badge_text_ar' => $tier['badge_text_ar'],
+                    'guarantee_title_en' => $tier['guarantee_title_en'],
+                    'guarantee_title_ar' => $tier['guarantee_title_ar'],
+                    'guarantee_text_en' => $tier['guarantee_text_en'],
+                    'guarantee_text_ar' => $tier['guarantee_text_ar'],
+                ];
+            }
+
+            return $map;
+        }
+
+        return is_array($this->catalog_modes) ? $this->catalog_modes : [];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function pricingTiersPayload(): array
+    {
+        $tiers = $this->relationLoaded('pricingTiers')
+            ? $this->pricingTiers
+            : $this->pricingTiers()->get();
+
+        return $tiers->map(fn ($tier) => [
+            'id' => $tier->id,
+            'mode' => $tier->mode,
+            'price' => (float) $tier->price,
+            'original_price' => $tier->original_price !== null ? (float) $tier->original_price : null,
+            'duration_hours' => (int) $tier->duration_hours,
+            'badge_text_en' => $tier->badge_text_en,
+            'badge_text_ar' => $tier->badge_text_ar,
+            'features_en' => array_values($tier->features_en ?? []),
+            'features_ar' => array_values($tier->features_ar ?? []),
+            'guarantee_title_en' => $tier->guarantee_title_en,
+            'guarantee_title_ar' => $tier->guarantee_title_ar,
+            'guarantee_text_en' => $tier->guarantee_text_en,
+            'guarantee_text_ar' => $tier->guarantee_text_ar,
+        ])->values()->all();
     }
 }

@@ -51,14 +51,32 @@ function BuyNowButton({ labels, isCheckingOut, onBuyNow, className }) {
 }
 
 function PricingCard({ course, mode, labels, lang, sticky = false, isCheckingOut, onBuyNow }) {
+  const tiers = course.pricingTiers || [];
+  const activeTier = tiers.find((t) => t.mode === mode) || null;
   const selected = course.modes?.[mode] || {
     price: course.price,
     originalPrice: course.originalPrice,
     duration: course.durationLabel,
     features: [],
   };
-  const hasDiscount = selected.originalPrice > selected.price;
-  const savings = hasDiscount ? selected.originalPrice - selected.price : 0;
+
+  const price = activeTier?.price ?? selected.price;
+  const originalPrice = activeTier?.originalPrice ?? selected.originalPrice;
+  const hasDiscount = originalPrice > price;
+  const savings = hasDiscount ? originalPrice - price : 0;
+  const badgeText =
+    activeTier?.badge ||
+    selected.badge ||
+    (hasDiscount ? `${labels.discount} $${savings}` : null);
+  const duration =
+    activeTier?.durationHours > 0
+      ? `${activeTier.durationHours} ${lang === 'ar' ? 'ساعة' : 'Hours'}`
+      : selected.duration || course.durationLabel;
+  const guaranteeTitle =
+    activeTier?.guaranteeTitle || selected.guaranteeTitle || labels.guarantee;
+  const guaranteeText =
+    activeTier?.guaranteeText || selected.guaranteeText || labels.moneyBackHint;
+  const features = activeTier?.features || selected.features || [];
   const inquiryHref = `/${lang}/course-inquiry?course=${encodeURIComponent(course.slug)}`;
 
   return (
@@ -68,20 +86,20 @@ function PricingCard({ course, mode, labels, lang, sticky = false, isCheckingOut
       }`}
     >
       <div className="flex items-end gap-3">
-        <p className="text-3xl font-extrabold text-plum-700 dark:text-gold-300">${selected.price}</p>
+        <p className="text-3xl font-extrabold text-plum-700 dark:text-gold-300">${price}</p>
         {hasDiscount ? (
-          <p className="pb-1 text-sm text-gray-400 line-through dark:text-gray-500">${selected.originalPrice}</p>
+          <p className="pb-1 text-sm text-gray-400 line-through dark:text-gray-500">${originalPrice}</p>
         ) : null}
       </div>
-      {hasDiscount ? (
+      {badgeText ? (
         <span className="mt-2 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200">
-          {labels.discount} ${savings}
+          {badgeText}
         </span>
       ) : null}
 
       <p className="mt-3 inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
         <Clock className="h-4 w-4 text-plum-600 dark:text-gold-300" aria-hidden />
-        {selected.duration}
+        {duration}
       </p>
 
       <BuyNowButton
@@ -103,12 +121,14 @@ function PricingCard({ course, mode, labels, lang, sticky = false, isCheckingOut
 
       <p className="mt-3 inline-flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-200">
         <ShieldCheck className="h-4 w-4" aria-hidden />
-        {labels.guarantee}
+        {guaranteeTitle}
       </p>
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">{labels.moneyBackHint}</p>
+      {guaranteeText ? (
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">{guaranteeText}</p>
+      ) : null}
 
       <ul className="mt-5 space-y-2.5">
-        {(selected.features || []).map((feature) => (
+        {features.map((feature) => (
           <li key={feature} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-200">
             <Check className="mt-0.5 h-4 w-4 shrink-0 text-gold-400" aria-hidden />
             {feature}
@@ -386,8 +406,19 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
             <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 p-3 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#120a1c]/95 lg:hidden">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-lg font-extrabold text-plum-700 dark:text-gold-300">${(course.modes?.[mode]?.price ?? course.price)}</p>
-                  <p className="text-[11px] text-emerald-800 dark:text-emerald-200">{labels.guarantee}</p>
+                  <p className="text-lg font-extrabold text-plum-700 dark:text-gold-300">
+                    $
+                    {(
+                      course.pricingTiers?.find((t) => t.mode === mode)?.price ??
+                      course.modes?.[mode]?.price ??
+                      course.price
+                    )}
+                  </p>
+                  <p className="text-[11px] text-emerald-800 dark:text-emerald-200">
+                    {course.pricingTiers?.find((t) => t.mode === mode)?.guaranteeTitle ||
+                      course.modes?.[mode]?.guaranteeTitle ||
+                      labels.guarantee}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Link

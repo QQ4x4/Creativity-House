@@ -747,14 +747,70 @@ function pickInstructorList(course, ar) {
 export function localizeCatalogCourse(course, lang = 'en') {
   if (!course) return null;
   const ar = lang === 'ar';
+
+  const rawTiers = Array.isArray(course.pricing_tiers)
+    ? course.pricing_tiers
+    : Array.isArray(course.pricingTiers)
+      ? course.pricingTiers
+      : [];
+
+  const pricingTiers = rawTiers.map((tier) => ({
+    mode: tier.mode,
+    price: tier.price,
+    originalPrice: tier.original_price ?? tier.originalPrice ?? null,
+    durationHours: tier.duration_hours ?? tier.durationHours ?? 0,
+    badge: ar
+      ? tier.badge_text_ar ?? tier.badgeTextAr ?? tier.badge ?? null
+      : tier.badge_text_en ?? tier.badgeTextEn ?? tier.badge ?? null,
+    features: ar
+      ? tier.features_ar ?? tier.featuresAr ?? tier.features ?? []
+      : tier.features_en ?? tier.featuresEn ?? tier.features ?? [],
+    guaranteeTitle: ar
+      ? tier.guarantee_title_ar ?? tier.guaranteeTitleAr ?? tier.guaranteeTitle ?? null
+      : tier.guarantee_title_en ?? tier.guaranteeTitleEn ?? tier.guaranteeTitle ?? null,
+    guaranteeText: ar
+      ? tier.guarantee_text_ar ?? tier.guaranteeTextAr ?? tier.guaranteeText ?? null
+      : tier.guarantee_text_en ?? tier.guaranteeTextEn ?? tier.guaranteeText ?? null,
+  }));
+
   const modes = {};
   Object.entries(course.modes || {}).forEach(([key, mode]) => {
+    const tier = pricingTiers.find((item) => item.mode === key);
     modes[key] = {
-      price: mode.price,
-      originalPrice: mode.original_price,
-      duration: ar ? mode.duration_ar : mode.duration_en,
-      features: ar ? mode.features_ar : mode.features_en,
+      price: mode.price ?? tier?.price,
+      originalPrice: mode.original_price ?? mode.originalPrice ?? tier?.originalPrice,
+      duration: ar ? mode.duration_ar ?? mode.duration : mode.duration_en ?? mode.duration,
+      durationHours: mode.duration_hours ?? mode.durationHours ?? tier?.durationHours ?? 0,
+      features: ar
+        ? mode.features_ar ?? mode.features ?? tier?.features ?? []
+        : mode.features_en ?? mode.features ?? tier?.features ?? [],
+      badge: ar
+        ? mode.badge_text_ar ?? mode.badge ?? tier?.badge ?? null
+        : mode.badge_text_en ?? mode.badge ?? tier?.badge ?? null,
+      guaranteeTitle: ar
+        ? mode.guarantee_title_ar ?? mode.guaranteeTitle ?? tier?.guaranteeTitle ?? null
+        : mode.guarantee_title_en ?? mode.guaranteeTitle ?? tier?.guaranteeTitle ?? null,
+      guaranteeText: ar
+        ? mode.guarantee_text_ar ?? mode.guaranteeText ?? tier?.guaranteeText ?? null
+        : mode.guarantee_text_en ?? mode.guaranteeText ?? tier?.guaranteeText ?? null,
     };
+  });
+
+  // Ensure modes entries exist for every pricing tier even if modes map was empty.
+  pricingTiers.forEach((tier) => {
+    if (!modes[tier.mode]) {
+      const hours = tier.durationHours || 0;
+      modes[tier.mode] = {
+        price: tier.price,
+        originalPrice: tier.originalPrice,
+        duration: hours > 0 ? (ar ? `${hours} ساعة` : `${hours} hours`) : '',
+        durationHours: hours,
+        features: tier.features,
+        badge: tier.badge,
+        guaranteeTitle: tier.guaranteeTitle,
+        guaranteeText: tier.guaranteeText,
+      };
+    }
   });
 
   return {
@@ -798,6 +854,7 @@ export function localizeCatalogCourse(course, lang = 'en') {
     })),
     schedule: ar ? course.schedule_ar : course.schedule_en,
     modes,
+    pricingTiers,
     seo: {
       title: ar ? course.title_ar : course.title_en,
       description: ar ? course.subtitle_ar : course.subtitle_en,

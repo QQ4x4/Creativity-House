@@ -48,6 +48,7 @@ class AdminCourseResource extends JsonResource
             'available_modes' => array_values($this->available_modes ?? []),
             'default_mode' => $this->default_mode,
             'catalog_modes' => (object) ($this->catalog_modes ?? []),
+            'pricing_tiers' => $this->pricingTiersPayload(),
 
             /* ─── Marketing ──────────────────────────────────────────────── */
             'description_en' => $this->description_en ?: $this->description,
@@ -113,5 +114,32 @@ class AdminCourseResource extends JsonResource
         $flat = array_values(array_map(strval(...), $value));
 
         return ['en' => $flat, 'ar' => $flat];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function pricingTiersPayload(): array
+    {
+        $tiers = $this->relationLoaded('pricingTiers')
+            ? $this->pricingTiers
+            : $this->pricingTiers()->get();
+
+        return $tiers->map(fn ($tier) => [
+            'id' => $tier->id,
+            'mode' => $tier->mode,
+            'price' => (float) $tier->price,
+            'original_price' => $tier->original_price !== null ? (float) $tier->original_price : null,
+            'duration_hours' => (int) $tier->duration_hours,
+            'badge_text_en' => $tier->badge_text_en,
+            'badge_text_ar' => $tier->badge_text_ar,
+            'features_en' => array_values($tier->features_en ?? []),
+            'features_ar' => array_values($tier->features_ar ?? []),
+            'guarantee_title_en' => $tier->guarantee_title_en,
+            'guarantee_title_ar' => $tier->guarantee_title_ar,
+            'guarantee_text_en' => $tier->guarantee_text_en,
+            'guarantee_text_ar' => $tier->guarantee_text_ar,
+            'sort_order' => (int) $tier->sort_order,
+        ])->values()->all();
     }
 }

@@ -7,6 +7,8 @@ import {
   type AdminCourseDto,
   type AdminLessonDto,
   type BilingualList,
+  type DeliveryMode,
+  type PricingTierDto,
 } from './types';
 
 /**
@@ -97,6 +99,23 @@ export const catalogModeSchema = z.object({
   features_ar: z.array(bulletItemSchema),
 });
 
+export const pricingTierSchema = z.object({
+  id: z.number().int().positive().nullable().optional(),
+  mode: z.enum(DELIVERY_MODES),
+  price: z.number().min(0, 'Price cannot be negative.').max(999999.99),
+  original_price: z.number().min(0).max(999999.99).nullable(),
+  duration_hours: z.number().int('Duration must be whole hours.').min(0).max(10000),
+  badge_text_en: z.string().max(FIELD_LIMITS.medium),
+  badge_text_ar: z.string().max(FIELD_LIMITS.medium),
+  features_en: z.array(bulletItemSchema),
+  features_ar: z.array(bulletItemSchema),
+  guarantee_title_en: z.string().max(FIELD_LIMITS.medium),
+  guarantee_title_ar: z.string().max(FIELD_LIMITS.medium),
+  guarantee_text_en: z.string().max(FIELD_LIMITS.long),
+  guarantee_text_ar: z.string().max(FIELD_LIMITS.long),
+  sort_order: z.number().int().min(0).optional(),
+});
+
 export const courseFormSchema = z
   .object({
     /* ─── General ──────────────────────────────────────────────────────── */
@@ -129,6 +148,7 @@ export const courseFormSchema = z
     available_modes: z.array(z.enum(DELIVERY_MODES)),
     default_mode: z.enum(DELIVERY_MODES).nullable(),
     catalog_modes: z.record(z.string(), catalogModeSchema),
+    pricing_tiers: z.array(pricingTierSchema),
 
     /* ─── Marketing ────────────────────────────────────────────────────── */
     description_en: z.string().max(FIELD_LIMITS.long),
@@ -226,6 +246,7 @@ export type ModuleFormValues = z.infer<typeof moduleSchema>;
 export type SubModuleFormValues = z.infer<typeof subModuleSchema>;
 export type LessonFormValues = z.infer<typeof lessonSchema>;
 export type LessonResourceFormValues = z.infer<typeof lessonResourceSchema>;
+export type PricingTierFormValues = z.infer<typeof pricingTierSchema>;
 
 function newClientKey(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -331,6 +352,85 @@ export function emptyModule(partial?: Partial<ModuleFormValues>): ModuleFormValu
   };
 }
 
+/** Blank per-mode pricing tier for the Pricing tab. */
+export function emptyPricingTier(
+  mode: DeliveryMode,
+  partial?: Partial<PricingTierFormValues>
+): PricingTierFormValues {
+  return {
+    id: null,
+    mode,
+    price: 0,
+    original_price: null,
+    duration_hours: 0,
+    badge_text_en: '',
+    badge_text_ar: '',
+    features_en: [],
+    features_ar: [],
+    guarantee_title_en: '',
+    guarantee_title_ar: '',
+    guarantee_text_en: '',
+    guarantee_text_ar: '',
+    sort_order: 0,
+    ...partial,
+  };
+}
+
+/** Pull a whole-hours number from legacy duration strings like "60 hours". */
+function parseDurationHours(value: string | null | undefined): number {
+  if (!value) return 0;
+  const match = String(value).match(/(\d+(?:\.\d+)?)/);
+  if (!match) return 0;
+  return Math.max(0, Math.round(Number(match[1])));
+}
+
+function tierFromCatalogMode(
+  mode: DeliveryMode,
+  catalog: AdminCourseDto['catalog_modes'][string] | undefined,
+  sortOrder: number
+): PricingTierFormValues {
+  return emptyPricingTier(mode, {
+    price: catalog?.price ?? 0,
+    original_price: catalog?.original_price ?? null,
+    duration_hours: parseDurationHours(catalog?.duration_en),
+    features_en: toBullets(catalog?.features_en),
+    features_ar: toBullets(catalog?.features_ar),
+    sort_order: sortOrder,
+  });
+}
+
+function hydratePricingTiers(course: AdminCourseDto): PricingTierFormValues[] {
+  const tiers = Array.isArray(course.pricing_tiers) ? course.pricing_tiers : [];
+
+  if (tiers.length > 0) {
+    return tiers.map((tier: PricingTierDto, index) => ({
+      id: tier.id ?? null,
+      mode: tier.mode,
+      price: Number(tier.price) || 0,
+      original_price: tier.original_price ?? null,
+      duration_hours: Number(tier.duration_hours) || 0,
+      badge_text_en: tier.badge_text_en ?? '',
+      badge_text_ar: tier.badge_text_ar ?? '',
+      features_en: toBullets(tier.features_en),
+      features_ar: toBullets(tier.features_ar),
+      guarantee_title_en: tier.guarantee_title_en ?? '',
+      guarantee_title_ar: tier.guarantee_title_ar ?? '',
+      guarantee_text_en: tier.guarantee_text_en ?? '',
+      guarantee_text_ar: tier.guarantee_text_ar ?? '',
+      sort_order: tier.sort_order ?? index,
+    }));
+  }
+
+  const modes =
+    (course.available_modes?.length ?? 0) > 0
+      ? course.available_modes
+      : (Object.keys(course.catalog_modes ?? {}) as DeliveryMode[]);
+
+  return modes.map((mode, index) =>
+    tierFromCatalogMode(mode, course.catalog_modes?.[mode], index)
+  );
+}
+
 /** Blank editor defaults for POST /api/v1/admin/courses (create flow). */
 export function defaultFormValues(): CourseFormValues {
   return {
@@ -355,6 +455,7 @@ export function defaultFormValues(): CourseFormValues {
     available_modes: ['live'],
     default_mode: 'live',
     catalog_modes: {},
+    pricing_tiers: [emptyPricingTier('live')],
 
     description_en: '',
     description_ar: '',
@@ -459,6 +560,7 @@ export function toFormValues(course: AdminCourseDto): CourseFormValues {
         },
       ])
     ),
+    pricing_tiers: hydratePricingTiers(course),
 
     description_en: course.description_en ?? '',
     description_ar: course.description_ar ?? '',
@@ -535,6 +637,43 @@ export function toFormValues(course: AdminCourseDto): CourseFormValues {
 
 /** Course columns only — the curriculum tree is saved by its own endpoint. */
 export function toCoursePayload(values: CourseFormValues): Record<string, unknown> {
+  const pricingTiers = values.pricing_tiers.map((tier, index) => ({
+    mode: tier.mode,
+    price: tier.price,
+    original_price: tier.original_price,
+    duration_hours: tier.duration_hours,
+    badge_text_en: nullable(tier.badge_text_en),
+    badge_text_ar: nullable(tier.badge_text_ar),
+    features_en: fromBullets(tier.features_en),
+    features_ar: fromBullets(tier.features_ar),
+    guarantee_title_en: nullable(tier.guarantee_title_en),
+    guarantee_title_ar: nullable(tier.guarantee_title_ar),
+    guarantee_text_en: nullable(tier.guarantee_text_en),
+    guarantee_text_ar: nullable(tier.guarantee_text_ar),
+    sort_order: tier.sort_order ?? index,
+  }));
+
+  // Rebuild catalog_modes from tiers for BC with older consumers.
+  const catalogModes = Object.fromEntries(
+    pricingTiers.map((tier) => {
+      const hours = tier.duration_hours;
+      return [
+        tier.mode,
+        {
+          price: tier.price,
+          original_price: tier.original_price,
+          duration_en: hours > 0 ? `${hours} hours` : null,
+          duration_ar: hours > 0 ? `${hours} ساعة` : null,
+          features_en: tier.features_en,
+          features_ar: tier.features_ar,
+        },
+      ];
+    })
+  );
+
+  const defaultTier =
+    pricingTiers.find((tier) => tier.mode === values.default_mode) ?? pricingTiers[0] ?? null;
+
   return {
     title_en: values.title_en.trim(),
     title_ar: nullable(values.title_ar),
@@ -551,24 +690,13 @@ export function toCoursePayload(values: CourseFormValues): Record<string, unknow
     is_published: values.is_published,
     is_public: values.is_public,
 
-    price: values.price,
-    original_price: values.original_price,
+    price: defaultTier?.price ?? values.price,
+    original_price: defaultTier?.original_price ?? values.original_price,
     currency: values.currency.toUpperCase(),
     available_modes: values.available_modes,
     default_mode: values.default_mode,
-    catalog_modes: Object.fromEntries(
-      Object.entries(values.catalog_modes).map(([key, mode]) => [
-        key,
-        {
-          price: mode.price,
-          original_price: mode.original_price,
-          duration_en: nullable(mode.duration_en),
-          duration_ar: nullable(mode.duration_ar),
-          features_en: fromBullets(mode.features_en),
-          features_ar: fromBullets(mode.features_ar),
-        },
-      ])
-    ),
+    catalog_modes: catalogModes,
+    pricing_tiers: pricingTiers,
 
     description_en: nullable(values.description_en),
     description_ar: nullable(values.description_ar),
@@ -580,7 +708,7 @@ export function toCoursePayload(values: CourseFormValues): Record<string, unknow
     cover_image: nullable(values.cover_image),
     rating: values.rating,
     students_count: values.students_count,
-    total_hours: values.total_hours,
+    total_hours: defaultTier?.duration_hours ?? values.total_hours,
     duration_label_en: nullable(values.duration_label_en),
     duration_label_ar: nullable(values.duration_label_ar),
     last_updated_at: nullable(values.last_updated_at),

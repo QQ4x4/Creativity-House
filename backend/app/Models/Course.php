@@ -121,6 +121,16 @@ class Course extends Model
     }
 
     /**
+     * Per delivery-mode pricing (Live / Recorded / Simulator).
+     *
+     * @return HasMany<CoursePricingTier, $this>
+     */
+    public function pricingTiers(): HasMany
+    {
+        return $this->hasMany(CoursePricingTier::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /**
      * @return HasMany<Order, $this>
      */
     public function orders(): HasMany

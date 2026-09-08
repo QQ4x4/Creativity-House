@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreCourseRequest;
 use App\Http\Requests\Admin\UpdateCourseRequest;
 use App\Http\Resources\Admin\AdminCourseResource;
 use App\Models\Course;
+use App\Services\Admin\CoursePricingTierService;
 use App\Services\Admin\CurriculumService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class CourseController extends Controller
 {
     public function __construct(
         private readonly CurriculumService $curriculum,
+        private readonly CoursePricingTierService $pricingTiers,
     ) {}
 
     /**
@@ -48,6 +50,8 @@ class CourseController extends Controller
     public function store(StoreCourseRequest $request): JsonResponse
     {
         $payload = $request->payload();
+        $tiers = $payload['pricing_tiers'] ?? null;
+        unset($payload['pricing_tiers']);
 
         $payload['slug'] = $this->resolveUniqueSlug(
             (string) ($payload['slug'] ?? ''),
@@ -71,6 +75,12 @@ class CourseController extends Controller
         $payload['seo_keywords'] = $payload['seo_keywords'] ?? [];
 
         $course = Course::query()->create($payload);
+
+        if (is_array($tiers)) {
+            $this->pricingTiers->sync($course, $tiers);
+        }
+
+        $course->load('pricingTiers');
         $course->setRelation('modules', collect());
 
         return (new AdminCourseResource($course))
@@ -83,6 +93,7 @@ class CourseController extends Controller
      */
     public function show(Course $course): AdminCourseResource
     {
+        $course->load('pricingTiers');
         $course->setRelation('modules', $this->curriculum->tree($course));
 
         return new AdminCourseResource($course);
@@ -97,6 +108,8 @@ class CourseController extends Controller
     public function update(UpdateCourseRequest $request, Course $course): AdminCourseResource
     {
         $payload = $request->payload();
+        $tiers = array_key_exists('pricing_tiers', $payload) ? $payload['pricing_tiers'] : null;
+        unset($payload['pricing_tiers']);
 
         // `title` is the legacy non-localized column still read by the student
         // portal and order receipts; keep it aligned with the English title.
@@ -110,7 +123,12 @@ class CourseController extends Controller
 
         $course->fill($payload)->save();
 
-        $course->refresh()->setRelation('modules', $this->curriculum->tree($course));
+        if (is_array($tiers)) {
+            $this->pricingTiers->sync($course, $tiers);
+        }
+
+        $course->refresh()->load('pricingTiers');
+        $course->setRelation('modules', $this->curriculum->tree($course));
 
         return new AdminCourseResource($course);
     }

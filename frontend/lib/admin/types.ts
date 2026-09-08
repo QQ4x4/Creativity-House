@@ -28,6 +28,24 @@ export interface CatalogModePricing {
   features_ar?: string[];
 }
 
+/** Per delivery-mode pricing tier from AdminCourseResource. */
+export interface PricingTierDto {
+  id?: number | null;
+  mode: DeliveryMode;
+  price: number;
+  original_price: number | null;
+  duration_hours: number;
+  badge_text_en: string | null;
+  badge_text_ar: string | null;
+  features_en: string[];
+  features_ar: string[];
+  guarantee_title_en: string | null;
+  guarantee_title_ar: string | null;
+  guarantee_text_en: string | null;
+  guarantee_text_ar: string | null;
+  sort_order?: number;
+}
+
 export interface AdminLessonResourceDto {
   id: number | null;
   title: string;
@@ -102,6 +120,7 @@ export interface AdminCourseDto {
   available_modes: DeliveryMode[];
   default_mode: DeliveryMode | null;
   catalog_modes: Record<string, CatalogModePricing>;
+  pricing_tiers?: PricingTierDto[];
 
   description_en: string | null;
   description_ar: string | null;
