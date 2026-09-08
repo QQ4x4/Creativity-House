@@ -15,29 +15,36 @@ function formatCount(value) {
 }
 
 /**
- * Prefer course-level price; if pricing tiers exist, show the lowest tier price
- * on the card so Enroll matches the cheapest option Stripe will charge today
- * (session still uses course_id → course.price until mode is wired).
+ * Resolve the pricing tier that matches the admin default mode
+ * (same source of truth as course-level price sync / detail page default).
  */
+function defaultPricingTier(course) {
+  const tiers = Array.isArray(course.pricingTiers)
+    ? course.pricingTiers
+    : Array.isArray(course.pricing_tiers)
+      ? course.pricing_tiers
+      : [];
+  if (tiers.length === 0) return null;
+
+  const defaultMode = course.defaultMode ?? course.default_mode;
+  return tiers.find((tier) => tier.mode === defaultMode) || tiers[0];
+}
+
 function displayPrice(course) {
-  const tiers = Array.isArray(course.pricingTiers) ? course.pricingTiers : [];
-  if (tiers.length > 0) {
-    const prices = tiers
-      .map((tier) => Number(tier.price))
-      .filter((price) => Number.isFinite(price) && price >= 0);
-    if (prices.length > 0) {
-      return Math.min(...prices);
-    }
+  const tier = defaultPricingTier(course);
+  if (tier) {
+    const price = Number(tier.price);
+    if (Number.isFinite(price) && price >= 0) return price;
   }
   return Number(course.price) || 0;
 }
 
 function displayOriginalPrice(course, price) {
-  const tiers = Array.isArray(course.pricingTiers) ? course.pricingTiers : [];
-  if (tiers.length > 0) {
-    const cheapest = tiers.find((tier) => Number(tier.price) === price);
-    const original = Number(cheapest?.originalPrice);
+  const tier = defaultPricingTier(course);
+  if (tier) {
+    const original = Number(tier.originalPrice ?? tier.original_price);
     if (Number.isFinite(original) && original > price) return original;
+    return null;
   }
   const original = Number(course.originalPrice);
   return Number.isFinite(original) && original > price ? original : null;
