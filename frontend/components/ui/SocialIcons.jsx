@@ -34,7 +34,7 @@ export const Youtube = (props) => (
 );
 
 export const socialLinks = [
-  { icon: Whatsapp, href: "https://wa.me/60312345678" },
+  { icon: Whatsapp, href: "https://wa.me/60178918602" },
   { icon: Facebook, href: "https://www.facebook.com/talaat.alawadhi.33" },
   { icon: Instagram, href: "https://www.instagram.com/the.creativity_house/" },
   { icon: Linkedin, href: "https://www.linkedin.com/in/talaat-alawadhi-%D8%B7%D9%84%D8%B9%D8%AA-%D8%A7%D9%84%D8%B9%D9%88%D8%A7%D8%B6%D9%8A-5b238823?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" },

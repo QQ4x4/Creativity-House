@@ -42,7 +42,7 @@ export const seoConfig = {
     logo: 'https://creativity-house.com/logo.png',
     contactPoint: {
       '@type': 'ContactPoint',
-      telephone: '+60-3-1234-5678',
+      telephone: '+60178918602',
       contactType: 'customer service',
       availableLanguage: ['English', 'Arabic'],
     },
