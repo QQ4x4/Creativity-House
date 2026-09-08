@@ -15,7 +15,7 @@ const StatsSection = dynamic(() => import('./sections/StatsSection'), { ssr: fal
 const ServicesSection = dynamic(() => import('./sections/ServicesSection'), { ssr: false, loading: () => <Skeleton h="h-[800px]" /> });
 const AboutSection = dynamic(() => import('./sections/AboutSection'), { ssr: false, loading: () => <Skeleton h="h-[600px]" /> });
 const TestimonialsSection = dynamic(() => import('./sections/TestimonialsSection'), { ssr: false, loading: () => <Skeleton h="h-[600px]" /> });
-const ContactSection = dynamic(() => import('./sections/ContactSection'), { ssr: false, loading: () => <Skeleton h="h-[800px]" /> });
+const ContactSection = dynamic(() => import('./sections/ContactSection'), { ssr: false, loading: () => <Skeleton h="h-[360px]" /> });
 
 export default function HomePageClient({ dictionary, lang }) {
     const [scrolled, setScrolled] = useState(false);

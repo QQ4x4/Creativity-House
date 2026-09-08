@@ -14,11 +14,11 @@
     "logout": "Log out"
   },
   "hero": {
-    "badge": "Malaysia's Leading IT Solutions Provider",
-    "title1": "Building Digital",
-    "title2": "Excellence",
-    "description": "We craft innovative CRM systems, project management platforms, and cloud solutions that transform businesses and drive growth.",
-    "exploreServices": "Explore Services",
+    "badge": "Accredited Corporate Training & Professional Development",
+    "title1": "Master Project Management.",
+    "title2": "Accelerate Your Career Growth.",
+    "description": "Engage in interactive learning programs designed to help you master PMBOK® guidelines, earn global PMI® certifications, and ensure practical application in the modern workplace across the MENA region.",
+    "exploreServices": "Explore Courses",
     "contactUs": "Contact Us",
     "projectsValue": "50+",
     "projectsLabel": "Projects",
@@ -29,57 +29,30 @@
   },
   "stats": {
     "items": [
-      { "value": "40+", "label": "Global Partners" },
-      { "value": "2K+", "label": "Users Trained" },
-      { "value": "100%", "label": "Client Satisfaction" },
-      { "value": "40K", "label": "Professional Learners" }
+      { "value": "40k+", "label": "Project Management Professionals" },
+      { "value": "2k+", "label": "Annual PMP Graduates" },
+      { "value": "40+", "label": "B2B Training & Corporate Partners" },
+      { "value": "10+", "label": "Years of Accredited Training Excellence" }
     ]
   },
-  "services": {
-    "badge": "OUR SERVICES",
-    "title": "What We",
-    "titleHighlight": "Offer",
-    "description": "Comprehensive IT solutions designed to elevate your business to the next level.",
-    "learnMore": "Learn More",
-    "items": [
-      {
-        "title": "Custom CRM Systems",
-        "description": "Tailored customer relationship management solutions that streamline your sales pipeline and boost customer engagement.",
-        "features": ["Sales Automation", "Lead Tracking", "Custom Reports", "API Integration"]
-      },
-      {
-        "title": "Project Management",
-        "description": "Powerful platforms to plan, track, and deliver projects efficiently with real-time collaboration tools.",
-        "features": ["Task Management", "Team Collaboration", "Progress Tracking", "Resource Planning"]
-      },
-      {
-        "title": "Cloud & Business Email",
-        "description": "Enterprise-grade AWS cloud infrastructure and professional email solutions for seamless operations.",
-        "features": ["AWS Setup", "Email Hosting", "Security", "24/7 Support"]
-      },
-      {
-        "title": "Training & Consulting",
-        "description": "Expert-led training programs and strategic consulting to empower your team with cutting-edge skills.",
-        "features": ["Corporate Training", "Workshops", "1-on-1 Coaching", "Certification"]
-      }
-    ]
-  },
+
   "about": {
-    "badge": "WHY CHOOSE US",
-    "title": "Built for",
-    "titleHighlight": "Success",
-    "description": "We combine technical expertise with business insight to deliver solutions that matter.",
+    "badge": "Why Creativity House?",
+    "title": "Accredited Training Focused on",
+    "titleHighlight": "Practical Application",
+    "description": "Our programs are designed to provide interactive learning, PMI-aligned knowledge, and ongoing support to ensure you achieve meaningful career growth.",
     "features": [
-      { "title": "Innovation First", "description": "Cutting-edge solutions tailored to your business needs." },
-      { "title": "Enterprise Security", "description": "Bank-grade security protocols protecting your data." },
-      { "title": "Fast Delivery", "description": "Agile methodology ensuring rapid deployment." },
-      { "title": "Scalable Growth", "description": "Solutions that grow with your business." }
+      { "title": "Accredited Instructors", "description": "Learn from certified practitioners with real-world project management experience." },
+      { "title": "PMBOK®-Aligned Content", "description": "Programs built to simplify complex concepts and connect them directly to practical application." },
+      { "title": "Flexible Learning", "description": "Choose from PMP-live-training, self-paced content, or custom corporate formats." },
+      { "title": "Outcome-Focused", "description": "We focus on building actual workplace capability and certification readiness." }
     ]
   },
   "testimonials": {
-    "badge": "TESTIMONIALS",
-    "title": "What Our",
-    "titleHighlight": "Clients Say",
+    "badge": "Learner Experiences",
+    "title": "Success Stories in",
+    "titleHighlight": "Career Growth",
+    "description": "Hear from professionals who have advanced their careers and mastered project management through our accredited training programs.",
     "readMore": "Learn More",
     "readLess": "Read Less",
     "items": [
@@ -101,29 +74,17 @@
     ]
   },
   "contact": {
-    "badge": "GET IN TOUCH",
-    "title": "Let's Build Something",
-    "titleHighlight": "Amazing",
-    "description": "Ready to transform your business? Reach out and let's discuss how we can help you achieve your goals.",
+    "badge": "Contact Us",
+    "title": "Ready to Advance Your Project Management",
+    "titleHighlight": "Career?",
+    "description": "Our team is ready to help you choose the right PMP program and answer any questions regarding enrollment, interactive learning, and B2B training solutions.",
+    "ctaButton": "Get in Touch Today",
     "emailLabel": "Email Us",
     "phoneLabel": "Call Us",
     "visitLabel": "Visit Us",
     "emailValue": "info@creativity-house.com",
     "phoneValue": "+60 3-1234 5678",
-    "visitValue": "Kuala Lumpur, Malaysia",
-    "form": {
-      "name": "Full Name",
-      "namePlaceholder": "John Doe",
-      "email": "Email Address",
-      "emailPlaceholder": "john@company.com",
-      "subject": "Subject",
-      "subjectPlaceholder": "How can we help?",
-      "message": "Message",
-      "messagePlaceholder": "Tell us about your project...",
-      "send": "Send Message",
-      "sending": "Sending...",
-      "sent": "Message Sent!"
-    }
+    "visitValue": "Kuala Lumpur, Malaysia"
   },
   "footer": {
     "description": "Empowering businesses with innovative IT solutions, custom software, and expert training since 2015.",
@@ -141,10 +102,10 @@
   },
   "about_page": {
     "hero": {
-      "badge": "Who We Are",
-      "title1": "Creativity House —",
-      "titleHighlight": "Building the Future of Organizations",
-      "description": "Creativity House Sdn. Bhd. is a multinational training, consulting, and technology solutions company specializing in administrative development, leadership empowerment, project management, and digital transformation. Founded in 2014 and headquartered in Cyberjaya, Malaysia since 2017, we have grown into a trusted partner for organizations across the Middle East, Africa, and Southeast Asia.",
+      "badge": "About Us",
+      "title1": "Developing Professionals.",
+      "titleHighlight": "Strengthening Regional Organizations.",
+      "description": "Creativity House is a leading accredited provider of corporate training and professional development. Specializing in project management, we transform PMBOK® methodologies into practical application. Our interactive learning approach empowers individuals to achieve career growth and helps businesses optimize performance.",
       "stats": [
         { "value": "10+", "label": "Years of Experience" },
         { "value": "17+", "label": "Countries Reached" },
@@ -152,18 +113,18 @@
       ],
       "vision": {
         "title": "Our Vision",
-        "text": "To be the global first choice in administrative and leadership development, empowering individuals and organizations to achieve sustainable success and measurable impact."
+        "text": "To be the premier accredited partner for professional development, B2B training, and project management excellence across the Middle East."
       },
       "mission": {
         "title": "Our Mission",
-        "text": "To deliver innovative, practical, and technology-driven training and consulting services that develop human capabilities, strengthen institutional performance, and accelerate digital adoption in modern organizations."
+        "text": "To deliver high-quality, interactive learning programs that drive career growth for professionals and ensure the practical application of project management best practices for organizations."
       }
     },
     "social_proof": {
-      "badge": "Trusted Worldwide",
-      "title": "Partnered with",
-      "titleHighlight": "World-Class Organizations",
-      "description": "From global energy companies to leading universities, our clients trust Creativity House to develop their people and transform their institutions.",
+      "badge": "Our Partners",
+      "title": "Trusted for Corporate Training",
+      "titleHighlight": "Across Industries",
+      "description": "We proudly deliver accredited B2B training and project management solutions to leading organizations across multiple sectors, tailoring our expertise to their strategic needs.",
       "testimonials": [
         {
           "name": "Dr. Faten Al-Buaishi Al-Kilani",
@@ -193,13 +154,13 @@
       ]
     },
     "trainer": {
-      "badge": "The Trainer",
-      "title": "Meet the",
-      "titleHighlight": "Expert Behind the Excellence",
+      "badge": "Project Management Expert",
+      "title": "Meet",
+      "titleHighlight": "Eng. Awadhi",
       "name": "Eng. Talaat Al-Awadhi",
       "jobTitle": "International Trainer in Leadership, Management & Project Management",
       "bio_label": "Biography",
-      "bio": "Engineer Talaat Hassan Al-Awadhi is a certified international trainer and expert in the fields of management, leadership, and skills development. He brings over 20 years of extensive experience delivering specialized training to public and private institutions across the Middle East, Africa, and Southeast Asia.",
+      "bio": "An accredited trainer and consultant specializing in project management and corporate training. With extensive experience delivering interactive learning across the region, he focuses on translating PMI standards and the PMBOK® guide into practical application and career growth for thousands of professionals.",
       "credentials_label": "Academic Credentials",
       "credentials": [
         "BSc Petroleum Engineering",
@@ -466,10 +427,10 @@
     "redirecting": "Redirecting",
     "close": "Close",
     "genericError": "Something went wrong. Please try again.",
-    "featuredBadge": "FEATURED COURSES",
-    "featuredTitle": "Featured",
-    "featuredTitleHighlight": "Courses",
-    "featuredSubtitle": "Start with our most requested PMP® programs — live training, self-paced video, and exam simulation.",
+    "featuredBadge": "Featured Project Management Courses",
+    "featuredTitle": "Accredited PMP Programs Designed for",
+    "featuredTitleHighlight": "Career Growth",
+    "featuredSubtitle": "Explore our specialized training programs in project management, risk management, and leadership. Aligned with PMI® standards, our courses deliver interactive learning and focus heavily on practical application.",
     "exploreAll": "Explore All Courses"
   },
   "paymentSuccess": {
@@ -480,9 +441,9 @@
     "secureNote": "Your payment was processed securely by Stripe. A receipt was sent to your email."
   },
   "organizations": {
-    "badge": "Corporate training",
-    "heroTitle": "Transform Your Team with Corporate Training",
-    "heroSubtitle": "Custom learning paths, dedicated program support, and cohort delivery built around your organization's goals.",
+    "badge": "B2B Training & Corporate Solutions",
+    "heroTitle": "Accredited Corporate Training to Empower Your Teams",
+    "heroSubtitle": "We help organizations across the region elevate their workforce through customized corporate training in project management, leadership, and risk management—fully aligned with PMI standards and your business goals.",
     "formTitle": "Request a consultation",
     "formSubtitle": "Share a few details and our corporate team will follow up within 24 hours.",
     "fullName": "Full name",
@@ -500,7 +461,7 @@
     "coursesUnavailable": "Courses could not be loaded. You can still send this request.",
     "message": "Message / Requirements",
     "messagePlaceholder": "Tell us about team size, preferred dates, and the skills you need to build…",
-    "submit": "Request Consultation",
+    "submit": "Request a Corporate Consultation",
     "submitting": "Sending…",
     "successTitle": "Request received",
     "successMessage": "Thank you! Our corporate team will contact you within 24 hours.",
@@ -508,17 +469,18 @@
     "genericError": "Something went wrong. Please try again.",
     "secureNote": "Your details are encrypted in transit and used only to follow up on this inquiry.",
     "points": [
-      "Custom learning paths for your teams",
-      "Dedicated corporate account support",
-      "Live, recorded, or blended delivery"
+      "Tailored B2B training programs based on organizational needs.",
+      "Interactive learning formats (In-person or virtual PMP-live-training).",
+      "Accredited development pathways for teams and project leaders.",
+      "Content strictly designed for immediate practical application."
     ]
   },
   "courseInquiry": {
-    "badge": "Student support",
-    "heroTitle": "Have a question before you enroll?",
-    "heroSubtitle": "Ask us anything about this course — dates, delivery mode, prerequisites, or payment. We typically reply within 24 hours.",
-    "formTitle": "Course inquiry",
-    "formSubtitle": "Share your question and we will get back to you shortly.",
+    "badge": "Student Support & Enrollment",
+    "heroTitle": "Have Questions Before You Enroll in Our PMP® Programs?",
+    "heroSubtitle": "Ask us anything about our accredited project management courses—including PMP-live-training dates, interactive learning formats, or PMI® exam prerequisites. We are here to help you achieve your career growth.",
+    "formTitle": "Project Management Course Inquiry",
+    "formSubtitle": "Share your questions about our accredited training, and our student support team will get back to you shortly.",
     "fullName": "Full name",
     "fullNamePlaceholder": "Jane Cooper",
     "email": "Email",
@@ -541,9 +503,9 @@
     "genericError": "Something went wrong. Please try again.",
     "secureNote": "Your details are encrypted in transit and used only to answer this inquiry.",
     "points": [
-      "Get clarity on dates, format, and exam readiness",
-      "Ask about live vs recorded delivery",
-      "We reply within 24 hours"
+      "Get clarity on PMBOK® alignment and PMI® exam readiness",
+      "Ask about flexible delivery: PMP-live-training vs. self-paced",
+      "Receive expert guidance for your career growth within 24 hours"
     ]
   }
 }

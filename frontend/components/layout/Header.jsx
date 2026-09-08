@@ -23,7 +23,10 @@ export default function Header({ dictionary, lang, scrolled }) {
     const isCatalogFlow =
         pathname?.startsWith(`/${lang}/courses`) ||
         pathname?.startsWith(`/${lang}/checkout`) ||
-        pathname?.startsWith(`/${lang}/for-organization`);
+        pathname?.startsWith(`/${lang}/for-organization`) ||
+        pathname?.startsWith(`/${lang}/course-inquiry`) ||
+        pathname?.startsWith(`/${lang}/terms`) ||
+        pathname?.startsWith(`/${lang}/privacy`);
     const isPortalFlow =
         pathname?.startsWith(`/${lang}/profile`) || pathname?.startsWith(`/${lang}/my-courses`);
     const solid = Boolean(scrolled || isCatalogFlow || isPortalFlow);
@@ -50,7 +53,12 @@ export default function Header({ dictionary, lang, scrolled }) {
         { name: dictionary.nav.courses, href: `/${lang}/courses`, isPage: true, match: `/${lang}/courses` },
         { name: dictionary.nav.forOrganizations, href: `/${lang}/for-organization`, isPage: true, match: `/${lang}/for-organization` },
         { name: dictionary.nav.about, href: `/${lang}/about`, isPage: true, match: `/${lang}/about` },
-        { name: dictionary.nav.contact, href: `/${lang}/#contact`, isPage: true },
+        {
+            name: dictionary.nav.contact,
+            href: `/${lang}/course-inquiry`,
+            isPage: true,
+            match: `/${lang}/course-inquiry`,
+        },
     ];
 
     const displayName = user?.first_name || user?.name || '';

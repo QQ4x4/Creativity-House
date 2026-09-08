@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Shield, Zap, TrendingUp } from 'lucide-react';
+import { Award, BookOpen, Clock, Target } from 'lucide-react';
 import TiltCard from '../ui/TiltCard';
 import {
   fadeUp,
@@ -12,7 +12,7 @@ import {
   staggerContainer,
 } from '@/lib/motion';
 
-const featureIcons = [Sparkles, Shield, Zap, TrendingUp];
+const featureIcons = [Award, BookOpen, Clock, Target];
 
 export default function AboutSection({ dictionary }) {
     return (

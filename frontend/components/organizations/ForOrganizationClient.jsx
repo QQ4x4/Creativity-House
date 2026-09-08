@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Building2, CheckCircle2, Loader2, Mail, ShieldCheck, User } from 'lucide-react';
+import { Award, Building2, CheckCircle2, Loader2, Mail, ShieldCheck, Target, Users, User } from 'lucide-react';
 import PublicShell from '@/components/catalog/PublicShell';
 import GlassAuthInput from '@/components/auth/GlassAuthInput';
 import GlassPhoneInput from '@/components/auth/GlassPhoneInput';
@@ -115,12 +115,15 @@ export default function ForOrganizationClient({ dictionary, lang }) {
               {labels.heroSubtitle}
             </p>
             <ul className="mt-8 space-y-3">
-              {(labels.points || []).map((point) => (
-                <li key={point} className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-200">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-plum-600 dark:text-gold-400" aria-hidden />
-                  <span>{point}</span>
-                </li>
-              ))}
+              {(labels.points || []).map((point, idx) => {
+                const PointIcon = [Building2, Users, Award, Target][idx] || CheckCircle2;
+                return (
+                  <li key={point} className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-200">
+                    <PointIcon className="mt-0.5 h-5 w-5 shrink-0 text-plum-600 dark:text-gold-400" aria-hidden />
+                    <span>{point}</span>
+                  </li>
+                );
+              })}
             </ul>
           </motion.div>
 

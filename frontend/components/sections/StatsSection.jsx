@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Globe, Users, Star, Award } from 'lucide-react';
+import { Users, GraduationCap, Handshake, Calendar } from 'lucide-react';
 import {
   motionGpu,
   motionViewport,
@@ -10,7 +10,7 @@ import {
   staggerContainer,
 } from '@/lib/motion';
 
-const statIcons = [Globe, Users, Star, Award];
+const statIcons = [Users, GraduationCap, Handshake, Calendar];
 
 export default function StatsSection({ dictionary }) {
     return (
@@ -41,7 +41,11 @@ export default function StatsSection({ dictionary }) {
                                 >
                                     <StatIcon className="w-7 h-7 text-plum-600 dark:text-plum-400 group-hover:scale-110 transition-transform" />
                                 </motion.div>
-                                <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-plum-700 to-plum-500 bg-clip-text text-transparent mb-2">
+                                <div
+                                    dir="ltr"
+                                    className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-plum-700 to-plum-500 bg-clip-text text-transparent mb-2"
+                                    style={{ unicodeBidi: 'isolate' }}
+                                >
                                     {stat.value}
                                 </div>
                                 <div className="text-slate-600 dark:text-slate-400 font-medium group-hover:text-plum-600 dark:group-hover:text-gold-400 transition-colors">

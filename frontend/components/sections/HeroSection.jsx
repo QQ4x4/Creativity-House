@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import MagneticButton from '../ui/MagneticButton';
@@ -9,6 +10,8 @@ import { images } from '@/config/site';
 
 export default function HeroSection({ dictionary, lang }) {
     const isRTL = lang === 'ar';
+    const coursesHref = `/${lang}/courses`;
+    const contactHref = `/${lang}/course-inquiry`;
 
     return (
         <section id="home" className="relative min-h-screen flex items-center overflow-hidden bg-slate-900">
@@ -98,14 +101,14 @@ export default function HeroSection({ dictionary, lang }) {
                             transition={{ delay: 0.9, duration: 0.6 }}
                         >
                             <MagneticButton className="w-full sm:w-auto">
-                                <a href="#services" className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-plum-700 to-plum-500 px-8 py-4 font-semibold text-white transition-all hover:gap-3 hover:shadow-2xl hover:shadow-plum-500/50 group sm:w-auto">
+                                <Link href={coursesHref} className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-plum-700 to-plum-500 px-8 py-4 font-semibold text-white transition-all hover:gap-3 hover:shadow-2xl hover:shadow-plum-500/50 group sm:w-auto">
                                     {dictionary.hero.exploreServices} <ArrowRight className={`w-5 h-5 transition-transform chevron-flip ${isRTL ? 'group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} />
-                                </a>
+                                </Link>
                             </MagneticButton>
                             <MagneticButton className="w-full sm:w-auto">
-                                <a href="#contact" className="inline-flex w-full items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 py-4 font-semibold text-white backdrop-blur-sm transition-all hover:border-gold-400/50 hover:bg-white/20 sm:w-auto">
+                                <Link href={contactHref} className="inline-flex w-full items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 py-4 font-semibold text-white backdrop-blur-sm transition-all hover:border-gold-400/50 hover:bg-white/20 sm:w-auto">
                                     {dictionary.hero.contactUs}
-                                </a>
+                                </Link>
                             </MagneticButton>
                         </motion.div>
 

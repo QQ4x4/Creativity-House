@@ -25,6 +25,9 @@ export default function TestimonialsSection({ dictionary, lang }) {
                     <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
                         {dictionary.testimonials.title} <span className="bg-gradient-to-r from-plum-700 to-plum-500 bg-clip-text text-transparent">{dictionary.testimonials.titleHighlight}</span>
                     </h2>
+                    <p className="mx-auto max-w-2xl text-lg text-slate-600 dark:text-slate-400">
+                        {dictionary.testimonials.description}
+                    </p>
                 </motion.div>
 
                 <div className="grid md:grid-cols-3 gap-6 items-start max-w-7xl mx-auto">

@@ -97,10 +97,10 @@ export default function Footer({ dictionary, lang }) {
                         {dictionary.footer.legal.copyright}
                     </div>
                     <div className="flex gap-6 text-sm text-slate-300">
-                        <Link href={`/${lang}/#`} className="hover:text-white transition-colors">
+                        <Link href={`/${lang}/privacy`} className="hover:text-white transition-colors">
                             {dictionary.footer.legal.privacy}
                         </Link>
-                        <Link href={`/${lang}/#`} className="hover:text-white transition-colors">
+                        <Link href={`/${lang}/terms`} className="hover:text-white transition-colors">
                             {dictionary.footer.legal.terms}
                         </Link>
                     </div>
