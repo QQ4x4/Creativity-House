@@ -1,10 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import CatalogCourseCard from '@/components/catalog/CatalogCourseCard';
-import { getPublicCourse, localizeCatalogCourse } from '@/lib/catalog/data';
+import { fetchPublicCatalog } from '@/lib/catalog/api';
 import {
   fadeUp,
   motionGpu,
@@ -12,17 +13,34 @@ import {
   staggerContainer,
 } from '@/lib/motion';
 
-const FEATURED_SLUGS = [
-  'pmp-live-training',
-  'pmp-recorded-program',
-  'pmp-exam-simulator-pro',
-];
+const FEATURED_COUNT = 3;
 
 export default function ServicesSection({ dictionary, lang }) {
   const labels = dictionary.catalog;
-  const featured = FEATURED_SLUGS.map((slug) =>
-    localizeCatalogCourse(getPublicCourse(slug), lang)
-  ).filter(Boolean);
+  const [featured, setFeatured] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      setIsLoading(true);
+      try {
+        const { data } = await fetchPublicCatalog(lang);
+        if (cancelled) return;
+        const rows = Array.isArray(data) ? data.filter(Boolean) : [];
+        setFeatured(rows.slice(0, FEATURED_COUNT));
+      } catch {
+        if (!cancelled) setFeatured([]);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lang]);
 
   return (
     <section id="services" className="bg-slate-50 py-24 transition-colors duration-300 dark:bg-slate-950">
@@ -51,23 +69,38 @@ export default function ServicesSection({ dictionary, lang }) {
           </p>
         </motion.div>
 
-        <motion.div
-          className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={motionViewport}
-        >
-          {featured.map((course, idx) => (
-            <CatalogCourseCard
-              key={course.slug}
-              course={course}
-              lang={lang}
-              labels={labels}
-              index={idx}
-            />
-          ))}
-        </motion.div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3" aria-hidden>
+            {Array.from({ length: FEATURED_COUNT }).map((_, idx) => (
+              <div
+                key={idx}
+                className="h-[28rem] animate-pulse rounded-3xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/5"
+              />
+            ))}
+          </div>
+        ) : featured.length === 0 ? (
+          <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+            {labels.noResults || labels.featuredSubtitle}
+          </p>
+        ) : (
+          <motion.div
+            className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={motionViewport}
+          >
+            {featured.map((course, idx) => (
+              <CatalogCourseCard
+                key={course.slug || course.id || idx}
+                course={course}
+                lang={lang}
+                labels={labels}
+                index={idx}
+              />
+            ))}
+          </motion.div>
+        )}
 
         <div className="mt-14 flex justify-center">
           <Link
