@@ -1,5 +1,20 @@
 /**
  * Canonical string length limits — keep in sync with backend/config/field_limits.php
+ *
+ * @type {Readonly<{
+ *   email: number;
+ *   phone: number;
+ *   password: number;
+ *   name: number;
+ *   short: number;
+ *   medium: number;
+ *   long: number;
+ *   url: number;
+ *   recaptcha: number;
+ *   otp: number;
+ *   currency: number;
+ *   slug: number;
+ * }>}
  */
 export const FIELD_LIMITS = Object.freeze({
   email: 254,
