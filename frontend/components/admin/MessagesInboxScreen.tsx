@@ -31,7 +31,11 @@ type TypeFilter = InquiryType;
 function statusBadge(status: InquiryStatus) {
   if (status === 'unread') return <Badge className="bg-plum-600 text-white hover:bg-plum-600">Unread</Badge>;
   if (status === 'replied') return <Badge variant="secondary">Replied</Badge>;
-  return <Badge variant="outline">Read</Badge>;
+  return (
+    <Badge variant="secondary" className="border-gray-300 bg-transparent dark:border-white/20">
+      Read
+    </Badge>
+  );
 }
 
 function formatWhen(iso: string | null) {
