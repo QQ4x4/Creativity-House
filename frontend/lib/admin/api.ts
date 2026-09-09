@@ -259,6 +259,21 @@ export async function fetchAdminInquiries(params: {
   return unwrap<InquiryDto[]>(await apiGet(`${ADMIN_ENDPOINTS.inquiries}${suffix}`)) ?? [];
 }
 
+export async function fetchAdminInquiryUnreadCounts(): Promise<{
+  total: number;
+  user: number;
+  organization: number;
+}> {
+  const payload = unwrap<{ total: number; user: number; organization: number }>(
+    await apiGet(ADMIN_ENDPOINTS.inquiryUnreadCounts)
+  );
+  return {
+    total: Number(payload?.total ?? 0),
+    user: Number(payload?.user ?? 0),
+    organization: Number(payload?.organization ?? 0),
+  };
+}
+
 export async function fetchAdminInquiry(id: number | string): Promise<InquiryDto> {
   return unwrap<InquiryDto>(await apiGet(ADMIN_ENDPOINTS.inquiry(id)));
 }

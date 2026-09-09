@@ -17,6 +17,7 @@ export const ADMIN_ENDPOINTS = {
   lessonResourceUpload: '/v1/admin/lesson-resources/upload',
   imageUpload: '/v1/admin/upload-image',
   inquiries: '/v1/admin/inquiries',
+  inquiryUnreadCounts: '/v1/admin/inquiries/unread-counts',
   inquiry: (id: number | string) => `/v1/admin/inquiries/${id}`,
   inquiryReply: (id: number | string) => `/v1/admin/inquiries/${id}/reply`,
 } as const;

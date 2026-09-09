@@ -15,6 +15,22 @@ use Illuminate\Support\Facades\Mail;
 class InquiryController extends Controller
 {
     /**
+     * GET /api/v1/admin/inquiries/unread-counts
+     */
+    public function unreadCounts(): JsonResponse
+    {
+        $base = Inquiry::query()->where('status', Inquiry::STATUS_UNREAD);
+
+        return response()->json([
+            'data' => [
+                'total' => (clone $base)->count(),
+                'user' => (clone $base)->where('type', Inquiry::TYPE_USER)->count(),
+                'organization' => (clone $base)->where('type', Inquiry::TYPE_ORGANIZATION)->count(),
+            ],
+        ]);
+    }
+
+    /**
      * GET /api/v1/admin/inquiries
      */
     public function index(Request $request): AnonymousResourceCollection

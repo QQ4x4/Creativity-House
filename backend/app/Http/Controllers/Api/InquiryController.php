@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inquiry\StoreInquiryRequest;
+use App\Mail\AdminInquiryAlertMail;
 use App\Models\Inquiry;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Mail;
 
 class InquiryController extends Controller
 {
@@ -28,6 +30,9 @@ class InquiryController extends Controller
             ...$data,
             'status' => Inquiry::STATUS_UNREAD,
         ]);
+
+        // Queued via ShouldQueue — does not block the API response.
+        Mail::to('info@creativity-house.com')->send(new AdminInquiryAlertMail($inquiry));
 
         $message = $inquiry->type === Inquiry::TYPE_ORGANIZATION
             ? 'Thank you! Our corporate team will contact you within 24 hours.'

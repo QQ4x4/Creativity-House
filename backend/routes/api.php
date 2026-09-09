@@ -247,6 +247,8 @@ Route::middleware(['auth:sanctum', 'admin'])
         Route::match(['put', 'patch'], '/courses/{course}', [AdminCourseController::class, 'update'])
             ->name('courses.update');
 
+        Route::get('/inquiries/unread-counts', [AdminInquiryController::class, 'unreadCounts'])
+            ->name('inquiries.unread-counts');
         Route::get('/inquiries', [AdminInquiryController::class, 'index'])->name('inquiries.index');
         Route::get('/inquiries/{inquiry}', [AdminInquiryController::class, 'show'])->name('inquiries.show');
         Route::post('/inquiries/{inquiry}/reply', [AdminInquiryController::class, 'reply'])

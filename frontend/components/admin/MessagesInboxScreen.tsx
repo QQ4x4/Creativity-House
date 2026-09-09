@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { ADMIN_UNREAD_REFRESH_EVENT } from '@/components/admin/AdminClientShell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,12 +22,22 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   fetchAdminInquiries,
   fetchAdminInquiry,
+  fetchAdminInquiryUnreadCounts,
   replyAdminInquiry,
 } from '@/lib/admin/api';
 import type { InquiryDto, InquiryStatus, InquiryType } from '@/lib/admin/types';
 import { toastApiError } from '@/lib/toast';
 
 type TypeFilter = InquiryType;
+
+function UnreadCountBadge({ count }: { count: number }) {
+  if (count < 1) return null;
+  return (
+    <span className="ms-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-plum-700 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white dark:bg-plum-500">
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
 
 function statusBadge(status: InquiryStatus) {
   if (status === 'unread') return <Badge className="bg-plum-600 text-white hover:bg-plum-600">Unread</Badge>;
@@ -59,6 +70,24 @@ export function MessagesInboxScreen() {
   const [replySubject, setReplySubject] = useState('');
   const [replyBody, setReplyBody] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [unreadByType, setUnreadByType] = useState({ user: 0, organization: 0, total: 0 });
+
+  const refreshUnreadCounts = useCallback(async () => {
+    try {
+      const counts = await fetchAdminInquiryUnreadCounts();
+      setUnreadByType(counts);
+      window.dispatchEvent(new Event(ADMIN_UNREAD_REFRESH_EVENT));
+    } catch {
+      // Non-blocking for the inbox UI.
+    }
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedId(null);
+    setSelected(null);
+    setReplyBody('');
+    setReplySubject('');
+  }, []);
 
   const loadList = useCallback(async () => {
     setIsLoading(true);
@@ -69,25 +98,34 @@ export function MessagesInboxScreen() {
         status: statusFilter,
       });
       setRows(data);
+      // Do not auto-open the first message — only keep a selection if it still exists.
       setSelectedId((current) => {
-        if (data.length === 0) return null;
         if (current && data.some((row) => row.id === current)) return current;
-        return data[0].id;
+        return null;
       });
-      if (data.length === 0) setSelected(null);
+      setSelected((current) => {
+        if (current && data.some((row) => row.id === current.id)) return current;
+        return null;
+      });
+      await refreshUnreadCounts();
     } catch (caught) {
       setError((caught as { message?: string })?.message ?? 'Could not load inquiries.');
       setRows([]);
-      setSelectedId(null);
-      setSelected(null);
+      clearSelection();
     } finally {
       setIsLoading(false);
     }
-  }, [typeFilter, statusFilter]);
+  }, [typeFilter, statusFilter, refreshUnreadCounts, clearSelection]);
 
   useEffect(() => {
     void loadList();
   }, [loadList]);
+
+  const selectType = (next: TypeFilter) => {
+    if (next === typeFilter) return;
+    clearSelection();
+    setTypeFilter(next);
+  };
 
   useEffect(() => {
     if (!selectedId) {
@@ -105,7 +143,8 @@ export function MessagesInboxScreen() {
         setRows((prev) =>
           prev.map((row) => (row.id === detail.id ? { ...row, status: detail.status } : row))
         );
-        setReplySubject((prev) => prev || `Re: Your inquiry to Creativity House`);
+        setReplySubject((prev) => prev || 'Re: Your inquiry to Creativity House');
+        await refreshUnreadCounts();
       } catch (caught) {
         if (!cancelled) toastApiError(caught, 'Could not open inquiry.');
       } finally {
@@ -116,9 +155,9 @@ export function MessagesInboxScreen() {
     return () => {
       cancelled = true;
     };
-  }, [selectedId]);
+  }, [selectedId, refreshUnreadCounts]);
 
-  const unreadCount = useMemo(
+  const listUnreadCount = useMemo(
     () => rows.filter((row) => row.status === 'unread').length,
     [rows]
   );
@@ -141,6 +180,7 @@ export function MessagesInboxScreen() {
       setRows((prev) => prev.map((row) => (row.id === updated.id ? updated : row)));
       setReplyBody('');
       toast.success('Reply sent via email.');
+      await refreshUnreadCounts();
     } catch (caught) {
       toastApiError(caught, 'Failed to send reply.');
     } finally {
@@ -168,19 +208,21 @@ export function MessagesInboxScreen() {
           type="button"
           size="sm"
           variant={typeFilter === 'user' ? 'default' : 'outline'}
-          onClick={() => setTypeFilter('user')}
+          onClick={() => selectType('user')}
         >
           <GraduationCap className="h-4 w-4" aria-hidden />
           Student Inquiries
+          <UnreadCountBadge count={unreadByType.user} />
         </Button>
         <Button
           type="button"
           size="sm"
           variant={typeFilter === 'organization' ? 'default' : 'outline'}
-          onClick={() => setTypeFilter('organization')}
+          onClick={() => selectType('organization')}
         >
           <Building2 className="h-4 w-4" aria-hidden />
           Organization Consultations
+          <UnreadCountBadge count={unreadByType.organization} />
         </Button>
       </div>
 
@@ -189,7 +231,10 @@ export function MessagesInboxScreen() {
           <button
             key={status}
             type="button"
-            onClick={() => setStatusFilter(status)}
+            onClick={() => {
+              clearSelection();
+              setStatusFilter(status);
+            }}
             className={`rounded-full px-3 py-1 text-xs font-semibold capitalize transition-colors ${
               statusFilter === status
                 ? 'bg-plum-700 text-white'
@@ -197,7 +242,7 @@ export function MessagesInboxScreen() {
             }`}
           >
             {status}
-            {status === 'unread' && unreadCount > 0 ? ` (${unreadCount})` : ''}
+            {status === 'unread' && listUnreadCount > 0 ? ` (${listUnreadCount})` : ''}
           </button>
         ))}
       </div>
