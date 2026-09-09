@@ -186,3 +186,21 @@ export interface BunnyVideoListResult {
   /** Present when Bunny is unreachable or unconfigured. */
   message?: string;
 }
+
+export type InquiryType = 'user' | 'organization';
+export type InquiryStatus = 'unread' | 'read' | 'replied';
+
+export interface InquiryDto {
+  id: number;
+  type: InquiryType;
+  full_name: string;
+  email: string;
+  phone_number: string | null;
+  company_name: string | null;
+  target_course: string | null;
+  message: string;
+  status: InquiryStatus;
+  replied_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}

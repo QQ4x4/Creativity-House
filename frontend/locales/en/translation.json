@@ -19,13 +19,8 @@
     "title2": "Accelerate Your Career Growth.",
     "description": "Engage in interactive learning programs designed to help you master PMBOK® guidelines, earn global PMI® certifications, and ensure practical application in the modern workplace across the MENA region.",
     "exploreServices": "Explore Courses",
-    "contactUs": "Contact Us",
-    "projectsValue": "50+",
-    "projectsLabel": "Projects",
-    "clientsValue": "20+",
-    "clientsLabel": "Clients",
-    "yearsValue": "4+",
-    "yearsLabel": "Years"
+    "contactUs": "Contact Us"
+
   },
   "stats": {
     "items": [
@@ -84,7 +79,7 @@
     "visitLabel": "Visit Us",
     "emailValue": "info@creativity-house.com",
     "phoneValue": "+6017-891 8602",
-    "visitValue": "Kuala Lumpur, Malaysia"
+    "visitValue": "SA-18-07 MENARA PARAGON, PERSIARAN BESTARI 63000 CYBERJAYA, SELANGOR, MALAYSIA."
   },
   "footer": {
     "description": "Empowering businesses with innovative IT solutions, custom software, and expert training since 2015.",

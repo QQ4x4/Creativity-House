@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Http\Requests\Concerns\SanitizesAuthInput;
+use App\Services\RecaptchaService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
@@ -41,7 +42,8 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
-        $recaptchaRequired = filled(config('services.recaptcha.secret'));
+        $recaptchaRequired = app(RecaptchaService::class)->shouldEnforce()
+            && filled(config('services.recaptcha.secret'));
 
         return [
             'first_name' => ['required', 'string', 'max:'.config('field_limits.name'), 'regex:/^[\p{L}\s\'\-]+$/u'],

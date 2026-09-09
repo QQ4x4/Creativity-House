@@ -261,12 +261,18 @@ class AuthController extends Controller
     }
 
     /**
-     * Skip when secret is empty (local WAMP). Otherwise require success + score.
+     * Bypass entirely in local. Otherwise require success + score when secret is set.
      */
     private function assertRecaptchaPasses(Request $request, string $action): void
     {
-        if (! filled(config('services.recaptcha.secret'))) {
+        if (! $this->recaptcha->shouldEnforce()) {
             return;
+        }
+
+        if (! filled(config('services.recaptcha.secret'))) {
+            throw ValidationException::withMessages([
+                'recaptcha_token' => ['reCAPTCHA is not configured on this server.'],
+            ]);
         }
 
         $recaptchaToken = $request->input('recaptcha_token');

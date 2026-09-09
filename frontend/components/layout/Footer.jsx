@@ -80,7 +80,11 @@ export default function Footer({ dictionary, lang }) {
                         <h4 className="font-bold mb-4">{dictionary.footer.contactTitle}</h4>
                         <ul className="space-y-2 text-slate-400">
                             <li>{dictionary.contact.emailValue}</li>
-                            <li>{dictionary.contact.phoneValue}</li>
+                            <li>
+                                <span dir="ltr" className="inline-block" style={{ unicodeBidi: 'isolate' }}>
+                                    {dictionary.contact.phoneValue}
+                                </span>
+                            </li>
                             <li>{dictionary.contact.visitValue}</li>
                         </ul>
                     </motion.div>

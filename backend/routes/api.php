@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\BunnyController;
 use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\CurriculumController;
 use App\Http\Controllers\Api\Admin\ImageUploadController;
+use App\Http\Controllers\Api\Admin\InquiryController as AdminInquiryController;
 use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Api\Admin\LessonResourceUploadController;
 use App\Http\Controllers\Api\Admin\ModuleController as AdminModuleController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Api\Auth\GoogleAuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\CourseInquiryController;
+use App\Http\Controllers\Api\InquiryController;
 use App\Http\Controllers\Api\LessonResourceController;
 use App\Http\Controllers\Api\OrganizationInquiryController;
 use App\Http\Controllers\Api\PaymentController;
@@ -127,6 +129,8 @@ Route::middleware('throttle:10,1')->group(function () {
         ->name('api.v1.organization-inquiries.store');
     Route::post('/v1/course-inquiries', [CourseInquiryController::class, 'store'])
         ->name('api.v1.course-inquiries.store');
+    Route::post('/v1/inquiries', [InquiryController::class, 'store'])
+        ->name('api.v1.inquiries.store');
 });
 
 /*
@@ -242,6 +246,11 @@ Route::middleware(['auth:sanctum', 'admin'])
         Route::get('/courses/{course}', [AdminCourseController::class, 'show'])->name('courses.show');
         Route::match(['put', 'patch'], '/courses/{course}', [AdminCourseController::class, 'update'])
             ->name('courses.update');
+
+        Route::get('/inquiries', [AdminInquiryController::class, 'index'])->name('inquiries.index');
+        Route::get('/inquiries/{inquiry}', [AdminInquiryController::class, 'show'])->name('inquiries.show');
+        Route::post('/inquiries/{inquiry}/reply', [AdminInquiryController::class, 'reply'])
+            ->name('inquiries.reply');
 
         Route::get('/courses/{course}/curriculum', [CurriculumController::class, 'show'])
             ->name('curriculum.show');

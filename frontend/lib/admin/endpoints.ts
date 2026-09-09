@@ -16,4 +16,7 @@ export const ADMIN_ENDPOINTS = {
   bunnyVideos: '/v1/admin/bunny/videos',
   lessonResourceUpload: '/v1/admin/lesson-resources/upload',
   imageUpload: '/v1/admin/upload-image',
+  inquiries: '/v1/admin/inquiries',
+  inquiry: (id: number | string) => `/v1/admin/inquiries/${id}`,
+  inquiryReply: (id: number | string) => `/v1/admin/inquiries/${id}/reply`,
 } as const;

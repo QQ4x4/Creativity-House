@@ -18,6 +18,7 @@ import { createCourseInquirySchema } from '@/lib/validations/courseInquiry';
 import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import CharacterCounter from '@/components/ui/CharacterCounter';
 import { toastApiError } from '@/lib/toast';
+import { toast } from 'sonner';
 import { fadeUp, motionGpu, motionViewport } from '@/lib/motion';
 
 const EMPTY_VALUES = {
@@ -122,6 +123,7 @@ function CourseInquiryBody({ dictionary, lang }) {
       await submitCourseInquiry(values);
       setSubmitted(true);
       reset(EMPTY_VALUES);
+      toast.success(labels.successMessage || 'Message sent successfully.');
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
         applyServerErrors(setError, error.data);

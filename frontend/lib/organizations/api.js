@@ -2,7 +2,7 @@ import { apiPost, getCsrfCookie } from '@/lib/api';
 import { sanitizeInquiryText } from '@/lib/validations/organization';
 import { FIELD_LIMITS } from '@/lib/fieldLimits';
 
-export const ORGANIZATION_INQUIRY_ENDPOINT = '/v1/organization-inquiries';
+export const INQUIRY_ENDPOINT = '/v1/inquiries';
 
 /**
  * @param {{
@@ -18,10 +18,11 @@ export async function submitOrganizationInquiry(data) {
   await getCsrfCookie();
 
   const payload = {
-    name: sanitizeInquiryText(data.name, FIELD_LIMITS.name),
+    type: 'organization',
+    full_name: sanitizeInquiryText(data.name, FIELD_LIMITS.name),
     company_name: sanitizeInquiryText(data.company_name, FIELD_LIMITS.medium),
     email: sanitizeInquiryText(data.email, FIELD_LIMITS.email).toLowerCase(),
-    phone: String(data.phone || '')
+    phone_number: String(data.phone || '')
       .trim()
       .replace(/[^\d+]/g, '')
       .slice(0, FIELD_LIMITS.phone),
@@ -33,5 +34,5 @@ export async function submitOrganizationInquiry(data) {
     payload.course_id = courseId;
   }
 
-  return apiPost(ORGANIZATION_INQUIRY_ENDPOINT, payload);
+  return apiPost(INQUIRY_ENDPOINT, payload);
 }

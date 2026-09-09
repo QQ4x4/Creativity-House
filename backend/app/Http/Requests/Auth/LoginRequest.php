@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Http\Requests\Concerns\SanitizesAuthInput;
+use App\Services\RecaptchaService;
 use Illuminate\Foundation\Http\FormRequest;
 
 class LoginRequest extends FormRequest
@@ -24,7 +25,8 @@ class LoginRequest extends FormRequest
      */
     public function rules(): array
     {
-        $recaptchaRequired = filled(config('services.recaptcha.secret'));
+        $recaptchaRequired = app(RecaptchaService::class)->shouldEnforce()
+            && filled(config('services.recaptcha.secret'));
 
         return [
             'email' => ['required', 'string', 'email:filter', 'max:'.config('field_limits.email')],

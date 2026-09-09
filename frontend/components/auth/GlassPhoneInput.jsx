@@ -12,8 +12,10 @@ import enLabels from 'react-phone-number-input/locale/en.json';
 import arLabels from 'react-phone-number-input/locale/ar.json';
 import { ChevronDown, Phone, Search } from 'lucide-react';
 import { FIELD_LIMITS } from '@/lib/fieldLimits';
+import { useDefaultPhoneCountry } from '@/hooks/useDefaultPhoneCountry';
 
 const FIELD_H = 'h-[52px]';
+const FALLBACK_COUNTRY = 'YE';
 
 function buildE164(country, nationalDigits) {
   const digits = String(nationalDigits || '').replace(/\D/g, '');
@@ -77,6 +79,7 @@ function CountryFlag({ code, labels, className = 'h-full w-full' }) {
 
 /**
  * Glass phone field with a custom country picker (no native OS select).
+ * Default country is inferred from IP geolocation; falls back to `defaultCountry` (YE).
  */
 export default function GlassPhoneInput({
   id = 'phone_number',
@@ -86,7 +89,7 @@ export default function GlassPhoneInput({
   onChange,
   onBlur,
   name,
-  defaultCountry = 'YE',
+  defaultCountry = FALLBACK_COUNTRY,
   disabled = false,
   lang = 'en',
   variant = 'glass',
@@ -94,8 +97,9 @@ export default function GlassPhoneInput({
   const labels = lang === 'ar' ? arLabels : enLabels;
   const isPortal = variant === 'portal';
   const countries = useMemo(() => getCountries(), []);
+  const geoCountry = useDefaultPhoneCountry(defaultCountry);
 
-  const initial = splitValue(value ?? '', defaultCountry);
+  const initial = splitValue(value ?? '', geoCountry || defaultCountry);
   const [country, setCountry] = useState(initial.country || defaultCountry);
   const [national, setNational] = useState(initial.national);
   const [open, setOpen] = useState(false);
@@ -107,10 +111,21 @@ export default function GlassPhoneInput({
   // Skip re-deriving national digits from our own onChange echo — that race
   // was dropping the first keystroke when the parent re-rendered with E.164.
   const lastEmittedRef = useRef(value ?? '');
+  const userPickedCountryRef = useRef(false);
+  const hasNationalDigitsRef = useRef(Boolean(String(initial.national || '').replace(/\D/g, '')));
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Apply geolocated default only while the field is still empty / untouched.
+  useEffect(() => {
+    if (!geoCountry) return;
+    if (userPickedCountryRef.current) return;
+    if (value) return;
+    if (hasNationalDigitsRef.current) return;
+    setCountry(geoCountry);
+  }, [geoCountry, value]);
 
   useEffect(() => {
     const incoming = value ?? '';
@@ -118,10 +133,11 @@ export default function GlassPhoneInput({
       return;
     }
     lastEmittedRef.current = incoming;
-    const next = splitValue(incoming, defaultCountry);
-    setCountry(next.country || defaultCountry);
+    const next = splitValue(incoming, geoCountry || defaultCountry);
+    setCountry(next.country || geoCountry || defaultCountry);
     setNational(next.national);
-  }, [value, defaultCountry]);
+    hasNationalDigitsRef.current = Boolean(String(next.national || '').replace(/\D/g, ''));
+  }, [value, defaultCountry, geoCountry]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -189,6 +205,7 @@ export default function GlassPhoneInput({
   };
 
   const selectCountry = (code) => {
+    userPickedCountryRef.current = true;
     setCountry(code);
     emit(code, national);
     setOpen(false);
@@ -272,6 +289,7 @@ export default function GlassPhoneInput({
             value={national}
             onChange={(e) => {
               const digits = e.target.value.replace(/[^\d\s\-()]/g, '');
+              hasNationalDigitsRef.current = Boolean(digits.replace(/\D/g, ''));
               setNational(digits);
               emit(country, digits);
             }}

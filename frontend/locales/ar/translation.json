@@ -19,13 +19,8 @@
     "title2": "وحقق نموك المهني (Career Growth).",
     "description": "برامج تعتمد على التعلم التفاعلي (Interactive Learning) لمساعدتك على إتقان منهجيات PMBOK، التحضير لشهادات PMI العالمية، وضمان التطبيق العملي في بيئة العمل في الشرق الأوسط.",
     "exploreServices": "استكشف الدورات",
-    "contactUs": "تواصل معنا",
-    "projectsValue": "+50",
-    "projectsLabel": "مشروع",
-    "clientsValue": "+20",
-    "clientsLabel": "عميل",
-    "yearsValue": "+4",
-    "yearsLabel": "سنوات"
+    "contactUs": "تواصل معنا"
+
   },
   "stats": {
     "items": [
@@ -112,7 +107,7 @@
     "visitLabel": "زُرنا",
     "emailValue": "info@creativity-house.com",
     "phoneValue": "+6017-891 8602",
-    "visitValue": "كوالالمبور، ماليزيا"
+    "visitValue": "SA-18-07 MENARA PARAGON, PERSIARAN BESTARI 63000 CYBERJAYA, SELANGOR, MALAYSIA."
   },
   "footer": {
     "description": "نمكّن الشركات بحلول تكنولوجيا المعلومات المبتكرة والبرمجيات المخصصة والتدريب المتخصص منذ عام 2015.",

@@ -17,6 +17,7 @@ import { createOrganizationInquirySchema } from '@/lib/validations/organization'
 import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import CharacterCounter from '@/components/ui/CharacterCounter';
 import { toastApiError } from '@/lib/toast';
+import { toast } from 'sonner';
 import { fadeUp, motionGpu, motionViewport } from '@/lib/motion';
 
 const EMPTY_VALUES = {
@@ -79,6 +80,7 @@ export default function ForOrganizationClient({ dictionary, lang }) {
       await submitOrganizationInquiry(values);
       setSubmitted(true);
       reset(EMPTY_VALUES);
+      toast.success(labels.successMessage || 'Request sent successfully.');
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
         applyServerErrors(setError, error.data);

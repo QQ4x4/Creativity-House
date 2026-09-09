@@ -19,6 +19,9 @@ import type {
   BunnyCollection,
   BunnyVideo,
   BunnyVideoListResult,
+  InquiryDto,
+  InquiryStatus,
+  InquiryType,
 } from './types';
 
 /** Laravel resources wrap payloads in `data`; collections may not. */
@@ -239,4 +242,33 @@ export async function uploadAdminImage(file: File): Promise<{ url: string; path:
 
     throw new ApiError(message, status, null);
   }
+}
+
+export async function fetchAdminInquiries(params: {
+  type?: InquiryType | 'all';
+  status?: InquiryStatus | 'all';
+  search?: string;
+} = {}): Promise<InquiryDto[]> {
+  const query = new URLSearchParams();
+  if (params.type && params.type !== 'all') query.set('type', params.type);
+  if (params.status && params.status !== 'all') query.set('status', params.status);
+  if (params.search?.trim()) query.set('search', params.search.trim());
+  query.set('per_page', '100');
+
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+  return unwrap<InquiryDto[]>(await apiGet(`${ADMIN_ENDPOINTS.inquiries}${suffix}`)) ?? [];
+}
+
+export async function fetchAdminInquiry(id: number | string): Promise<InquiryDto> {
+  return unwrap<InquiryDto>(await apiGet(ADMIN_ENDPOINTS.inquiry(id)));
+}
+
+export async function replyAdminInquiry(
+  id: number | string,
+  payload: { message: string; subject?: string }
+): Promise<InquiryDto> {
+  const response = (await apiPost(ADMIN_ENDPOINTS.inquiryReply(id), payload)) as {
+    data?: InquiryDto;
+  };
+  return unwrap<InquiryDto>(response?.data ?? response);
 }

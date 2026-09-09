@@ -8,20 +8,29 @@ use Illuminate\Support\Facades\Log;
 class RecaptchaService
 {
     /**
+     * Whether reCAPTCHA must be validated (production / staging).
+     * Local development always bypasses token + score checks.
+     */
+    public function shouldEnforce(): bool
+    {
+        return ! app()->environment('local');
+    }
+
+    /**
      * Verify a Google reCAPTCHA v3 token (success + minimum score).
      *
      * @param  string|null  $expectedAction  Optional action name from executeRecaptcha (e.g. login).
      */
     public function verify(?string $token, ?string $remoteIp = null, ?string $expectedAction = null): bool
     {
+        if (! $this->shouldEnforce()) {
+            return true;
+        }
+
         $secret = config('services.recaptcha.secret');
 
         if (blank($secret)) {
-            if (app()->environment('local')) {
-                Log::warning('reCAPTCHA secret is empty; skipping verification in local environment.');
-
-                return true;
-            }
+            Log::warning('reCAPTCHA secret is empty; rejecting verification outside local environment.');
 
             return false;
         }
