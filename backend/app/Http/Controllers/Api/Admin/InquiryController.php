@@ -19,13 +19,26 @@ class InquiryController extends Controller
      */
     public function unreadCounts(): JsonResponse
     {
-        $base = Inquiry::query()->where('status', Inquiry::STATUS_UNREAD);
+        // Single indexed aggregate — this endpoint is polled frequently.
+        $row = Inquiry::query()
+            ->where('status', Inquiry::STATUS_UNREAD)
+            ->toBase()
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw(
+                'SUM(CASE WHEN type = ? THEN 1 ELSE 0 END) as user_count',
+                [Inquiry::TYPE_USER]
+            )
+            ->selectRaw(
+                'SUM(CASE WHEN type = ? THEN 1 ELSE 0 END) as organization_count',
+                [Inquiry::TYPE_ORGANIZATION]
+            )
+            ->first();
 
         return response()->json([
             'data' => [
-                'total' => (clone $base)->count(),
-                'user' => (clone $base)->where('type', Inquiry::TYPE_USER)->count(),
-                'organization' => (clone $base)->where('type', Inquiry::TYPE_ORGANIZATION)->count(),
+                'total' => (int) ($row->total ?? 0),
+                'user' => (int) ($row->user_count ?? 0),
+                'organization' => (int) ($row->organization_count ?? 0),
             ],
         ]);
     }

@@ -5,27 +5,26 @@ import { FIELD_LIMITS, maxMessage } from '@/lib/fieldLimits';
 const messages = {
   en: {
     required: 'This field is required.',
-    firstNameMin: 'First name must be at least 2 characters.',
-    lastNameMin: 'Last name must be at least 2 characters.',
+    nameMin: 'Full name must be at least 2 characters.',
     email: 'Enter a valid email address.',
     phone: 'Enter a valid international phone number.',
     phoneRequired: 'Phone number is required.',
-    country: 'Select your country.',
-    cardNumber: 'Enter a valid card number.',
-    expiry: 'Enter a valid expiry date (MM/YY).',
-    cvc: 'Enter a valid CVC.',
+    otp: 'Enter the 6-digit code from your email.',
+    passwordMin: 'Password must be at least 8 characters.',
+    passwordComplexity:
+      'Use upper and lower case letters, a number, and a special character.',
+    passwordMatch: 'Passwords do not match.',
   },
   ar: {
     required: 'هذا الحقل مطلوب.',
-    firstNameMin: 'يجب أن يكون الاسم الأول حرفين على الأقل.',
-    lastNameMin: 'يجب أن يكون اسم العائلة حرفين على الأقل.',
+    nameMin: 'يجب أن يكون الاسم الكامل حرفين على الأقل.',
     email: 'أدخل بريدًا إلكترونيًا صالحًا.',
     phone: 'أدخل رقم هاتف دولي صالحًا.',
     phoneRequired: 'رقم الهاتف مطلوب.',
-    country: 'اختر دولتك.',
-    cardNumber: 'أدخل رقم بطاقة صالحًا.',
-    expiry: 'أدخل تاريخ انتهاء صالحًا (MM/YY).',
-    cvc: 'أدخل رمز CVC صالحًا.',
+    otp: 'أدخل الرمز المكون من 6 أرقام من بريدك.',
+    passwordMin: 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.',
+    passwordComplexity: 'استخدم أحرفًا كبيرة وصغيرة ورقمًا ورمزًا خاصًا.',
+    passwordMatch: 'كلمتا المرور غير متطابقتين.',
   },
 };
 
@@ -35,37 +34,34 @@ function t(lang) {
 
 const nameRegex = /^[\p{L}\s'\-]+$/u;
 const e164Regex = /^\+[1-9]\d{6,14}$/;
+const passwordComplexityRegex = new RegExp(
+  `^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,${FIELD_LIMITS.password}}$`
+);
 
 export const CHECKOUT_FIELD_MAP = {
-  first_name: 'firstName',
-  last_name: 'lastName',
+  name: 'fullName',
   email: 'email',
-  phone_number: 'phoneNumber',
   phone: 'phoneNumber',
-  country: 'country',
+  phone_number: 'phoneNumber',
   course_id: 'root',
-  course_slug: 'root',
+  code: 'code',
+  password: 'password',
+  password_confirmation: 'passwordConfirmation',
+  payment_intent_id: 'root',
 };
 
 export function createCheckoutBillingSchema(lang = 'en') {
   const m = t(lang);
-  const maxName = maxMessage(FIELD_LIMITS.name, lang);
+  const maxName = maxMessage(FIELD_LIMITS.name * 2, lang);
 
   return z.object({
-    firstName: z
+    fullName: z
       .string()
       .trim()
       .min(1, m.required)
-      .min(2, m.firstNameMin)
-      .max(FIELD_LIMITS.name, maxName)
-      .regex(nameRegex, m.firstNameMin),
-    lastName: z
-      .string()
-      .trim()
-      .min(1, m.required)
-      .min(2, m.lastNameMin)
-      .max(FIELD_LIMITS.name, maxName)
-      .regex(nameRegex, m.lastNameMin),
+      .min(2, m.nameMin)
+      .max(FIELD_LIMITS.name * 2, maxName)
+      .regex(nameRegex, m.nameMin),
     email: z
       .string()
       .trim()
@@ -80,41 +76,31 @@ export function createCheckoutBillingSchema(lang = 'en') {
       .refine((value) => e164Regex.test(value) && isValidPhoneNumber(value), {
         message: m.phone,
       }),
-    country: z.string().trim().length(2, m.country),
   });
 }
 
-export function createCheckoutCardSchema(lang = 'en') {
+export function createClaimAccountSchema(lang = 'en') {
   const m = t(lang);
+  const maxPassword = maxMessage(FIELD_LIMITS.password, lang);
 
-  return z.object({
-    cardNumber: z
-      .string()
-      .trim()
-      .refine((value) => {
-        const digits = value.replace(/\D/g, '');
-        return digits.length >= 13 && digits.length <= 19;
-      }, m.cardNumber),
-    expiry: z
-      .string()
-      .trim()
-      .refine((value) => isValidExpiry(value), m.expiry),
-    cvc: z
-      .string()
-      .trim()
-      .refine((value) => /^\d{3,4}$/.test(value), m.cvc),
-  });
-}
-
-function isValidExpiry(value) {
-  const match = String(value || '').match(/^(\d{2})\s*\/\s*(\d{2})$/);
-  if (!match) return false;
-
-  const month = Number(match[1]);
-  const year = Number(`20${match[2]}`);
-  if (month < 1 || month > 12) return false;
-
-  const now = new Date();
-  const exp = new Date(year, month, 1);
-  return exp > now;
+  return z
+    .object({
+      code: z
+        .string()
+        .trim()
+        .regex(/^\d{6}$/, m.otp),
+      password: z
+        .string()
+        .min(8, m.passwordMin)
+        .max(FIELD_LIMITS.password, maxPassword)
+        .regex(passwordComplexityRegex, m.passwordComplexity),
+      passwordConfirmation: z
+        .string()
+        .min(1, m.required)
+        .max(FIELD_LIMITS.password, maxPassword),
+    })
+    .refine((data) => data.password === data.passwordConfirmation, {
+      message: m.passwordMatch,
+      path: ['passwordConfirmation'],
+    });
 }

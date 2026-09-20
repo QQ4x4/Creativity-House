@@ -19,9 +19,7 @@ import {
 } from 'lucide-react';
 import PublicShell from './PublicShell';
 import { fetchPublicCourse } from '@/lib/catalog/api';
-import { createStripeCheckoutSession } from '@/lib/checkout/api';
-import { ApiError } from '@/lib/api';
-import { toastApiError } from '@/lib/toast';
+import { useAuth } from '@/providers/AuthProvider';
 
 const MODE_ORDER = ['live', 'recorded', 'simulator'];
 
@@ -50,7 +48,24 @@ function BuyNowButton({ labels, isCheckingOut, onBuyNow, className }) {
   );
 }
 
-function PricingCard({ course, mode, labels, lang, sticky = false, isCheckingOut, onBuyNow }) {
+function StartLearningButton({ labels, href, className }) {
+  return (
+    <Link href={href} className={className}>
+      {labels.startLearning || labels.watchCourse || 'Start Learning'}
+    </Link>
+  );
+}
+
+function PricingCard({
+  course,
+  mode,
+  labels,
+  lang,
+  sticky = false,
+  isCheckingOut,
+  onBuyNow,
+  isEnrolled = false,
+}) {
   const tiers = course.pricingTiers || [];
   const activeTier = tiers.find((t) => t.mode === mode) || null;
   const selected = course.modes?.[mode] || {
@@ -78,6 +93,7 @@ function PricingCard({ course, mode, labels, lang, sticky = false, isCheckingOut
     activeTier?.guaranteeText || selected.guaranteeText || labels.moneyBackHint;
   const features = activeTier?.features || selected.features || [];
   const inquiryHref = `/${lang}/course-inquiry?course=${encodeURIComponent(course.slug)}`;
+  const learnHref = `/${lang}/courses/${course.id}/learn`;
 
   return (
     <aside
@@ -85,31 +101,48 @@ function PricingCard({ course, mode, labels, lang, sticky = false, isCheckingOut
         sticky ? 'lg:sticky lg:top-28' : ''
       }`}
     >
-      <div className="flex items-end gap-3">
-        <p className="text-3xl font-extrabold text-plum-700 dark:text-gold-300">${price}</p>
-        {hasDiscount ? (
-          <p className="pb-1 text-sm text-gray-400 line-through dark:text-gray-500">${originalPrice}</p>
-        ) : null}
-      </div>
-      {badgeText ? (
-        <span className="mt-2 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200">
-          {badgeText}
-        </span>
-      ) : null}
+      {isEnrolled ? (
+        <>
+          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+            {labels.alreadyEnrolled || 'You own this course'}
+          </p>
+          <StartLearningButton
+            labels={labels}
+            href={learnHref}
+            className="mt-5 inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 text-sm font-semibold text-white shadow-[0_0_24px_rgba(168,85,247,0.35)] transition-all duration-300 hover:from-plum-600 hover:to-plum-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+          />
+        </>
+      ) : (
+        <>
+          <div className="flex items-end gap-3">
+            <p className="text-3xl font-extrabold text-plum-700 dark:text-gold-300">${price}</p>
+            {hasDiscount ? (
+              <p className="pb-1 text-sm text-gray-400 line-through dark:text-gray-500">
+                ${originalPrice}
+              </p>
+            ) : null}
+          </div>
+          {badgeText ? (
+            <span className="mt-2 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+              {badgeText}
+            </span>
+          ) : null}
 
-      <p className="mt-3 inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-        <Clock className="h-4 w-4 text-plum-600 dark:text-gold-300" aria-hidden />
-        {duration}
-      </p>
+          <p className="mt-3 inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <Clock className="h-4 w-4 text-plum-600 dark:text-gold-300" aria-hidden />
+            {duration}
+          </p>
 
-      <BuyNowButton
-        labels={labels}
-        isCheckingOut={isCheckingOut}
-        onBuyNow={onBuyNow}
-        className={`mt-5 inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 text-sm font-semibold text-white shadow-[0_0_24px_rgba(168,85,247,0.35)] transition-all duration-300 hover:from-plum-600 hover:to-plum-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 disabled:cursor-wait disabled:opacity-80 ${
-          isCheckingOut ? 'animate-pulse shadow-[0_0_28px_rgba(212,175,55,0.45)]' : ''
-        }`}
-      />
+          <BuyNowButton
+            labels={labels}
+            isCheckingOut={isCheckingOut}
+            onBuyNow={onBuyNow}
+            className={`mt-5 inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 text-sm font-semibold text-white shadow-[0_0_24px_rgba(168,85,247,0.35)] transition-all duration-300 hover:from-plum-600 hover:to-plum-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 disabled:cursor-wait disabled:opacity-80 ${
+              isCheckingOut ? 'animate-pulse shadow-[0_0_28px_rgba(212,175,55,0.45)]' : ''
+            }`}
+          />
+        </>
+      )}
 
       <Link
         href={inquiryHref}
@@ -119,12 +152,16 @@ function PricingCard({ course, mode, labels, lang, sticky = false, isCheckingOut
         {labels.haveQuestions}
       </Link>
 
-      <p className="mt-3 inline-flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-200">
-        <ShieldCheck className="h-4 w-4" aria-hidden />
-        {guaranteeTitle}
-      </p>
-      {guaranteeText ? (
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">{guaranteeText}</p>
+      {!isEnrolled ? (
+        <>
+          <p className="mt-3 inline-flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-200">
+            <ShieldCheck className="h-4 w-4" aria-hidden />
+            {guaranteeTitle}
+          </p>
+          {guaranteeText ? (
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">{guaranteeText}</p>
+          ) : null}
+        </>
       ) : null}
 
       <ul className="mt-5 space-y-2.5">
@@ -142,6 +179,7 @@ function PricingCard({ course, mode, labels, lang, sticky = false, isCheckingOut
 export default function CourseDetailClient({ dictionary, lang, slug }) {
   const labels = dictionary.catalog;
   const router = useRouter();
+  const { user } = useAuth();
   const [course, setCourse] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -172,38 +210,56 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
     };
   }, [slug, lang]);
 
-  const handleBuyNow = useCallback(async () => {
-    if (isCheckingOut || !course) return;
+  // Re-check enrollment once auth session resolves (cookie may arrive after first paint).
+  useEffect(() => {
+    if (!slug || !user?.id) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await fetchPublicCourse(slug, lang);
+        if (!cancelled && data) {
+          setCourse((current) =>
+            current
+              ? {
+                  ...current,
+                  ...data,
+                  isEnrolled: Boolean(data.isEnrolled || data.is_enrolled),
+                  is_enrolled: Boolean(data.isEnrolled || data.is_enrolled),
+                }
+              : data
+          );
+        }
+      } catch {
+        // Keep the already-loaded public course payload.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, lang, user?.id]);
 
-    const courseId = Number(course.id);
-    if (!Number.isFinite(courseId) || courseId < 1) {
-      toastApiError(new Error(labels.genericError), labels.genericError);
+  const handleBuyNow = useCallback(() => {
+    if (isCheckingOut || !course?.slug) return;
+    if (course?.isEnrolled || course?.is_enrolled) {
+      router.push(
+        course?.id ? `/${lang}/courses/${course.id}/learn` : `/${lang}/my-courses`
+      );
       return;
     }
-
     setIsCheckingOut(true);
-    try {
-      const data = await createStripeCheckoutSession(courseId);
-      const url = data?.url || data?.data?.url;
-      if (!url) {
-        throw new Error(labels.genericError);
-      }
-      window.location.href = url;
-    } catch (error) {
-      setIsCheckingOut(false);
-      if (error instanceof ApiError && error.status === 401) {
-        toastApiError(error, labels.signInToPay);
-        router.push(`/${lang}/login`);
-        return;
-      }
-      toastApiError(error, labels.genericError);
-    }
-  }, [course, isCheckingOut, labels.genericError, labels.signInToPay, lang, router]);
+    const selectedMode = mode || course.defaultMode || 'live';
+    router.push(
+      `/${lang}/checkout?course=${encodeURIComponent(course.slug)}&mode=${encodeURIComponent(selectedMode)}`
+    );
+  }, [course, isCheckingOut, lang, mode, router]);
 
   const availableModes = useMemo(
     () => MODE_ORDER.filter((key) => course?.availableModes?.includes(key)),
     [course]
   );
+
+  const isEnrolled = Boolean(course?.isEnrolled || course?.is_enrolled);
+  const learnHref = course?.id ? `/${lang}/courses/${course.id}/learn` : `/${lang}/my-courses`;
 
   if (!isLoading && !course) {
     return (
@@ -293,6 +349,7 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
                   sticky
                   isCheckingOut={isCheckingOut}
                   onBuyNow={handleBuyNow}
+                  isEnrolled={isEnrolled}
                 />
               </div>
             </header>
@@ -405,21 +462,27 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
 
             <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 p-3 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#120a1c]/95 lg:hidden">
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-lg font-extrabold text-plum-700 dark:text-gold-300">
-                    $
-                    {(
-                      course.pricingTiers?.find((t) => t.mode === mode)?.price ??
-                      course.modes?.[mode]?.price ??
-                      course.price
-                    )}
+                {isEnrolled ? (
+                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                    {labels.alreadyEnrolled || 'You own this course'}
                   </p>
-                  <p className="text-[11px] text-emerald-800 dark:text-emerald-200">
-                    {course.pricingTiers?.find((t) => t.mode === mode)?.guaranteeTitle ||
-                      course.modes?.[mode]?.guaranteeTitle ||
-                      labels.guarantee}
-                  </p>
-                </div>
+                ) : (
+                  <div>
+                    <p className="text-lg font-extrabold text-plum-700 dark:text-gold-300">
+                      $
+                      {(
+                        course.pricingTiers?.find((t) => t.mode === mode)?.price ??
+                        course.modes?.[mode]?.price ??
+                        course.price
+                      )}
+                    </p>
+                    <p className="text-[11px] text-emerald-800 dark:text-emerald-200">
+                      {course.pricingTiers?.find((t) => t.mode === mode)?.guaranteeTitle ||
+                        course.modes?.[mode]?.guaranteeTitle ||
+                        labels.guarantee}
+                    </p>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/${lang}/course-inquiry?course=${encodeURIComponent(course.slug)}`}
@@ -428,14 +491,22 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
                   >
                     <MessageCircle className="h-4 w-4" aria-hidden />
                   </Link>
-                  <BuyNowButton
-                    labels={labels}
-                    isCheckingOut={isCheckingOut}
-                    onBuyNow={handleBuyNow}
-                    className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-80 ${
-                      isCheckingOut ? 'animate-pulse' : ''
-                    }`}
-                  />
+                  {isEnrolled ? (
+                    <StartLearningButton
+                      labels={labels}
+                      href={learnHref}
+                      className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-5 text-sm font-semibold text-white"
+                    />
+                  ) : (
+                    <BuyNowButton
+                      labels={labels}
+                      isCheckingOut={isCheckingOut}
+                      onBuyNow={handleBuyNow}
+                      className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-80 ${
+                        isCheckingOut ? 'animate-pulse' : ''
+                      }`}
+                    />
+                  )}
                 </div>
               </div>
             </div>

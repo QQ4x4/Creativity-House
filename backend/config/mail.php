@@ -45,7 +45,7 @@ return [
             'port' => env('MAIL_PORT', 2525),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
+            'timeout' => (int) env('MAIL_TIMEOUT', 3),
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
@@ -114,5 +114,19 @@ return [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Contact / inquiry form recipient
+    |--------------------------------------------------------------------------
+    |
+    | Internal inbox for public form submissions (student + organization).
+    | Public UI continues to display info@creativity-house.com.
+    |
+    */
+    'contact_form_recipient' => env(
+        'CONTACT_FORM_RECIPIENT',
+        'ahmed@creativity-house.com'
+    ),
 
 ];

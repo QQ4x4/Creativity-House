@@ -5,10 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowRight, Clock, GraduationCap, Loader2, Star, Users } from 'lucide-react';
-import { ApiError } from '@/lib/api';
-import { createStripeCheckoutSession } from '@/lib/checkout/api';
 import { motionGpu, motionViewport } from '@/lib/motion';
-import { toastApiError } from '@/lib/toast';
 
 function formatCount(value) {
   return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -55,40 +52,31 @@ export default function CatalogCourseCard({ course, lang, labels, index = 0 }) {
   const [coverFailed, setCoverFailed] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const detailHref = `/${lang}/courses/${course.slug}`;
+  const defaultMode = course.defaultMode ?? course.default_mode ?? 'live';
+  const checkoutHref = `/${lang}/checkout?course=${encodeURIComponent(course.slug)}&mode=${encodeURIComponent(defaultMode)}`;
+  // Player route is `[courseId]` — id is the stable param used elsewhere.
+  const learnHref = course.id
+    ? `/${lang}/courses/${course.id}/learn`
+    : `/${lang}/my-courses`;
+  const isEnrolled = Boolean(course.isEnrolled || course.is_enrolled);
   const showCover = Boolean(course.coverImage) && !coverFailed;
   const price = displayPrice(course);
   const originalPrice = displayOriginalPrice(course, price);
   const hasDiscount = originalPrice !== null && originalPrice > price;
 
-  const handleEnroll = useCallback(async () => {
+  const handleEnroll = useCallback(() => {
     if (isCheckingOut) return;
-
-    const courseId = Number(course.id);
-    if (!Number.isFinite(courseId) || courseId < 1) {
-      // Live catalog rows always have an id; fall back to detail if missing.
+    if (isEnrolled) {
+      router.push(learnHref);
+      return;
+    }
+    if (!course.slug) {
       router.push(detailHref);
       return;
     }
-
     setIsCheckingOut(true);
-    try {
-      // Same Stripe flow as Course Details "Buy Now".
-      const data = await createStripeCheckoutSession(courseId);
-      const url = data?.url || data?.data?.url;
-      if (!url) {
-        throw new Error(labels.genericError || 'Unable to start checkout.');
-      }
-      window.location.href = url;
-    } catch (error) {
-      setIsCheckingOut(false);
-      if (error instanceof ApiError && error.status === 401) {
-        toastApiError(error, labels.signInToPay || labels.genericError);
-        router.push(`/${lang}/login`);
-        return;
-      }
-      toastApiError(error, labels.genericError);
-    }
-  }, [course.id, detailHref, isCheckingOut, labels.genericError, labels.signInToPay, lang, router]);
+    router.push(checkoutHref);
+  }, [checkoutHref, course.slug, detailHref, isCheckingOut, isEnrolled, learnHref, router]);
 
   return (
     <motion.article
@@ -153,12 +141,18 @@ export default function CatalogCourseCard({ course, lang, labels, index = 0 }) {
         <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">{course.instructorName}</p>
 
         <div className="mt-auto flex items-end justify-between gap-3 pt-5">
-          <div>
-            {hasDiscount ? (
-              <p className="text-xs text-gray-500 line-through">${originalPrice}</p>
-            ) : null}
-            <p className="text-xl font-extrabold text-plum-700 dark:text-gold-300">${price}</p>
-          </div>
+          {isEnrolled ? (
+            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+              {labels.alreadyEnrolled || 'You own this course'}
+            </p>
+          ) : (
+            <div>
+              {hasDiscount ? (
+                <p className="text-xs text-gray-500 line-through">${originalPrice}</p>
+              ) : null}
+              <p className="text-xl font-extrabold text-plum-700 dark:text-gold-300">${price}</p>
+            </div>
+          )}
           <div className="flex flex-col gap-2 sm:flex-row">
             <Link
               href={detailHref}
@@ -166,25 +160,35 @@ export default function CatalogCourseCard({ course, lang, labels, index = 0 }) {
             >
               {labels.viewDetails}
             </Link>
-            <button
-              type="button"
-              onClick={handleEnroll}
-              disabled={isCheckingOut}
-              aria-busy={isCheckingOut}
-              className="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-3 text-xs font-semibold text-white shadow-[0_0_18px_rgba(168,85,247,0.35)] transition-all duration-300 hover:from-plum-600 hover:to-plum-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 disabled:cursor-wait disabled:opacity-80"
-            >
-              {isCheckingOut ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                  {labels.startingCheckout || labels.enrollNow}
-                </>
-              ) : (
-                <>
-                  {labels.enrollNow}
-                  <ArrowRight className="h-3.5 w-3.5 chevron-flip" aria-hidden />
-                </>
-              )}
-            </button>
+            {isEnrolled ? (
+              <Link
+                href={learnHref}
+                className="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-3 text-xs font-semibold text-white shadow-[0_0_18px_rgba(168,85,247,0.35)] transition-all duration-300 hover:from-plum-600 hover:to-plum-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+              >
+                {labels.startLearning || labels.watchCourse || 'Start Learning'}
+                <ArrowRight className="h-3.5 w-3.5 chevron-flip" aria-hidden />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={handleEnroll}
+                disabled={isCheckingOut}
+                aria-busy={isCheckingOut}
+                className="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-3 text-xs font-semibold text-white shadow-[0_0_18px_rgba(168,85,247,0.35)] transition-all duration-300 hover:from-plum-600 hover:to-plum-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 disabled:cursor-wait disabled:opacity-80"
+              >
+                {isCheckingOut ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                    {labels.startingCheckout || labels.enrollNow}
+                  </>
+                ) : (
+                  <>
+                    {labels.enrollNow}
+                    <ArrowRight className="h-3.5 w-3.5 chevron-flip" aria-hidden />
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

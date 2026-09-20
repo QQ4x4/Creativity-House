@@ -7,12 +7,22 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Public catalog payload — bilingual snake_case, no enrollment or progress.
+ * Public catalog payload — bilingual snake_case.
+ * Optionally includes is_enrolled when the request carries a Sanctum session.
  *
  * @mixin Course
  */
 class PublicCourseResource extends JsonResource
 {
+    private ?bool $isEnrolled = null;
+
+    public function withIsEnrolled(bool $isEnrolled): static
+    {
+        $this->isEnrolled = $isEnrolled;
+
+        return $this;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -21,6 +31,8 @@ class PublicCourseResource extends JsonResource
         $outcomes = $this->localizedList($this->learning_outcomes);
         $audience = $this->localizedList($this->target_audience);
         $credentials = $this->localizedList($this->instructor_credentials);
+
+        $isEnrolled = $this->isEnrolled ?? false;
 
         return [
             'id' => $this->id,
@@ -72,6 +84,7 @@ class PublicCourseResource extends JsonResource
             'schedule_ar' => $this->schedule_ar,
             'modes' => $this->modesPayload(),
             'pricing_tiers' => $this->pricingTiersPayload(),
+            'is_enrolled' => (bool) $isEnrolled,
             'seo' => [
                 'title' => $this->seo_title,
                 'description' => $this->seo_description,

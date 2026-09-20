@@ -39,6 +39,7 @@ class Order extends Model
         'billing_country',
         'delivery_mode',
         'stripe_session_id',
+        'stripe_payment_intent_id',
     ];
 
     /**

@@ -7,7 +7,9 @@ use App\Http\Requests\Inquiry\StoreInquiryRequest;
 use App\Mail\AdminInquiryAlertMail;
 use App\Models\Inquiry;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class InquiryController extends Controller
 {
@@ -31,8 +33,36 @@ class InquiryController extends Controller
             'status' => Inquiry::STATUS_UNREAD,
         ]);
 
-        // Queued via ShouldQueue — does not block the API response.
-        Mail::to('info@creativity-house.com')->send(new AdminInquiryAlertMail($inquiry));
+        $recipient = (string) config(
+            'mail.contact_form_recipient',
+            'ahmed@creativity-house.com'
+        );
+
+        // Queue after the HTTP response so local sync queues / slow SMTP
+        // cannot freeze the request (previously ~19s hangs).
+        $inquiryId = $inquiry->id;
+        $replyEmail = $inquiry->email;
+        $replyName = $inquiry->full_name;
+
+        dispatch(function () use ($inquiryId, $recipient, $replyEmail, $replyName): void {
+            try {
+                $inquiry = Inquiry::query()->find($inquiryId);
+                if (! $inquiry) {
+                    return;
+                }
+
+                Mail::to($recipient)->queue(
+                    (new AdminInquiryAlertMail($inquiry))
+                        ->replyTo($replyEmail, $replyName)
+                );
+            } catch (Throwable $e) {
+                Log::error('Failed to queue admin inquiry alert mail.', [
+                    'inquiry_id' => $inquiryId,
+                    'recipient' => $recipient,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        })->afterResponse();
 
         $message = $inquiry->type === Inquiry::TYPE_ORGANIZATION
             ? 'Thank you! Our corporate team will contact you within 24 hours.'

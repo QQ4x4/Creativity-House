@@ -20,10 +20,11 @@ function unwrapOne(payload) {
 
 function normalizePublicCourse(raw, lang) {
   if (!raw) return null;
+  const isEnrolled = Boolean(raw.is_enrolled ?? raw.isEnrolled);
   if (raw.title && raw.slug && !raw.title_en) {
-    return raw;
+    return { ...raw, isEnrolled, is_enrolled: isEnrolled };
   }
-  return localizeCatalogCourse(
+  const localized = localizeCatalogCourse(
     {
       ...raw,
       defaultMode: raw.defaultMode ?? raw.default_mode,
@@ -57,6 +58,9 @@ function normalizePublicCourse(raw, lang) {
     },
     lang
   );
+  return localized
+    ? { ...localized, isEnrolled, is_enrolled: isEnrolled }
+    : null;
 }
 
 export async function fetchPublicCatalog(lang = 'en') {

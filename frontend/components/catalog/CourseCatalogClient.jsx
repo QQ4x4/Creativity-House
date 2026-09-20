@@ -7,9 +7,11 @@ import PublicShell from './PublicShell';
 import CatalogCourseCard from './CatalogCourseCard';
 import { CATALOG_CATEGORIES } from '@/lib/catalog/data';
 import { fetchPublicCatalog } from '@/lib/catalog/api';
+import { useAuth } from '@/providers/AuthProvider';
 
 export default function CourseCatalogClient({ dictionary, lang }) {
   const labels = dictionary.catalog;
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -33,7 +35,7 @@ export default function CourseCatalogClient({ dictionary, lang }) {
     return () => {
       cancelled = true;
     };
-  }, [lang]);
+  }, [lang, user?.id]);
 
   useEffect(() => {
     if (!filterOpen) return undefined;

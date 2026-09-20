@@ -113,7 +113,10 @@ class CheckoutService
         return $course;
     }
 
-    private function resolveMode(Course $course, ?string $mode): string
+    /**
+     * Resolve a delivery mode against the course catalog (falls back to default).
+     */
+    public function resolveMode(Course $course, ?string $mode): string
     {
         $available = $course->available_modes;
         if (! is_array($available) || $available === []) {
@@ -130,7 +133,10 @@ class CheckoutService
         return $course->default_mode ?: (string) ($available[0] ?? 'live');
     }
 
-    private function resolveAmount(Course $course, string $mode): float
+    /**
+     * Authoritative unit price for a delivery mode (tier → catalog → course.price).
+     */
+    public function resolveAmount(Course $course, string $mode): float
     {
         $tier = $course->pricingTiers()
             ->where('mode', $mode)

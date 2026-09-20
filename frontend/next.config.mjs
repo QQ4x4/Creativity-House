@@ -131,6 +131,70 @@ const nextConfig = {
       },
     ];
   },
+
+  async headers() {
+    const isDev = process.env.NODE_ENV === 'development';
+
+    const scriptSrc = [
+      "'self'",
+      "'unsafe-inline'",
+      'https://js.stripe.com',
+      'https://www.google.com',
+      'https://www.gstatic.com',
+      ...(isDev ? ["'unsafe-eval'"] : []),
+    ].join(' ');
+
+    const connectSrc = [
+      "'self'",
+      'https://api.stripe.com',
+      'https://ipapi.co',
+      'https://api.creativity-house.com',
+      'https://www.google.com',
+      'https://www.gstatic.com',
+      ...(isDev
+        ? [
+            'http://localhost:*',
+            'http://127.0.0.1:*',
+            'ws://localhost:*',
+            'ws://127.0.0.1:*',
+          ]
+        : []),
+    ].join(' ');
+
+    const csp = [
+      "default-src 'self'",
+      `script-src ${scriptSrc}`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      `connect-src ${connectSrc}`,
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://iframe.mediadelivery.net https://www.google.com https://recaptcha.google.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join('; ');
+
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains; preload',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(self)',
+          },
+          { key: 'Content-Security-Policy', value: csp },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

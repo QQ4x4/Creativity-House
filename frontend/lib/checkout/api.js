@@ -1,42 +1,84 @@
 /**
- * Public checkout API — billing + course only. Card PAN/CVC never leave the browser.
+ * Elements checkout + post-payment account claim APIs.
  */
 
-import { apiPost, getCsrfCookie } from '@/lib/api';
+import { apiGet, apiPost, getCsrfCookie } from '@/lib/api';
 
-export const CHECKOUT_ENDPOINT = '/v1/checkout';
+export const CREATE_PAYMENT_INTENT_ENDPOINT = '/v1/checkout/create-payment-intent';
+export const CLAIM_INFO_ENDPOINT = '/v1/checkout/claim-info';
+export const CLAIM_ACCOUNT_ENDPOINT = '/v1/auth/claim-account';
+export const CLAIM_RESEND_ENDPOINT = '/v1/auth/claim-account/resend';
 
 /**
  * @param {{
- *   firstName: string,
- *   lastName: string,
+ *   courseId: number|string,
+ *   mode?: string,
  *   email: string,
- *   phoneNumber: string,
- *   country: string,
- *   courseId?: number | string | null,
- *   courseSlug: string,
- *   mode?: string | null,
+ *   name: string,
+ *   phone: string,
  * }} data
  */
-export async function processCheckout(data) {
+export async function createPaymentIntent(data) {
   await getCsrfCookie();
 
-  const payload = {
-    first_name: data.firstName,
-    last_name: data.lastName,
-    email: data.email,
-    phone_number: data.phoneNumber,
-    country: data.country,
-    course_slug: data.courseSlug,
-    mode: data.mode || undefined,
-  };
-
   const courseId = Number(data.courseId);
-  if (Number.isFinite(courseId) && courseId > 0) {
-    payload.course_id = courseId;
+  if (!Number.isFinite(courseId) || courseId < 1) {
+    throw new Error('A valid course is required to start checkout.');
   }
 
-  return apiPost(CHECKOUT_ENDPOINT, payload);
+  const payload = {
+    course_id: courseId,
+    email: data.email,
+    name: data.name,
+    phone: data.phone,
+  };
+
+  if (data.mode) {
+    payload.mode = data.mode;
+  }
+
+  return apiPost(CREATE_PAYMENT_INTENT_ENDPOINT, payload);
+}
+
+/**
+ * @param {string} paymentIntentId
+ */
+export async function fetchClaimInfo(paymentIntentId) {
+  const id = encodeURIComponent(String(paymentIntentId || '').trim());
+  // Send both names — Stripe redirect uses `payment_intent`; our return_url uses `session_id`.
+  return apiGet(
+    `${CLAIM_INFO_ENDPOINT}?payment_intent=${id}&payment_intent_id=${id}&session_id=${id}`
+  );
+}
+
+/**
+ * @param {{
+ *   paymentIntentId: string,
+ *   code: string,
+ *   password: string,
+ *   passwordConfirmation: string,
+ * }} data
+ */
+export async function claimAccount(data) {
+  await getCsrfCookie();
+
+  return apiPost(CLAIM_ACCOUNT_ENDPOINT, {
+    payment_intent_id: data.paymentIntentId,
+    code: data.code,
+    password: data.password,
+    password_confirmation: data.passwordConfirmation,
+  });
+}
+
+/**
+ * @param {{ paymentIntentId: string }} data
+ */
+export async function resendClaimCode(data) {
+  await getCsrfCookie();
+
+  return apiPost(CLAIM_RESEND_ENDPOINT, {
+    payment_intent_id: data.paymentIntentId,
+  });
 }
 
 /**
@@ -52,5 +94,5 @@ export async function createStripeCheckoutSession(courseId) {
     throw new Error('A valid course is required to start checkout.');
   }
 
-  return apiPost(CHECKOUT_ENDPOINT, { course_id: id });
+  return apiPost('/v1/checkout', { course_id: id });
 }

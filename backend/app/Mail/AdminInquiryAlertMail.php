@@ -6,6 +6,7 @@ use App\Models\Inquiry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -24,8 +25,17 @@ class AdminInquiryAlertMail extends Mailable implements ShouldQueue
             ? 'Organization'
             : 'Student';
 
+        $replyTo = [];
+        if (filled($this->inquiry->email)) {
+            $replyTo[] = new Address(
+                $this->inquiry->email,
+                filled($this->inquiry->full_name) ? $this->inquiry->full_name : null
+            );
+        }
+
         return new Envelope(
             subject: "New {$kind} inquiry — {$this->inquiry->full_name}",
+            replyTo: $replyTo,
         );
     }
 

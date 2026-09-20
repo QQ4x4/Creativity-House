@@ -9,6 +9,7 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResendOtpRequest;
 use App\Http\Requests\Auth\VerifyOtpRequest;
 use App\Models\User;
+use App\Services\Checkout\StripeEnrollmentService;
 use App\Services\OtpService;
 use App\Services\RecaptchaService;
 use Illuminate\Http\JsonResponse;
@@ -157,6 +158,12 @@ class AuthController extends Controller
         if (! $user->is_active) {
             throw ValidationException::withMessages([
                 'email' => ['This account has been deactivated.'],
+            ]);
+        }
+
+        if ($user->account_status === StripeEnrollmentService::ACCOUNT_STATUS_PENDING_CLAIM) {
+            throw ValidationException::withMessages([
+                'email' => ['Complete your account claim from the checkout email before logging in.'],
             ]);
         }
 

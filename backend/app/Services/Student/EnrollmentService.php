@@ -69,6 +69,28 @@ class EnrollmentService
     }
 
     /**
+     * Enrollment flags for many courses at once — avoids N+1 on the catalog.
+     *
+     * @param  list<int>  $courseIds
+     * @return array<int, true>
+     */
+    public function enrolledCourseIdMap(int $userId, array $courseIds): array
+    {
+        if ($courseIds === []) {
+            return [];
+        }
+
+        return Order::query()
+            ->where('user_id', $userId)
+            ->whereIn('course_id', $courseIds)
+            ->where('payment_status', PaymentStatus::Paid->value)
+            ->pluck('course_id')
+            ->unique()
+            ->mapWithKeys(fn ($id) => [(int) $id => true])
+            ->all();
+    }
+
+    /**
      * Enrollment dates for many courses at once — avoids an N+1 in the
      * "my courses" listing.
      *

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Api\Admin\LessonResourceUploadController;
 use App\Http\Controllers\Api\Admin\ModuleController as AdminModuleController;
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\Auth\ClaimAccountController;
 use App\Http\Controllers\Api\Auth\GoogleAuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CheckoutController;
@@ -56,12 +57,19 @@ Route::prefix('auth')->group(function () {
             ->name('auth.google.exchange');
     });
 
-    Route::middleware(['auth:sanctum'])->group(function () {
+    Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
         Route::match(['patch', 'put'], '/complete-profile', [AuthController::class, 'completeProfile'])
             ->name('auth.complete-profile');
     });
+});
+
+Route::prefix('v1/auth')->middleware('throttle:auth')->group(function () {
+    Route::post('/claim-account', [ClaimAccountController::class, 'store'])
+        ->name('api.v1.auth.claim-account');
+    Route::post('/claim-account/resend', [ClaimAccountController::class, 'resend'])
+        ->name('api.v1.auth.claim-account.resend');
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -86,13 +94,21 @@ Route::get('/courses/{course}', [PublicCatalogController::class, 'show']);
 | Stripe Checkout
 |--------------------------------------------------------------------------
 |
-| Authenticated buyers receive a Stripe-hosted Checkout URL.
+| Authenticated buyers can still use Stripe-hosted Checkout.
+| Guests use Payment Intents + Elements via create-payment-intent.
 | The mock billing checkout remains on POST /api/checkout.
 |
 */
 Route::middleware(['auth:sanctum', 'throttle:20,1'])->group(function () {
     Route::post('/v1/checkout', [PaymentController::class, 'createCheckoutSession'])
         ->name('api.v1.checkout');
+});
+
+Route::middleware('throttle:20,1')->group(function () {
+    Route::post('/v1/checkout/create-payment-intent', [PaymentController::class, 'createPaymentIntent'])
+        ->name('api.v1.checkout.create-payment-intent');
+    Route::get('/v1/checkout/claim-info', [ClaimAccountController::class, 'claimInfo'])
+        ->name('api.v1.checkout.claim-info');
 });
 
 /*
@@ -102,6 +118,8 @@ Route::middleware(['auth:sanctum', 'throttle:20,1'])->group(function () {
 */
 Route::post('/v1/stripe/webhook', [PaymentController::class, 'webhook'])
     ->name('api.v1.stripe.webhook');
+Route::post('/v1/webhooks/stripe', [PaymentController::class, 'webhook'])
+    ->name('api.v1.webhooks.stripe');
 
 /*
 |--------------------------------------------------------------------------

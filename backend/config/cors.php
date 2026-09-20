@@ -2,12 +2,20 @@
 
 /**
  * Build the allow-list of browser origins for credentialed CORS.
- * Localhost is always included so WAMP/dev keeps working.
- * Production origins come from FRONTEND_URL + optional CORS_ALLOWED_ORIGINS.
+ *
+ * Never use '*' with supports_credentials. Origins come from:
+ *   - hard-coded local + production defaults
+ *   - FRONTEND_URL
+ *   - optional CORS_ALLOWED_ORIGINS (comma-separated)
+ *
+ * Preview wildcards (e.g. *.vercel.app) are OFF by default. Set
+ * CORS_ORIGIN_PATTERN only when you explicitly need a regex allow-list.
  */
 $defaultOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'https://creativity-house.com',
+    'https://www.creativity-house.com',
 ];
 
 $configured = [];
@@ -32,10 +40,8 @@ $allowedOrigins = array_values(array_unique(array_filter([
     ...$configured,
 ])));
 
-$originPatterns = [
-    // Vercel production + preview deployments (*.vercel.app)
-    '#^https://.*\.vercel\.app$#',
-];
+// No broad *.vercel.app pattern — add exact preview URLs via CORS_ALLOWED_ORIGINS.
+$originPatterns = [];
 
 $extraPattern = env('CORS_ORIGIN_PATTERN');
 if (filled($extraPattern)) {

@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import CatalogCourseCard from '@/components/catalog/CatalogCourseCard';
 import { fetchPublicCatalog } from '@/lib/catalog/api';
+import { useAuth } from '@/providers/AuthProvider';
 import {
   fadeUp,
   motionGpu,
@@ -17,6 +18,7 @@ const FEATURED_COUNT = 3;
 
 export default function ServicesSection({ dictionary, lang }) {
   const labels = dictionary.catalog;
+  const { user } = useAuth();
   const [featured, setFeatured] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -40,7 +42,7 @@ export default function ServicesSection({ dictionary, lang }) {
     return () => {
       cancelled = true;
     };
-  }, [lang]);
+  }, [lang, user?.id]);
 
   return (
     <section id="services" className="bg-slate-50 py-24 transition-colors duration-300 dark:bg-slate-950">

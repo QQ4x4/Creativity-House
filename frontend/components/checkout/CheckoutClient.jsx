@@ -1,11 +1,12 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Elements } from '@stripe/react-stripe-js';
 import {
   ChevronDown,
   CreditCard,
@@ -13,65 +14,66 @@ import {
   Mail,
   ShieldCheck,
   User,
+  Loader2,
 } from 'lucide-react';
 import PublicShell from '@/components/catalog/PublicShell';
 import GlassAuthInput from '@/components/auth/GlassAuthInput';
 import GlassPhoneInput from '@/components/auth/GlassPhoneInput';
-import GlassCountrySelect from '@/components/checkout/GlassCountrySelect';
-import StripeMockFields from '@/components/checkout/StripeMockFields';
-import CheckoutSuccessModal from '@/components/checkout/CheckoutSuccessModal';
+import StripePaymentForm, { appearance } from '@/components/checkout/StripePaymentForm';
 import { fetchPublicCourse } from '@/lib/catalog/api';
-import { processCheckout } from '@/lib/checkout/api';
+import { createPaymentIntent } from '@/lib/checkout/api';
+import { getStripePromise, getStripePublishableKey } from '@/lib/checkout/stripe';
 import { applyServerErrors } from '@/lib/auth';
 import { ApiError } from '@/lib/api';
 import {
   CHECKOUT_FIELD_MAP,
   createCheckoutBillingSchema,
-  createCheckoutCardSchema,
 } from '@/lib/validations/checkout';
 import { remapServerErrors } from '@/lib/validations/profile';
 import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { toastApiError } from '@/lib/toast';
 import { useAuth } from '@/providers/AuthProvider';
 
+const stripePublishableKey = getStripePublishableKey();
+const stripePromise = getStripePromise();
+
 function CheckoutBody({ dictionary, lang }) {
   const labels = dictionary.catalog;
   const searchParams = useSearchParams();
-  const { user, refreshUser } = useAuth();
+  const router = useRouter();
+  const { user } = useAuth();
   const slug = searchParams.get('course') || '';
   const mode = searchParams.get('mode') || 'live';
 
   const [course, setCourse] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [step, setStep] = useState(1);
-  const [card, setCard] = useState({ cardNumber: '', expiry: '', cvc: '' });
-  const [cardErrors, setCardErrors] = useState({});
-  const [success, setSuccess] = useState({ open: false, orderId: '', requiresLogin: false });
+  const [clientSecret, setClientSecret] = useState('');
+  const [paymentIntentId, setPaymentIntentId] = useState('');
+  const [isCreatingIntent, setIsCreatingIntent] = useState(false);
 
   const billingForm = useForm({
     resolver: zodResolver(createCheckoutBillingSchema(lang)),
     mode: 'onBlur',
     defaultValues: {
-      firstName: '',
-      lastName: '',
+      fullName: '',
       email: '',
       phoneNumber: '',
-      country: '',
     },
   });
 
   useEffect(() => {
     if (!user) return;
+    const first = user.first_name || user.firstName || '';
+    const last = user.last_name || user.lastName || '';
     billingForm.reset({
-      firstName: user.first_name || user.firstName || '',
-      lastName: user.last_name || user.lastName || '',
+      fullName: user.name || `${first} ${last}`.trim(),
       email: user.email || '',
       phoneNumber: user.phone_number || user.phoneNumber || '',
-      country: billingForm.getValues('country') || '',
     });
     // Prefill once the signed-in profile arrives.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, user?.email, user?.first_name, user?.last_name, user?.phone_number]);
+  }, [user?.id, user?.email, user?.first_name, user?.last_name, user?.phone_number, user?.name]);
 
   useEffect(() => {
     let cancelled = false;
@@ -84,7 +86,17 @@ function CheckoutBody({ dictionary, lang }) {
       setIsLoading(true);
       try {
         const { data } = await fetchPublicCourse(slug, lang);
-        if (!cancelled) setCourse(data);
+        if (cancelled) return;
+        setCourse(data);
+
+        // Already purchased — skip checkout and open the student player.
+        if (data?.isEnrolled || data?.is_enrolled) {
+          router.replace(
+            data?.id
+              ? `/${lang}/courses/${data.id}/learn`
+              : `/${lang}/my-courses`
+          );
+        }
       } catch {
         if (!cancelled) setCourse(null);
       } finally {
@@ -94,48 +106,67 @@ function CheckoutBody({ dictionary, lang }) {
     return () => {
       cancelled = true;
     };
-  }, [slug, lang]);
+  }, [slug, lang, router]);
 
   const selected = course?.modes?.[mode] || course?.modes?.[course?.defaultMode];
   const total = selected?.price ?? course?.price;
-  const cardSchema = useMemo(() => createCheckoutCardSchema(lang), [lang]);
 
   const goToPayment = async () => {
     const valid = await billingForm.trigger();
-    if (valid) setStep(2);
-  };
+    if (!valid || !course?.id) return;
 
-  const handlePay = billingForm.handleSubmit(async (billing) => {
-    const parsed = cardSchema.safeParse(card);
-    if (!parsed.success) {
-      const next = {};
-      parsed.error.issues.forEach((issue) => {
-        next[issue.path[0]] = issue.message;
-      });
-      setCardErrors(next);
-      setStep(2);
-      return;
-    }
-    setCardErrors({});
-
+    const billing = billingForm.getValues();
+    setIsCreatingIntent(true);
     try {
-      const result = await processCheckout({
-        ...billing,
-        courseId: course?.id,
-        courseSlug: course?.slug || slug,
+      const result = await createPaymentIntent({
+        courseId: course.id,
         mode,
+        email: billing.email,
+        name: billing.fullName,
+        phone: billing.phoneNumber,
       });
 
-      if (result?.session_started) {
-        await refreshUser();
+      const secret =
+        result?.clientSecret || result?.data?.client_secret || result?.client_secret;
+      const intentId =
+        result?.data?.payment_intent_id || result?.payment_intent_id || '';
+      const chargedCents = Number(result?.data?.amount);
+
+      if (!secret) {
+        throw new Error(labels.genericError);
       }
 
-      setSuccess({
-        open: true,
-        orderId: result?.order?.order_id || '',
-        requiresLogin: Boolean(result?.requires_login),
-      });
+      // Refuse step 2 if server amount does not match the UI total (tamper / stale price).
+      const displayedCents =
+        total != null && Number.isFinite(Number(total))
+          ? Math.round(Number(total) * 100)
+          : null;
+      if (
+        displayedCents != null &&
+        Number.isFinite(chargedCents) &&
+        chargedCents !== displayedCents
+      ) {
+        throw new Error(
+          labels.priceMismatch ||
+            'The checkout price changed. Please refresh and try again.'
+        );
+      }
+
+      setClientSecret(secret);
+      setPaymentIntentId(intentId);
+      setStep(2);
     } catch (error) {
+      if (
+        error instanceof ApiError &&
+        (error.status === 400 || error.data?.already_enrolled)
+      ) {
+        router.replace(
+          course?.id
+            ? `/${lang}/courses/${course.id}/learn`
+            : `/${lang}/my-courses`
+        );
+        return;
+      }
       const fieldMessage = applyServerErrors(
         billingForm.setError,
         remapServerErrors(error?.data, CHECKOUT_FIELD_MAP)
@@ -144,8 +175,10 @@ function CheckoutBody({ dictionary, lang }) {
         setStep(1);
       }
       if (!fieldMessage) toastApiError(error, labels.genericError);
+    } finally {
+      setIsCreatingIntent(false);
     }
-  });
+  };
 
   return (
     <PublicShell dictionary={dictionary} lang={lang}>
@@ -153,8 +186,12 @@ function CheckoutBody({ dictionary, lang }) {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plum-700 dark:text-gold-300">
           {labels.secureCheckoutBadge}
         </p>
-        <h1 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white">{labels.checkoutTitle}</h1>
-        <p className="mt-2 max-w-2xl text-gray-600 dark:text-gray-400">{labels.checkoutSubtitle}</p>
+        <h1 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white">
+          {labels.checkoutTitle}
+        </h1>
+        <p className="mt-2 max-w-2xl text-gray-600 dark:text-gray-400">
+          {labels.checkoutSubtitle}
+        </p>
 
         {isLoading ? (
           <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_22rem]">
@@ -162,10 +199,12 @@ function CheckoutBody({ dictionary, lang }) {
             <div className="h-80 animate-pulse rounded-3xl bg-gray-200 dark:bg-[#181124]/60" />
           </div>
         ) : !course ? (
-          <p className="mt-8 text-gray-600 dark:text-gray-400">{dictionary.dashboard.courseNotFound}</p>
+          <p className="mt-8 text-gray-600 dark:text-gray-400">
+            {dictionary.dashboard.courseNotFound}
+          </p>
         ) : (
           <div className="mt-10 grid items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_24rem]">
-            <form onSubmit={handlePay} className="space-y-4" noValidate>
+            <div className="space-y-4">
               <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm dark:border-purple-500/20 dark:bg-[#181124]/90">
                 <button
                   type="button"
@@ -177,7 +216,9 @@ function CheckoutBody({ dictionary, lang }) {
                     <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-plum-700 text-sm font-bold text-white">
                       1
                     </span>
-                    <span className="text-base font-bold text-gray-900 dark:text-white">{labels.billingStep}</span>
+                    <span className="text-base font-bold text-gray-900 dark:text-white">
+                      {labels.billingStep}
+                    </span>
                   </span>
                   <ChevronDown
                     className={`h-5 w-5 text-gray-500 transition-transform duration-300 ${step === 1 ? 'rotate-180' : ''}`}
@@ -195,28 +236,16 @@ function CheckoutBody({ dictionary, lang }) {
                       className="overflow-hidden"
                     >
                       <div className="space-y-5 border-t border-gray-200 px-5 py-5 dark:border-white/10">
-                        <div className="grid gap-5 sm:grid-cols-2">
-                          <GlassAuthInput
-                            id="checkout-first-name"
-                            label={dictionary.auth.firstName}
-                            icon={User}
-                            maxLength={FIELD_LIMITS.name}
-                            autoComplete="given-name"
-                            error={billingForm.formState.errors.firstName?.message}
-                            variant="portal"
-                            {...billingForm.register('firstName')}
-                          />
-                          <GlassAuthInput
-                            id="checkout-last-name"
-                            label={dictionary.auth.lastName}
-                            icon={User}
-                            maxLength={FIELD_LIMITS.name}
-                            autoComplete="family-name"
-                            error={billingForm.formState.errors.lastName?.message}
-                            variant="portal"
-                            {...billingForm.register('lastName')}
-                          />
-                        </div>
+                        <GlassAuthInput
+                          id="checkout-full-name"
+                          label={labels.fullName || dictionary.auth.fullName || 'Full name'}
+                          icon={User}
+                          maxLength={FIELD_LIMITS.name * 2}
+                          autoComplete="name"
+                          error={billingForm.formState.errors.fullName?.message}
+                          variant="portal"
+                          {...billingForm.register('fullName')}
+                        />
 
                         <GlassAuthInput
                           id="checkout-email"
@@ -249,30 +278,24 @@ function CheckoutBody({ dictionary, lang }) {
                           )}
                         />
 
-                        <Controller
-                          control={billingForm.control}
-                          name="country"
-                          render={({ field }) => (
-                            <GlassCountrySelect
-                              id="checkout-country"
-                              label={labels.country}
-                              placeholder={labels.countryPlaceholder}
-                              lang={lang}
-                              name={field.name}
-                              value={field.value}
-                              onChange={field.onChange}
-                              onBlur={field.onBlur}
-                              error={billingForm.formState.errors.country?.message}
-                            />
-                          )}
-                        />
+                        {billingForm.formState.errors.root?.message ? (
+                          <p className="text-sm text-red-600 dark:text-red-300" role="alert">
+                            {billingForm.formState.errors.root.message}
+                          </p>
+                        ) : null}
 
                         <button
                           type="button"
                           onClick={goToPayment}
-                          className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-5 text-sm font-semibold text-white transition-all duration-300 hover:from-plum-600 hover:to-plum-400 sm:w-auto"
+                          disabled={isCreatingIntent}
+                          className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-5 text-sm font-semibold text-white transition-all duration-300 hover:from-plum-600 hover:to-plum-400 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                         >
-                          {labels.continueToPayment}
+                          {isCreatingIntent ? (
+                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                          ) : null}
+                          {isCreatingIntent
+                            ? labels.processing
+                            : labels.continueToPayment}
                         </button>
                       </div>
                     </motion.div>
@@ -291,7 +314,9 @@ function CheckoutBody({ dictionary, lang }) {
                     <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-plum-700 text-sm font-bold text-white">
                       2
                     </span>
-                    <span className="text-base font-bold text-gray-900 dark:text-white">{labels.paymentStep}</span>
+                    <span className="text-base font-bold text-gray-900 dark:text-white">
+                      {labels.paymentStep}
+                    </span>
                   </span>
                   <ChevronDown
                     className={`h-5 w-5 text-gray-500 transition-transform duration-300 ${step === 2 ? 'rotate-180' : ''}`}
@@ -309,30 +334,29 @@ function CheckoutBody({ dictionary, lang }) {
                       className="overflow-hidden"
                     >
                       <div className="space-y-5 border-t border-gray-200 px-5 py-5 dark:border-white/10">
-                        <StripeMockFields
-                          labels={labels}
-                          values={card}
-                          errors={cardErrors}
-                          onChange={(key, value) => {
-                            setCard((current) => ({ ...current, [key]: value }));
-                            setCardErrors((current) => ({ ...current, [key]: undefined }));
-                          }}
-                        />
-
-                        {billingForm.formState.errors.root?.message ? (
+                        {!stripePublishableKey || !stripePromise ? (
                           <p className="text-sm text-red-600 dark:text-red-300" role="alert">
-                            {billingForm.formState.errors.root.message}
+                            Stripe publishable key is not configured.
                           </p>
-                        ) : null}
-
-                        <button
-                          type="submit"
-                          disabled={billingForm.formState.isSubmitting}
-                          className="inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-plum-700 via-plum-600 to-gold-500 px-6 text-base font-bold text-white shadow-[0_0_32px_rgba(168,85,247,0.35)] transition-all duration-300 hover:shadow-[0_0_40px_rgba(212,175,55,0.35)] disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          <Lock className="h-4 w-4" aria-hidden />
-                          {billingForm.formState.isSubmitting ? labels.processing : labels.completePayment}
-                        </button>
+                        ) : clientSecret ? (
+                          <Elements
+                            stripe={stripePromise}
+                            options={{
+                              clientSecret,
+                              appearance,
+                            }}
+                          >
+                            <StripePaymentForm
+                              labels={labels}
+                              lang={lang}
+                              paymentIntentId={paymentIntentId}
+                            />
+                          </Elements>
+                        ) : (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {labels.continueToPayment}
+                          </p>
+                        )}
                       </div>
                     </motion.div>
                   ) : null}
@@ -345,11 +369,13 @@ function CheckoutBody({ dictionary, lang }) {
               >
                 {labels.backToCourse}
               </Link>
-            </form>
+            </div>
 
             <aside className="lg:sticky lg:top-28">
               <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-purple-500/20 dark:bg-[#181124]/90 sm:p-6">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">{labels.orderSummary}</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  {labels.orderSummary}
+                </h2>
 
                 <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10">
                   {course.coverImage ? (
@@ -363,7 +389,9 @@ function CheckoutBody({ dictionary, lang }) {
                   ) : null}
                 </div>
 
-                <p className="mt-4 text-base font-bold text-gray-900 dark:text-white">{course.title}</p>
+                <p className="mt-4 text-base font-bold text-gray-900 dark:text-white">
+                  {course.title}
+                </p>
                 <span className="mt-2 inline-flex rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-plum-800 dark:border-gold-400/30 dark:bg-gold-400/10 dark:text-gold-200">
                   {labels.modes[mode] || course.badge || mode}
                 </span>
@@ -372,21 +400,34 @@ function CheckoutBody({ dictionary, lang }) {
                 </p>
 
                 <div className="mt-5 flex items-end justify-between border-t border-gray-200 pt-4 dark:border-white/10">
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{labels.total}</span>
-                  <span className="text-2xl font-extrabold text-plum-700 dark:text-gold-300">${total}</span>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    {labels.total}
+                  </span>
+                  <span className="text-2xl font-extrabold text-plum-700 dark:text-gold-300">
+                    ${total}
+                  </span>
                 </div>
 
                 <ul className="mt-5 space-y-2.5">
                   <li className="flex items-start gap-2.5 text-xs text-gray-600 dark:text-gray-300">
-                    <Lock className="mt-0.5 h-4 w-4 shrink-0 text-plum-700 dark:text-gold-300" aria-hidden />
+                    <Lock
+                      className="mt-0.5 h-4 w-4 shrink-0 text-plum-700 dark:text-gold-300"
+                      aria-hidden
+                    />
                     {labels.sslBadge}
                   </li>
                   <li className="flex items-start gap-2.5 text-xs text-gray-600 dark:text-gray-300">
-                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden />
+                    <ShieldCheck
+                      className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300"
+                      aria-hidden
+                    />
                     {labels.guaranteeBadge}
                   </li>
                   <li className="flex items-start gap-2.5 text-xs text-gray-600 dark:text-gray-300">
-                    <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-plum-700 dark:text-gold-300" aria-hidden />
+                    <CreditCard
+                      className="mt-0.5 h-4 w-4 shrink-0 text-plum-700 dark:text-gold-300"
+                      aria-hidden
+                    />
                     {labels.stripeBadge}
                   </li>
                 </ul>
@@ -395,15 +436,6 @@ function CheckoutBody({ dictionary, lang }) {
           </div>
         )}
       </div>
-
-      <CheckoutSuccessModal
-        open={success.open}
-        labels={labels}
-        lang={lang}
-        orderId={success.orderId}
-        requiresLogin={success.requiresLogin}
-        onClose={() => setSuccess((current) => ({ ...current, open: false }))}
-      />
     </PublicShell>
   );
 }

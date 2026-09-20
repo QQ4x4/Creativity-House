@@ -49,8 +49,9 @@ return [
     ],
 
     'stripe' => [
-        'key' => env('STRIPE_KEY'),
-        'secret' => env('STRIPE_SECRET'),
+        // Prefer STRIPE_* names used by PaymentController; accept common aliases.
+        'key' => env('STRIPE_KEY', env('STRIPE_PUBLISHABLE_KEY')),
+        'secret' => env('STRIPE_SECRET', env('STRIPE_SECRET_KEY')),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 

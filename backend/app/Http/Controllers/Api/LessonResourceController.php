@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\LessonResource;
+use App\Services\Student\EnrollmentService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -13,13 +15,28 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class LessonResourceController extends Controller
 {
+    public function __construct(
+        private readonly EnrollmentService $enrollment,
+    ) {}
+
     /**
      * GET /api/v1/resources/{id}/download
      */
-    public function download(int $id): StreamedResponse|RedirectResponse
+    public function download(Request $request, int $id): StreamedResponse|RedirectResponse
     {
         /** @var LessonResource $resource */
-        $resource = LessonResource::query()->findOrFail($id);
+        $resource = LessonResource::query()
+            ->with('lesson:id,course_id')
+            ->findOrFail($id);
+
+        $user = $request->user();
+        $courseId = (int) ($resource->lesson?->course_id ?? 0);
+
+        abort_unless($user !== null && $courseId > 0, 403);
+
+        if (! $this->enrollment->isEnrolled((int) $user->id, $courseId)) {
+            abort(403, 'You do not have access to this resource.');
+        }
 
         // External links open in a new tab from the client; if hit directly, redirect.
         if ($resource->type === LessonResource::TYPE_LINK) {
