@@ -5,40 +5,16 @@ import { PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { Lock, Loader2 } from 'lucide-react';
 import { toastApiError } from '@/lib/toast';
 
-const appearance = {
-  theme: 'night',
-  variables: {
-    colorPrimary: '#a855f7',
-    colorBackground: '#12091c',
-    colorText: '#f8fafc',
-    colorDanger: '#f87171',
-    fontFamily: 'inherit',
-    borderRadius: '12px',
-  },
-  rules: {
-    '.Input': {
-      backgroundColor: '#181124',
-      border: '1px solid rgba(168, 85, 247, 0.25)',
-    },
-    '.Input:focus': {
-      border: '1px solid rgba(212, 175, 55, 0.55)',
-      boxShadow: '0 0 0 1px rgba(212, 175, 55, 0.25)',
-    },
-    '.Label': {
-      color: '#e2e8f0',
-    },
-  },
-};
-
-export { appearance };
-
 /**
  * Stripe Payment Element + confirmPayment for Scenario 3 checkout.
+ * Billing details are collected in step 1 and passed here — Stripe's own
+ * billing/country fields are hidden via PaymentElement options.
  */
 export default function StripePaymentForm({
   labels,
   lang,
   paymentIntentId,
+  billingDetails,
   onError,
 }) {
   const stripe = useStripe();
@@ -57,15 +33,30 @@ export default function StripePaymentForm({
     try {
       const returnUrl = new URL(`/${lang}/checkout/claim`, window.location.origin);
       if (paymentIntentId) {
-        // Prefer payment_intent (Stripe's own redirect param) + session_id for our claim page.
         returnUrl.searchParams.set('payment_intent', paymentIntentId);
         returnUrl.searchParams.set('session_id', paymentIntentId);
       }
+
+      const countryCode = String(billingDetails?.countryCode || '')
+        .trim()
+        .toUpperCase();
 
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: returnUrl.toString(),
+          payment_method_data: {
+            billing_details: {
+              name: billingDetails?.name || undefined,
+              email: billingDetails?.email || undefined,
+              phone: billingDetails?.phone || undefined,
+              address: countryCode
+                ? {
+                    country: countryCode,
+                  }
+                : undefined,
+            },
+          },
         },
       });
 
@@ -78,9 +69,11 @@ export default function StripePaymentForm({
       }
       // On success Stripe redirects away — keep button disabled.
     } catch (error) {
-      setIsSubmitting(false);
+      const message = error?.message || labels.genericError;
+      setLocalError(message);
+      onError?.(message);
       toastApiError(error, labels.genericError);
-      onError?.(error?.message || labels.genericError);
+      setIsSubmitting(false);
     }
   };
 
@@ -90,6 +83,9 @@ export default function StripePaymentForm({
         id="checkout-payment-element"
         options={{
           layout: 'tabs',
+          fields: {
+            billingDetails: 'never',
+          },
         }}
         onReady={() => setElementReady(true)}
       />

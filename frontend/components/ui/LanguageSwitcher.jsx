@@ -1,27 +1,30 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Languages } from 'lucide-react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
-export default function LanguageSwitcher({ scrolled, dictionary, lang }) {
+function LanguageSwitcherButton({ scrolled, dictionary, lang }) {
     const router = useRouter();
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const isAr = lang === 'ar';
 
     const toggleLanguage = () => {
-        // Switch between /en and /ar while keeping the hash if any exists
+        // Switch between /en and /ar while keeping query string + hash
         const newLang = isAr ? 'en' : 'ar';
         const segments = pathname.split('/');
         segments[1] = newLang;
         const newPath = segments.join('/');
-        const hash = window.location.hash;
-        
+        const searchString = searchParams.toString();
+        const hash = typeof window !== 'undefined' ? window.location.hash : '';
+        const href = `${newPath}${searchString ? `?${searchString}` : ''}${hash}`;
+
         // Use document.cookie to set NEXT_LOCALE explicitly to remember preference
         document.cookie = `NEXT_LOCALE=${newLang}; path=/; max-age=31536000; SameSite=Lax`;
-        
-        router.push(`${newPath}${hash}`);
+
+        router.push(href);
     };
 
     return (
@@ -51,5 +54,13 @@ export default function LanguageSwitcher({ scrolled, dictionary, lang }) {
                 </motion.div>
             </AnimatePresence>
         </motion.button>
+    );
+}
+
+export default function LanguageSwitcher(props) {
+    return (
+        <Suspense fallback={null}>
+            <LanguageSwitcherButton {...props} />
+        </Suspense>
     );
 }

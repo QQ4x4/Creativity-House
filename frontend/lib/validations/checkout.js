@@ -43,6 +43,7 @@ export const CHECKOUT_FIELD_MAP = {
   email: 'email',
   phone: 'phoneNumber',
   phone_number: 'phoneNumber',
+  country: 'country',
   course_id: 'root',
   code: 'code',
   password: 'password',
@@ -76,6 +77,11 @@ export function createCheckoutBillingSchema(lang = 'en') {
       .refine((value) => e164Regex.test(value) && isValidPhoneNumber(value), {
         message: m.phone,
       }),
+    country: z
+      .string()
+      .trim()
+      .length(2, m.required)
+      .regex(/^[A-Z]{2}$/, m.required),
   });
 }
 

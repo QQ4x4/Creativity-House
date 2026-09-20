@@ -42,7 +42,7 @@ const GlassAuthInput = forwardRef(function GlassAuthInput(
 
       <div className="relative">
         {Icon ? (
-          <span className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-gray-400">
+          <span className="pointer-events-none absolute inset-y-0 flex items-center text-gray-400 ltr:left-3 rtl:right-3">
             <Icon className="h-4 w-4" aria-hidden />
           </span>
         ) : null}
@@ -55,8 +55,14 @@ const GlassAuthInput = forwardRef(function GlassAuthInput(
           autoComplete={autoComplete}
           dir={dir}
           className={`w-full max-w-full min-h-[48px] rounded-2xl border py-3.5 outline-none transition-all duration-200 ${
-            Icon ? 'ps-11' : 'ps-4'
-          } ${showPasswordToggle ? 'pe-11' : 'pe-4'} ${
+            Icon
+              ? showPasswordToggle
+                ? 'ltr:pl-10 rtl:pr-10 ltr:pr-11 rtl:pl-11'
+                : 'ltr:pl-10 rtl:pr-10 ltr:pr-4 rtl:pl-4'
+              : showPasswordToggle
+                ? 'ps-4 pe-11'
+                : 'px-4'
+          } ${
             isPortal
               ? 'bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:bg-black/20 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-amber-400/60 dark:focus:ring-amber-400/20'
               : 'bg-white/[0.05] text-white placeholder:text-gray-500 focus:border-amber-400/60 focus:ring-2 focus:ring-amber-400/20'

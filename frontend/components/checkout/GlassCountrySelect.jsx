@@ -203,11 +203,11 @@ export default function GlassCountrySelect({
           onBlur={() => {
             if (!open) onBlur?.();
           }}
-          className={`flex min-h-[48px] w-full items-center gap-3 rounded-xl border bg-white/80 px-4 text-start text-sm backdrop-blur-md transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/20 dark:bg-black/20 dark:focus-visible:ring-amber-400/40 ${
+          className={`flex min-h-[48px] w-full items-center gap-3 rounded-2xl border bg-gray-50 px-4 text-start text-sm text-gray-900 outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-purple-500/20 dark:bg-black/20 dark:text-white dark:focus-visible:ring-amber-400/20 ${
             error
               ? 'border-red-400/70'
               : open
-                ? 'border-purple-500 ring-2 ring-purple-500/15 dark:border-amber-400/40 dark:ring-amber-400/15'
+                ? 'border-purple-500 ring-2 ring-purple-500/20 dark:border-amber-400/60 dark:ring-amber-400/20'
                 : 'border-gray-300 hover:border-gray-400 dark:border-white/10 dark:hover:border-white/20'
           }`}
         >

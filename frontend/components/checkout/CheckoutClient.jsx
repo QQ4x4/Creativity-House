@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
@@ -19,7 +19,8 @@ import {
 import PublicShell from '@/components/catalog/PublicShell';
 import GlassAuthInput from '@/components/auth/GlassAuthInput';
 import GlassPhoneInput from '@/components/auth/GlassPhoneInput';
-import StripePaymentForm, { appearance } from '@/components/checkout/StripePaymentForm';
+import GlassCountrySelect from '@/components/checkout/GlassCountrySelect';
+import StripePaymentForm from '@/components/checkout/StripePaymentForm';
 import { fetchPublicCourse } from '@/lib/catalog/api';
 import { createPaymentIntent } from '@/lib/checkout/api';
 import { getStripePromise, getStripePublishableKey } from '@/lib/checkout/stripe';
@@ -33,6 +34,8 @@ import { remapServerErrors } from '@/lib/validations/profile';
 import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { toastApiError } from '@/lib/toast';
 import { useAuth } from '@/providers/AuthProvider';
+import { useTheme } from 'next-themes';
+import { useDefaultPhoneCountry } from '@/hooks/useDefaultPhoneCountry';
 
 const stripePublishableKey = getStripePublishableKey();
 const stripePromise = getStripePromise();
@@ -42,6 +45,9 @@ function CheckoutBody({ dictionary, lang }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { resolvedTheme } = useTheme();
+  const defaultCountry = useDefaultPhoneCountry('YE');
+  const [mounted, setMounted] = useState(false);
   const slug = searchParams.get('course') || '';
   const mode = searchParams.get('mode') || 'live';
 
@@ -51,6 +57,81 @@ function CheckoutBody({ dictionary, lang }) {
   const [clientSecret, setClientSecret] = useState('');
   const [paymentIntentId, setPaymentIntentId] = useState('');
   const [isCreatingIntent, setIsCreatingIntent] = useState(false);
+  const [billingDetails, setBillingDetails] = useState(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Match GlassAuthInput variant="portal" (Contact Us / checkout inputs).
+  const stripeAppearance = useMemo(() => {
+    if (!mounted) return undefined;
+    const isDark = resolvedTheme === 'dark';
+    return {
+      theme: isDark ? 'night' : 'stripe',
+      variables: {
+        colorPrimary: isDark ? '#fbbf24' : '#a855f7', // amber-400 / purple-500
+        colorBackground: 'transparent',
+        colorText: isDark ? '#ffffff' : '#111827', // white / gray-900
+        colorTextSecondary: isDark ? '#d1d5db' : '#374151', // gray-300 / gray-700
+        colorTextPlaceholder: isDark ? '#6b7280' : '#9ca3af', // gray-500 / gray-400
+        colorDanger: isDark ? '#f87171' : '#dc2626',
+        fontFamily: 'inherit',
+        borderRadius: '16px', // rounded-2xl
+        spacingUnit: '4px',
+      },
+      rules: {
+        '.Label': {
+          color: isDark ? '#d1d5db' : '#374151', // dark:text-gray-300 / text-gray-700
+          fontWeight: '500',
+          fontSize: '14px',
+        },
+        '.Input': {
+          // portal: bg-gray-50 / dark:bg-black/20 — no solid fills
+          backgroundColor: isDark ? 'rgba(0, 0, 0, 0.2)' : 'rgba(249, 250, 251, 0.9)',
+          color: isDark ? '#ffffff' : '#111827',
+          border: isDark
+            ? '1px solid rgba(255, 255, 255, 0.1)' // dark:border-white/10
+            : '1px solid #d1d5db', // border-gray-300
+          boxShadow: 'none',
+          padding: '14px 16px',
+        },
+        '.Input:hover': {
+          border: isDark
+            ? '1px solid rgba(255, 255, 255, 0.2)'
+            : '1px solid #9ca3af', // hover:border-gray-400
+        },
+        '.Input:focus': {
+          border: isDark
+            ? '1px solid rgba(251, 191, 36, 0.6)' // dark:focus:border-amber-400/60
+            : '1px solid #a855f7', // focus:border-purple-500
+          boxShadow: isDark
+            ? '0 0 0 2px rgba(251, 191, 36, 0.2)'
+            : '0 0 0 2px rgba(168, 85, 247, 0.2)',
+          outline: 'none',
+        },
+        '.Input--invalid': {
+          border: '1px solid rgba(248, 113, 113, 0.7)',
+        },
+        '.Tab': {
+          backgroundColor: isDark ? 'rgba(0, 0, 0, 0.2)' : 'rgba(249, 250, 251, 0.9)',
+          border: isDark
+            ? '1px solid rgba(255, 255, 255, 0.1)'
+            : '1px solid #d1d5db',
+          borderRadius: '16px',
+        },
+        '.Tab--selected': {
+          border: isDark
+            ? '1px solid rgba(251, 191, 36, 0.6)'
+            : '1px solid #a855f7',
+          backgroundColor: isDark ? 'rgba(0, 0, 0, 0.35)' : 'rgba(249, 250, 251, 1)',
+        },
+        '.TabLabel, .TabIcon': {
+          color: isDark ? '#d1d5db' : '#374151',
+        },
+      },
+    };
+  }, [resolvedTheme, mounted]);
 
   const billingForm = useForm({
     resolver: zodResolver(createCheckoutBillingSchema(lang)),
@@ -59,8 +140,18 @@ function CheckoutBody({ dictionary, lang }) {
       fullName: '',
       email: '',
       phoneNumber: '',
+      country: '',
     },
   });
+
+  useEffect(() => {
+    if (!defaultCountry) return;
+    const current = billingForm.getValues('country');
+    if (!current) {
+      billingForm.setValue('country', defaultCountry, { shouldValidate: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultCountry]);
 
   useEffect(() => {
     if (!user) return;
@@ -70,6 +161,7 @@ function CheckoutBody({ dictionary, lang }) {
       fullName: user.name || `${first} ${last}`.trim(),
       email: user.email || '',
       phoneNumber: user.phone_number || user.phoneNumber || '',
+      country: billingForm.getValues('country') || defaultCountry || '',
     });
     // Prefill once the signed-in profile arrives.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -152,6 +244,12 @@ function CheckoutBody({ dictionary, lang }) {
         );
       }
 
+      setBillingDetails({
+        name: billing.fullName,
+        email: billing.email,
+        phone: billing.phoneNumber,
+        countryCode: String(billing.country || '').trim().toUpperCase(),
+      });
       setClientSecret(secret);
       setPaymentIntentId(intentId);
       setStep(2);
@@ -189,7 +287,7 @@ function CheckoutBody({ dictionary, lang }) {
         <h1 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white">
           {labels.checkoutTitle}
         </h1>
-        <p className="mt-2 max-w-2xl text-gray-600 dark:text-gray-400">
+        <p className="mt-2 max-w-2xl text-gray-600 dark:text-gray-300">
           {labels.checkoutSubtitle}
         </p>
 
@@ -252,7 +350,6 @@ function CheckoutBody({ dictionary, lang }) {
                           type="email"
                           label={dictionary.auth.email}
                           icon={Mail}
-                          dir="ltr"
                           maxLength={FIELD_LIMITS.email}
                           autoComplete="email"
                           error={billingForm.formState.errors.email?.message}
@@ -274,6 +371,26 @@ function CheckoutBody({ dictionary, lang }) {
                               onBlur={field.onBlur}
                               error={billingForm.formState.errors.phoneNumber?.message}
                               variant="portal"
+                            />
+                          )}
+                        />
+
+                        <Controller
+                          control={billingForm.control}
+                          name="country"
+                          render={({ field }) => (
+                            <GlassCountrySelect
+                              id="checkout-country"
+                              label={labels.country || 'Country'}
+                              placeholder={
+                                labels.countryPlaceholder || 'Select country'
+                              }
+                              lang={lang}
+                              name={field.name}
+                              value={field.value}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                              error={billingForm.formState.errors.country?.message}
                             />
                           )}
                         />
@@ -338,20 +455,24 @@ function CheckoutBody({ dictionary, lang }) {
                           <p className="text-sm text-red-600 dark:text-red-300" role="alert">
                             Stripe publishable key is not configured.
                           </p>
-                        ) : clientSecret ? (
+                        ) : clientSecret && mounted && stripeAppearance ? (
                           <Elements
+                            key={`stripe-elements-${resolvedTheme}`}
                             stripe={stripePromise}
                             options={{
                               clientSecret,
-                              appearance,
+                              appearance: stripeAppearance,
                             }}
                           >
                             <StripePaymentForm
                               labels={labels}
                               lang={lang}
                               paymentIntentId={paymentIntentId}
+                              billingDetails={billingDetails}
                             />
                           </Elements>
+                        ) : clientSecret && !mounted ? (
+                          <div className="h-40 animate-pulse rounded-2xl bg-gray-100 dark:bg-white/10" />
                         ) : (
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             {labels.continueToPayment}
