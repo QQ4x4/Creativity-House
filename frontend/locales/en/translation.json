@@ -381,6 +381,11 @@
       "recorded": "Recorded / Self-Study",
       "simulator": "Simulator Only"
     },
+    "modeBadges": {
+      "live": "Live & Interactive",
+      "recorded": "Recorded / Self-Study",
+      "simulator": "Exam Simulator"
+    },
     "guarantee": "30-day money-back guarantee",
     "discount": "Save",
     "about": "About the course",

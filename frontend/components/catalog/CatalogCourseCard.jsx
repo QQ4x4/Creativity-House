@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowRight, Clock, GraduationCap, Loader2, Star, Users } from 'lucide-react';
 import { motionGpu, motionViewport } from '@/lib/motion';
+import { resolveDeliveryModeBadge } from '@/lib/catalog/modeBadge';
 
 function formatCount(value) {
   return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -54,6 +55,7 @@ export default function CatalogCourseCard({ course, lang, labels, index = 0 }) {
   const detailHref = `/${lang}/courses/${course.slug}`;
   const defaultMode = course.defaultMode ?? course.default_mode ?? 'live';
   const checkoutHref = `/${lang}/checkout?course=${encodeURIComponent(course.slug)}&mode=${encodeURIComponent(defaultMode)}`;
+  const modeBadge = resolveDeliveryModeBadge(course, labels);
   // Player route is `[courseId]` — id is the stable param used elsewhere.
   const learnHref = course.id
     ? `/${lang}/courses/${course.id}/learn`
@@ -107,9 +109,11 @@ export default function CatalogCourseCard({ course, lang, labels, index = 0 }) {
           </div>
         )}
         <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-[#120a1c] via-[#120a1c]/20 to-transparent" />
-        <span className="absolute start-3 top-3 rounded-full border border-purple-200 bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-plum-800 backdrop-blur-md dark:border-gold-400/30 dark:bg-[#181124]/80 dark:text-gold-200">
-          {course.badge}
-        </span>
+        {modeBadge ? (
+          <span className="absolute start-3 top-3 rounded-full border border-purple-200 bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-plum-800 backdrop-blur-md dark:border-gold-400/30 dark:bg-[#181124]/80 dark:text-gold-200">
+            {modeBadge}
+          </span>
+        ) : null}
       </Link>
 
       <div className="flex flex-1 flex-col p-5">

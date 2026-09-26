@@ -141,6 +141,8 @@ const nextConfig = {
       'https://js.stripe.com',
       'https://www.google.com',
       'https://www.gstatic.com',
+      'https://www.googletagmanager.com',
+      'https://www.google-analytics.com',
       ...(isDev ? ["'unsafe-eval'"] : []),
     ].join(' ');
 
@@ -151,6 +153,9 @@ const nextConfig = {
       'https://api.creativity-house.com',
       'https://www.google.com',
       'https://www.gstatic.com',
+      'https://www.googletagmanager.com',
+      'https://www.google-analytics.com',
+      'https://region1.google-analytics.com',
       ...(isDev
         ? [
             'http://localhost:*',
@@ -168,7 +173,7 @@ const nextConfig = {
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
       `connect-src ${connectSrc}`,
-      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://iframe.mediadelivery.net https://www.google.com https://recaptcha.google.com",
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://iframe.mediadelivery.net https://www.google.com https://recaptcha.google.com https://www.googletagmanager.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

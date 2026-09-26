@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { Inter, Cairo } from 'next/font/google';
+import { GoogleTagManager } from '@next/third-parties/google';
 import ClientProviders from '@/providers/ClientProviders';
 import '../globals.css';
 
@@ -75,6 +76,9 @@ export default async function LangLayout({ children, params }) {
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body suppressHydrationWarning>
+        {process.env.NEXT_PUBLIC_GTM_ID ? (
+          <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
+        ) : null}
         <ClientProviders lang={lang}>
           <div className="relative w-full max-w-full overflow-x-hidden min-h-screen flex flex-col">
             {children}

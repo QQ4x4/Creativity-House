@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import PublicShell from './PublicShell';
 import { fetchPublicCourse } from '@/lib/catalog/api';
+import { resolveDeliveryModeBadge } from '@/lib/catalog/modeBadge';
 import { useAuth } from '@/providers/AuthProvider';
 
 const MODE_ORDER = ['live', 'recorded', 'simulator'];
@@ -260,6 +261,7 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
 
   const isEnrolled = Boolean(course?.isEnrolled || course?.is_enrolled);
   const learnHref = course?.id ? `/${lang}/courses/${course.id}/learn` : `/${lang}/my-courses`;
+  const modeBadge = course ? resolveDeliveryModeBadge(course, labels) : '';
 
   if (!isLoading && !course) {
     return (
@@ -291,9 +293,11 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
 
             <header className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
               <div>
-                <span className="inline-flex rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-plum-800 dark:border-gold-400/30 dark:bg-gold-400/10 dark:text-gold-200">
-                  {course.badge}
-                </span>
+                {modeBadge ? (
+                  <span className="inline-flex rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-plum-800 dark:border-gold-400/30 dark:bg-gold-400/10 dark:text-gold-200">
+                    {modeBadge}
+                  </span>
+                ) : null}
                 <h1 className="mt-4 text-3xl font-extrabold leading-tight text-gray-900 dark:text-white sm:text-4xl">{course.title}</h1>
                 <p className="mt-3 max-w-2xl text-base text-gray-600 dark:text-gray-400">{course.subtitle}</p>
 
