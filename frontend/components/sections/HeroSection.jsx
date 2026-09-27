@@ -18,7 +18,7 @@ export default function HeroSection({ dictionary, lang }) {
             <div className="absolute inset-0">
                 <motion.img
                     src={images.hero}
-                    alt="Creativity House — digital excellence in IT solutions"
+                    alt="Creativity House — PMP certification and professional project management training"
                     width="1920"
                     height="1080"
                     fetchPriority="high"

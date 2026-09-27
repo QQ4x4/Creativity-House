@@ -13,14 +13,14 @@ export async function generateMetadata({ params }) {
 
     const meta = {
         en: {
-            title: 'About Us | Creativity House — Training & Consulting Experts',
+            title: 'About Us | Creativity House — PMP & Professional Training',
             description:
-                'Learn about Creativity House Sdn. Bhd. — a multinational training, consulting, and technology company founded in 2014. Meet our international trainer Eng. Talaat Al-Awadhi.',
+                'Learn about Creativity House Sdn. Bhd. — accredited PMP® and project management training, consulting, and professional development since 2014. Meet international trainer Eng. Talaat Al-Awadhi.',
         },
         ar: {
-            title: 'من نحن | دار الإبداع — خبراء التدريب والاستشارات',
+            title: 'من نحن | دار الإبداع — تدريب PMP والدورات الاحترافية',
             description:
-                'تعرف على دار الإبداع — شركة تدريب واستشارات وتقنية متعددة الجنسيات تأسست عام 2014. تعرف على مدربنا الدولي المهندس طلعت العوادي.',
+                'تعرف على دار الإبداع — تدريب معتمد في إدارة المشاريع وشهادات PMP® واستشارات وتطوير مهني منذ عام 2014. تعرف على مدربنا الدولي المهندس طلعت العوادي.',
         },
     };
 

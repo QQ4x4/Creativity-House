@@ -20,15 +20,15 @@ export const seoConfig = {
 
   /** Per-language metadata */
   en: {
-    title: 'Creativity House | Leading IT Solutions Provider in Malaysia',
+    title: 'Creativity House | PMP Certification & Professional Training',
     description:
-      'Creativity House Sdn Bhd builds digital excellence. We design custom CRM systems, lean project management platforms (LPMS), AWS cloud migrations, and professional corporate IT training.',
+      'Accredited PMP®, PMI-RMP®, and project management training from Creativity House. Interactive live cohorts, recorded academies, and exam simulators aligned with PMBOK® for professionals across the MENA region.',
     ogLocale: 'en_US',
   },
   ar: {
-    title: 'دار الإبداع | الشركة الرائدة في حلول تكنولوجيا المعلومات في ماليزيا',
+    title: 'دار الإبداع | دورات إدارة المشاريع الاحترافية',
     description:
-      'دار الإبداع تبني التميز الرقمي. نصمم أنظمة إدارة علاقات العملاء المخصصة ومنصات إدارة المشاريع والحلول السحابية والتدريب المؤسسي الاحترافي.',
+      'دورات معتمدة في إدارة المشاريع وشهادات PMP® وPMI-RMP® من دار الإبداع. برامج تفاعلية مباشرة ومسجّلة ومحاكيات امتحان وفق منهجيات PMBOK® للمحترفين في الشرق الأوسط.',
     ogLocale: 'ar_SA',
   },
 
@@ -36,8 +36,11 @@ export const seoConfig = {
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Creativity House Sdn Bhd',
+    name: 'Creativity House',
+    legalName: 'Creativity House Sdn Bhd',
     alternateName: 'دار الإبداع',
+    description:
+      'Accredited PMP® and professional project management training — live, recorded, and exam simulator programs.',
     url: 'https://creativity-house.com',
     logo: 'https://creativity-house.com/logo.png',
     contactPoint: {

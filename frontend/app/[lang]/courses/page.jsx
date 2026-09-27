@@ -29,6 +29,21 @@ export async function generateMetadata({ params }) {
         ar: `${seoConfig.siteUrl}/ar/courses`,
       },
     },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: seoConfig.siteName,
+      locale: lang === 'ar' ? 'ar_SA' : 'en_US',
+      type: 'website',
+      images: [{ url: seoConfig.ogImage, width: 1200, height: 630, alt: seoConfig.siteName }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [seoConfig.ogImage],
+    },
   };
 }
 
