@@ -135,27 +135,37 @@ const nextConfig = {
   async headers() {
     const isDev = process.env.NODE_ENV === 'development';
 
+    // Google Tag Manager / Ads / Analytics — see:
+    // https://developers.google.com/tag-platform/security/guides/csp
     const scriptSrc = [
       "'self'",
       "'unsafe-inline'",
-      'https://js.stripe.com',
+      "'unsafe-eval'",
+      'https://*.googletagmanager.com',
+      'https://tagassistant.google.com',
+      'https://*.google-analytics.com',
+      'https://*.doubleclick.net',
+      'https://www.googleadservices.com',
       'https://www.google.com',
       'https://www.gstatic.com',
-      'https://www.googletagmanager.com',
-      'https://www.google-analytics.com',
-      ...(isDev ? ["'unsafe-eval'"] : []),
+      'https://js.stripe.com',
     ].join(' ');
 
     const connectSrc = [
       "'self'",
+      'https://*.googletagmanager.com',
+      'https://*.google-analytics.com',
+      'https://*.analytics.google.com',
+      'https://*.g.doubleclick.net',
+      'https://*.google.com',
+      'https://ad.doubleclick.net',
+      'https://www.googleadservices.com',
+      'https://pagead2.googlesyndication.com',
+      'https://www.gstatic.com',
       'https://api.stripe.com',
       'https://ipapi.co',
       'https://api.creativity-house.com',
-      'https://www.google.com',
-      'https://www.gstatic.com',
-      'https://www.googletagmanager.com',
-      'https://www.google-analytics.com',
-      'https://region1.google-analytics.com',
+      'https://*.up.railway.app',
       ...(isDev
         ? [
             'http://localhost:*',
@@ -166,14 +176,42 @@ const nextConfig = {
         : []),
     ].join(' ');
 
+    const imgSrc = [
+      "'self'",
+      'data:',
+      'blob:',
+      'https://*.googletagmanager.com',
+      'https://*.google-analytics.com',
+      'https://*.google.com',
+      'https://*.google.com.my',
+      'https://*.doubleclick.net',
+      'https://*.g.doubleclick.net',
+      'https://www.googleadservices.com',
+      'https://pagead2.googlesyndication.com',
+      // Existing remote images (Cloudinary, S3, Railway, BunnyCDN, etc.)
+      'https:',
+    ].join(' ');
+
+    const frameSrc = [
+      "'self'",
+      'https://www.googletagmanager.com',
+      'https://*.doubleclick.net',
+      'https://bid.g.doubleclick.net',
+      'https://js.stripe.com',
+      'https://hooks.stripe.com',
+      'https://iframe.mediadelivery.net',
+      'https://www.google.com',
+      'https://recaptcha.google.com',
+    ].join(' ');
+
     const csp = [
       "default-src 'self'",
       `script-src ${scriptSrc}`,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https:",
+      `img-src ${imgSrc}`,
       "font-src 'self' data:",
       `connect-src ${connectSrc}`,
-      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://iframe.mediadelivery.net https://www.google.com https://recaptcha.google.com https://www.googletagmanager.com",
+      `frame-src ${frameSrc}`,
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
