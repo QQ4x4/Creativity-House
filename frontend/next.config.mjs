@@ -137,6 +137,7 @@ const nextConfig = {
 
     // Google Tag Manager / Ads / Analytics — see:
     // https://developers.google.com/tag-platform/security/guides/csp
+    // Meta, TikTok, Snapchat, LinkedIn pixels for GTM marketing tags
     const scriptSrc = [
       "'self'",
       "'unsafe-inline'",
@@ -149,6 +150,14 @@ const nextConfig = {
       'https://www.google.com',
       'https://www.gstatic.com',
       'https://js.stripe.com',
+      'https://connect.facebook.net',
+      'https://*.facebook.net',
+      'https://analytics.tiktok.com',
+      'https://*.tiktok.com',
+      'https://sc-static.net',
+      'https://*.snapchat.com',
+      'https://snap.licdn.com',
+      'https://*.linkedin.com',
     ].join(' ');
 
     const connectSrc = [
@@ -166,6 +175,15 @@ const nextConfig = {
       'https://ipapi.co',
       'https://api.creativity-house.com',
       'https://*.up.railway.app',
+      'https://*.facebook.com',
+      'https://*.facebook.net',
+      'https://connect.facebook.net',
+      'https://*.tiktok.com',
+      'https://analytics.tiktok.com',
+      'https://*.snapchat.com',
+      'https://tr.snapchat.com',
+      'https://*.linkedin.com',
+      'https://px.ads.linkedin.com',
       ...(isDev
         ? [
             'http://localhost:*',
@@ -188,6 +206,15 @@ const nextConfig = {
       'https://*.g.doubleclick.net',
       'https://www.googleadservices.com',
       'https://pagead2.googlesyndication.com',
+      'https://www.facebook.com',
+      'https://*.facebook.com',
+      'https://*.facebook.net',
+      'https://analytics.tiktok.com',
+      'https://*.tiktok.com',
+      'https://tr.snapchat.com',
+      'https://*.snapchat.com',
+      'https://px.ads.linkedin.com',
+      'https://*.linkedin.com',
       // Existing remote images (Cloudinary, S3, Railway, BunnyCDN, etc.)
       'https:',
     ].join(' ');
@@ -202,6 +229,8 @@ const nextConfig = {
       'https://iframe.mediadelivery.net',
       'https://www.google.com',
       'https://recaptcha.google.com',
+      'https://www.facebook.com',
+      'https://web.facebook.com',
     ].join(' ');
 
     const csp = [
