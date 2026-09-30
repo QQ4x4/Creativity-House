@@ -137,7 +137,8 @@ const nextConfig = {
 
     // Google Tag Manager / Ads / Analytics — see:
     // https://developers.google.com/tag-platform/security/guides/csp
-    // Meta, TikTok, Snapchat, LinkedIn pixels for GTM marketing tags
+    // Meta CAPI (jsDelivr/unpkg), TikTok, Snapchat, LinkedIn, Pinterest,
+    // X/Twitter, Reddit, Bing, Clarity — GTM marketing tags
     const scriptSrc = [
       "'self'",
       "'unsafe-inline'",
@@ -158,6 +159,16 @@ const nextConfig = {
       'https://*.snapchat.com',
       'https://snap.licdn.com',
       'https://*.linkedin.com',
+      'https://cdn.jsdelivr.net',
+      'https://unpkg.com',
+      'https://s.pinimg.com',
+      'https://*.pinterest.com',
+      'https://static.ads-twitter.com',
+      'https://mux.twitter.com',
+      'https://www.redditstatic.com',
+      'https://alb.reddit.com',
+      'https://bat.bing.com',
+      'https://www.clarity.ms',
     ].join(' ');
 
     const connectSrc = [
@@ -184,6 +195,13 @@ const nextConfig = {
       'https://tr.snapchat.com',
       'https://*.linkedin.com',
       'https://px.ads.linkedin.com',
+      'https://ct.pinterest.com',
+      'https://*.pinterest.com',
+      'https://analytics.twitter.com',
+      'https://alb.reddit.com',
+      'https://bat.bing.com',
+      'https://www.clarity.ms',
+      'https://*.clarity.ms',
       ...(isDev
         ? [
             'http://localhost:*',
@@ -215,6 +233,12 @@ const nextConfig = {
       'https://*.snapchat.com',
       'https://px.ads.linkedin.com',
       'https://*.linkedin.com',
+      'https://ct.pinterest.com',
+      'https://*.pinterest.com',
+      'https://analytics.twitter.com',
+      'https://t.co',
+      'https://alb.reddit.com',
+      'https://bat.bing.com',
       // Existing remote images (Cloudinary, S3, Railway, BunnyCDN, etc.)
       'https:',
     ].join(' ');
@@ -231,6 +255,8 @@ const nextConfig = {
       'https://recaptcha.google.com',
       'https://www.facebook.com',
       'https://web.facebook.com',
+      'https://*.snapchat.com',
+      'https://*.pinterest.com',
     ].join(' ');
 
     const csp = [
