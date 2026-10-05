@@ -24,6 +24,7 @@ import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { toastApiError } from '@/lib/toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { toast } from 'sonner';
+import { trackPurchase } from '@/lib/tracking';
 
 function formatMoney(amount, currency) {
   const n = Number(amount);
@@ -105,6 +106,31 @@ function ClaimBody({ dictionary, lang }) {
 
         setInfo(data);
         setIsLoading(false);
+
+        // Client Purchase (shares payment_intent id with Stripe webhook CAPI).
+        try {
+          const amount =
+            data?.amount != null && Number.isFinite(Number(data.amount))
+              ? Number(data.amount)
+              : null;
+          trackPurchase({
+            sessionId: data?.payment_intent_id || paymentIntentId,
+            value: amount,
+            currency: data?.currency || 'USD',
+            items: data?.course
+              ? [
+                  {
+                    item_id: String(data.course.id ?? ''),
+                    item_name: data.course.title || data.course.slug || 'Course',
+                    price: amount ?? undefined,
+                    quantity: 1,
+                  },
+                ]
+              : [],
+          });
+        } catch {
+          // non-blocking
+        }
 
         if (data?.already_active) {
           const courseId = data?.course?.id;

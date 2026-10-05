@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inquiry\StoreInquiryRequest;
+use App\Jobs\SendMetaCapiEvent;
 use App\Mail\AdminInquiryAlertMail;
 use App\Models\Inquiry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Throwable;
 
 class InquiryController extends Controller
@@ -32,6 +34,43 @@ class InquiryController extends Controller
             ...$data,
             'status' => Inquiry::STATUS_UNREAD,
         ]);
+
+        $eventId = (string) ($request->validated('event_id') ?? '');
+        if ($eventId === '') {
+            $eventId = (string) Str::uuid();
+        }
+
+        $anonymousId = $request->validated('anonymous_id');
+        $isOrganization = $inquiry->type === Inquiry::TYPE_ORGANIZATION;
+
+        // Meta CAPI (async) — same event_id as browser dataLayer for dedup.
+        try {
+            SendMetaCapiEvent::dispatch(
+                $isOrganization ? 'SubmitApplication' : 'Lead',
+                $eventId,
+                [
+                    'email' => $inquiry->email,
+                    'phone' => $inquiry->phone_number,
+                    'name' => $inquiry->full_name,
+                    'anonymous_id' => is_string($anonymousId) ? $anonymousId : null,
+                    'client_ip_address' => $request->ip(),
+                    'client_user_agent' => (string) $request->userAgent(),
+                    'fbp' => $request->cookie('_fbp'),
+                    'fbc' => $request->cookie('_fbc'),
+                ],
+                array_filter([
+                    'content_name' => $isOrganization ? 'Organization Inquiry' : 'Course Inquiry',
+                    'content_category' => $inquiry->type,
+                    'company_name' => $inquiry->company_name,
+                ], static fn ($v) => $v !== null && $v !== ''),
+                $request->headers->get('referer'),
+            )->afterResponse();
+        } catch (Throwable $e) {
+            Log::warning('Failed to dispatch Meta CAPI inquiry event.', [
+                'inquiry_id' => $inquiry->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
 
         $recipient = (string) config(
             'mail.contact_form_recipient',
@@ -64,7 +103,7 @@ class InquiryController extends Controller
             }
         })->afterResponse();
 
-        $message = $inquiry->type === Inquiry::TYPE_ORGANIZATION
+        $message = $isOrganization
             ? 'Thank you! Our corporate team will contact you within 24 hours.'
             : 'Thank you! Our team will reply to your course question within 24 hours.';
 
@@ -75,6 +114,7 @@ class InquiryController extends Controller
                 'id' => $inquiry->id,
                 'status' => $inquiry->status,
                 'type' => $inquiry->type,
+                'event_id' => $eventId,
             ],
         ], 201);
     }

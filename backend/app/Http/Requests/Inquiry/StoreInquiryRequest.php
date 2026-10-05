@@ -109,6 +109,9 @@ class StoreInquiryRequest extends FormRequest
             'target_course' => ['nullable', 'string', 'max:'.config('field_limits.medium')],
             'course_id' => ['nullable', 'integer', Rule::exists('courses', 'id')->whereNull('deleted_at')],
             'message' => ['required', 'string', 'min:20', 'max:'.config('field_limits.long')],
+            // Dual-tracking: shared with GTM dataLayer for Meta CAPI deduplication.
+            'event_id' => ['nullable', 'string', 'uuid', 'max:64'],
+            'anonymous_id' => ['nullable', 'string', 'max:64'],
         ];
     }
 

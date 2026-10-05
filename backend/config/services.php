@@ -56,6 +56,17 @@ return [
     ],
 
     /*
+     * Meta (Facebook) Pixel + Conversions API.
+     * event_id must match the browser Pixel / GTM dataLayer for deduplication.
+     */
+    'meta' => [
+        'pixel_id' => env('META_PIXEL_ID'),
+        'capi_access_token' => env('META_CAPI_ACCESS_TOKEN'),
+        'test_event_code' => env('META_TEST_EVENT_CODE'),
+        'graph_version' => env('META_GRAPH_VERSION', 'v19.0'),
+    ],
+
+    /*
      * Bunny Stream. The API key is a full-access library credential and must
      * never reach the browser — the admin UI reads videos through
      * GET /api/v1/admin/bunny/videos instead.

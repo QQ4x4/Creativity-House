@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payment\CreateCheckoutSessionRequest;
 use App\Http\Requests\Payment\CreatePaymentIntentRequest;
+use App\Jobs\SendMetaCapiEvent;
 use App\Models\Course;
+use App\Models\Order;
 use App\Models\User;
 use App\Services\Checkout\CheckoutService;
 use App\Services\Checkout\StripeEnrollmentService;
@@ -193,6 +195,7 @@ class PaymentController extends Controller
 
             $name = $request->validated('name');
             $phone = $request->validated('phone');
+            $anonymousId = (string) ($request->validated('anonymous_id') ?? '');
 
             $intent = PaymentIntent::create([
                 'amount' => $unitAmount,
@@ -200,13 +203,17 @@ class PaymentController extends Controller
                 'automatic_payment_methods' => ['enabled' => true],
                 'receipt_email' => $email,
                 'description' => $course->title ?: ($course->title_en ?: 'Course purchase'),
-                'metadata' => [
+                'metadata' => array_filter([
                     'course_id' => (string) $course->id,
                     'mode' => $mode,
                     'email' => $email,
                     'name' => $name,
                     'phone' => $phone,
-                ],
+                    // For Meta CAPI Purchase dedup + matching quality on webhook.
+                    'anonymous_id' => $anonymousId !== '' ? $anonymousId : null,
+                    'client_ip_address' => (string) ($request->ip() ?? ''),
+                    'client_user_agent' => mb_substr((string) $request->userAgent(), 0, 500),
+                ], static fn ($v) => $v !== null && $v !== ''),
             ]);
 
             return response()->json([
@@ -309,6 +316,8 @@ class PaymentController extends Controller
                     ], 422);
                 }
 
+                $this->dispatchPurchaseCapiFromCheckoutSession($session, $order, $request);
+
                 return response()->json([
                     'success' => true,
                     'received' => true,
@@ -336,6 +345,8 @@ class PaymentController extends Controller
                     ], 422);
                 }
 
+                $this->dispatchPurchaseCapiFromPaymentIntent($intent, $order, $request);
+
                 return response()->json([
                     'success' => true,
                     'received' => true,
@@ -360,6 +371,105 @@ class PaymentController extends Controller
                 'success' => false,
                 'message' => 'Enrollment failed.',
             ], 500);
+        }
+    }
+
+    /**
+     * Meta CAPI Purchase — event_id = Stripe Checkout Session id (matches client).
+     */
+    private function dispatchPurchaseCapiFromCheckoutSession(
+        Session $session,
+        Order $order,
+        Request $request,
+    ): void {
+        try {
+            $eventId = (string) ($session->id ?? '');
+            if ($eventId === '') {
+                return;
+            }
+
+            $customer = $session->customer_details;
+            $amountTotal = is_numeric($session->amount_total)
+                ? round(((int) $session->amount_total) / 100, 2)
+                : (float) $order->amount;
+            $currency = strtoupper((string) ($session->currency ?: $order->currency ?: 'USD'));
+
+            $metadata = $session->metadata?->toArray() ?? [];
+
+            SendMetaCapiEvent::dispatch(
+                'Purchase',
+                $eventId,
+                [
+                    'email' => $customer?->email ?: $order->billing_email,
+                    'phone' => $customer?->phone ?: $order->billing_phone,
+                    'name' => trim(($order->billing_first_name ?? '').' '.($order->billing_last_name ?? '')),
+                    'anonymous_id' => $metadata['anonymous_id'] ?? null,
+                    'client_ip_address' => $metadata['client_ip_address'] ?? $request->ip(),
+                    'client_user_agent' => $metadata['client_user_agent'] ?? (string) $request->userAgent(),
+                ],
+                [
+                    'value' => $amountTotal,
+                    'currency' => $currency,
+                    'order_id' => (string) $order->id,
+                    'content_ids' => [(string) $order->course_id],
+                    'content_type' => 'product',
+                    'num_items' => 1,
+                ],
+            )->afterResponse();
+        } catch (Throwable $e) {
+            Log::warning('Failed to dispatch Meta CAPI Purchase (checkout.session).', [
+                'session_id' => $session->id ?? null,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Meta CAPI Purchase — event_id = PaymentIntent id (matches client claim / success page).
+     */
+    private function dispatchPurchaseCapiFromPaymentIntent(
+        PaymentIntent $intent,
+        Order $order,
+        Request $request,
+    ): void {
+        try {
+            $eventId = (string) ($intent->id ?? '');
+            if ($eventId === '') {
+                return;
+            }
+
+            $metadata = $intent->metadata?->toArray() ?? [];
+            $paidCents = (int) ($intent->amount_received ?: $intent->amount);
+            $amount = $paidCents > 0
+                ? round($paidCents / 100, 2)
+                : (float) $order->amount;
+            $currency = strtoupper((string) ($intent->currency ?: $order->currency ?: 'USD'));
+
+            SendMetaCapiEvent::dispatch(
+                'Purchase',
+                $eventId,
+                [
+                    'email' => $metadata['email'] ?? $order->billing_email,
+                    'phone' => $metadata['phone'] ?? $order->billing_phone,
+                    'name' => $metadata['name'] ?? trim(($order->billing_first_name ?? '').' '.($order->billing_last_name ?? '')),
+                    'anonymous_id' => $metadata['anonymous_id'] ?? null,
+                    'client_ip_address' => $metadata['client_ip_address'] ?? $request->ip(),
+                    'client_user_agent' => $metadata['client_user_agent'] ?? (string) $request->userAgent(),
+                ],
+                [
+                    'value' => $amount,
+                    'currency' => $currency,
+                    'order_id' => (string) $order->id,
+                    'content_ids' => [(string) ($metadata['course_id'] ?? $order->course_id)],
+                    'content_type' => 'product',
+                    'num_items' => 1,
+                ],
+            )->afterResponse();
+        } catch (Throwable $e) {
+            Log::warning('Failed to dispatch Meta CAPI Purchase (payment_intent).', [
+                'payment_intent_id' => $intent->id ?? null,
+                'message' => $e->getMessage(),
+            ]);
         }
     }
 }

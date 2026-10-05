@@ -28,6 +28,7 @@ class CreatePaymentIntentRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255'],
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'phone' => ['required', 'string', 'max:20', 'regex:/^\+[1-9]\d{6,14}$/'],
+            'anonymous_id' => ['nullable', 'string', 'max:64'],
         ];
     }
 

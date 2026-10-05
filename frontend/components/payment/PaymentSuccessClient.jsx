@@ -1,10 +1,13 @@
 'use client';
 
+import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle2, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import PublicShell from '@/components/catalog/PublicShell';
 import { fadeUp, motionGpu, motionViewport } from '@/lib/motion';
+import { trackPurchase } from '@/lib/tracking';
 
 const FALLBACK = {
   en: {
@@ -23,12 +26,44 @@ const FALLBACK = {
   },
 };
 
+function PurchaseTracker() {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const sessionId =
+      searchParams.get('session_id') ||
+      searchParams.get('payment_intent') ||
+      searchParams.get('payment_intent_id') ||
+      '';
+    const valueRaw = searchParams.get('value') || searchParams.get('amount');
+    const currency = searchParams.get('currency') || 'USD';
+    const value =
+      valueRaw != null && Number.isFinite(Number(valueRaw))
+        ? Number(valueRaw)
+        : null;
+
+    if (!sessionId) return;
+
+    trackPurchase({
+      sessionId,
+      value,
+      currency,
+      items: [],
+    });
+  }, [searchParams]);
+
+  return null;
+}
+
 export default function PaymentSuccessClient({ dictionary, lang }) {
   const fallback = FALLBACK[lang] || FALLBACK.en;
   const labels = { ...fallback, ...(dictionary.paymentSuccess || {}) };
 
   return (
     <PublicShell dictionary={dictionary} lang={lang}>
+      <Suspense fallback={null}>
+        <PurchaseTracker />
+      </Suspense>
       <section className="relative z-30 flex min-h-[70vh] items-center px-4 pb-16 pt-28 sm:px-6 lg:px-8">
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-24 start-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-plum-600/20 blur-3xl" />

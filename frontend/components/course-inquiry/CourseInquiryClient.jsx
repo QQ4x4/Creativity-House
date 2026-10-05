@@ -20,6 +20,11 @@ import CharacterCounter from '@/components/ui/CharacterCounter';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
 import { fadeUp, motionGpu, motionViewport } from '@/lib/motion';
+import {
+  createEventId,
+  getOrCreateAnonymousId,
+  pushDataLayer,
+} from '@/lib/tracking';
 
 const EMPTY_VALUES = {
   name: '',
@@ -119,8 +124,23 @@ function CourseInquiryBody({ dictionary, lang }) {
 
   const onSubmit = async (values) => {
     setFormError('');
+    const eventId = createEventId();
+    const anonymousId = getOrCreateAnonymousId();
     try {
-      await submitCourseInquiry(values);
+      await submitCourseInquiry({
+        ...values,
+        event_id: eventId,
+        anonymous_id: anonymousId,
+      });
+      try {
+        pushDataLayer('Lead', eventId, {}, {
+          email: values.email,
+          phone: values.phone || undefined,
+          name: values.name,
+        });
+      } catch {
+        // non-blocking
+      }
       setSubmitted(true);
       reset(EMPTY_VALUES);
       toast.success(labels.successMessage || 'Message sent successfully.');

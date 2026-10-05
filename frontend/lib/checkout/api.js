@@ -3,6 +3,7 @@
  */
 
 import { apiGet, apiPost, getCsrfCookie } from '@/lib/api';
+import { getOrCreateAnonymousId } from '@/lib/tracking';
 
 export const CREATE_PAYMENT_INTENT_ENDPOINT = '/v1/checkout/create-payment-intent';
 export const CLAIM_INFO_ENDPOINT = '/v1/checkout/claim-info';
@@ -35,6 +36,11 @@ export async function createPaymentIntent(data) {
 
   if (data.mode) {
     payload.mode = data.mode;
+  }
+
+  const anonymousId = getOrCreateAnonymousId();
+  if (anonymousId) {
+    payload.anonymous_id = anonymousId;
   }
 
   return apiPost(CREATE_PAYMENT_INTENT_ENDPOINT, payload);
