@@ -21,6 +21,7 @@ import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
 import { fadeUp, motionGpu, motionViewport } from '@/lib/motion';
 import {
+  buildUserData,
   createEventId,
   getOrCreateAnonymousId,
   pushDataLayer,
@@ -133,11 +134,23 @@ function CourseInquiryBody({ dictionary, lang }) {
         anonymous_id: anonymousId,
       });
       try {
-        pushDataLayer('Lead', eventId, {}, {
-          email: values.email,
-          phone: values.phone || undefined,
-          name: values.name,
-        });
+        const selectedCourse = courses.find(
+          (course) => String(course?.id ?? '') === String(values.course_id || '')
+        );
+        pushDataLayer(
+          'Lead',
+          eventId,
+          {
+            form_name: 'course_inquiry',
+            content_name: selectedCourse?.title || undefined,
+            content_ids: selectedCourse ? [String(selectedCourse.id)] : undefined,
+          },
+          buildUserData({
+            email: values.email,
+            phone: values.phone,
+            name: values.name,
+          })
+        );
       } catch {
         // non-blocking
       }

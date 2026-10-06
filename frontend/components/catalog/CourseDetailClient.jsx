@@ -21,8 +21,46 @@ import PublicShell from './PublicShell';
 import { fetchPublicCourse } from '@/lib/catalog/api';
 import { resolveDeliveryModeBadge } from '@/lib/catalog/modeBadge';
 import { useAuth } from '@/providers/AuthProvider';
+import { buildUserData, courseItem, createEventId, pushDataLayer } from '@/lib/tracking';
 
 const MODE_ORDER = ['live', 'recorded', 'simulator'];
+
+function trackViewItem(course, mode, user) {
+  try {
+    const tier = (course.pricingTiers || []).find((t) => t.mode === mode);
+    const rawPrice = tier?.price ?? course.modes?.[mode]?.price ?? course.price;
+    const price = Number.isFinite(Number(rawPrice)) ? Number(rawPrice) : undefined;
+    const currency = String(course.currency || 'USD').toUpperCase();
+
+    pushDataLayer(
+      'view_item',
+      createEventId(),
+      {
+        content_name: course.title,
+        content_ids: [String(course.id)],
+        content_type: 'product',
+        value: price,
+        currency,
+        ecommerce: {
+          value: price,
+          currency,
+          items: [courseItem(course, price, mode)],
+        },
+      },
+      user
+        ? buildUserData({
+            email: user.email,
+            phone: user.phone_number,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            name: user.name,
+          })
+        : {}
+    );
+  } catch {
+    // non-blocking
+  }
+}
 
 function formatCount(value) {
   return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -199,7 +237,9 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
           return;
         }
         setCourse(data);
-        setMode(data.defaultMode || data.availableModes?.[0] || 'live');
+        const initialMode = data.defaultMode || data.availableModes?.[0] || 'live';
+        setMode(initialMode);
+        trackViewItem(data, initialMode, user);
       } catch {
         if (!cancelled) setCourse(null);
       } finally {
@@ -209,6 +249,8 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
     return () => {
       cancelled = true;
     };
+    // `user` is read for matching only; auth resolving must not re-fire view_item.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, lang]);
 
   // Re-check enrollment once auth session resolves (cookie may arrive after first paint).

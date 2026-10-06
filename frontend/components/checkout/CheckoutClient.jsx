@@ -36,6 +36,13 @@ import { toastApiError } from '@/lib/toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { useTheme } from 'next-themes';
 import { useDefaultPhoneCountry } from '@/hooks/useDefaultPhoneCountry';
+import {
+  buildUserData,
+  courseItem,
+  createEventId,
+  pushDataLayer,
+  saveCheckoutContext,
+} from '@/lib/tracking';
 
 const stripePublishableKey = getStripePublishableKey();
 const stripePromise = getStripePromise();
@@ -208,6 +215,34 @@ function CheckoutBody({ dictionary, lang }) {
     if (!valid || !course?.id) return;
 
     const billing = billingForm.getValues();
+    const trackingUser = buildUserData({
+      email: billing.email,
+      phone: billing.phoneNumber,
+      country: billing.country,
+      name: billing.fullName,
+    });
+    const numericTotal = Number.isFinite(Number(total)) ? Number(total) : undefined;
+    const currency = String(course.currency || 'USD').toUpperCase();
+    const items = [courseItem(course, numericTotal, mode)];
+
+    try {
+      pushDataLayer(
+        'begin_checkout',
+        createEventId(),
+        {
+          content_name: course.title,
+          content_ids: [String(course.id)],
+          content_type: 'product',
+          value: numericTotal,
+          currency,
+          ecommerce: { value: numericTotal, currency, items },
+        },
+        trackingUser
+      );
+    } catch {
+      // non-blocking
+    }
+
     setIsCreatingIntent(true);
     try {
       const result = await createPaymentIntent({
@@ -243,6 +278,13 @@ function CheckoutBody({ dictionary, lang }) {
             'The checkout price changed. Please refresh and try again.'
         );
       }
+
+      saveCheckoutContext(intentId, {
+        userData: trackingUser,
+        value: Number.isFinite(chargedCents) ? chargedCents / 100 : numericTotal,
+        currency,
+        items,
+      });
 
       setBillingDetails({
         name: billing.fullName,

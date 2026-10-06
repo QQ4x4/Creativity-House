@@ -24,7 +24,7 @@ import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { toastApiError } from '@/lib/toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { toast } from 'sonner';
-import { trackPurchase } from '@/lib/tracking';
+import { courseItem, trackPurchase } from '@/lib/tracking';
 
 function formatMoney(amount, currency) {
   const n = Number(amount);
@@ -117,16 +117,7 @@ function ClaimBody({ dictionary, lang }) {
             sessionId: data?.payment_intent_id || paymentIntentId,
             value: amount,
             currency: data?.currency || 'USD',
-            items: data?.course
-              ? [
-                  {
-                    item_id: String(data.course.id ?? ''),
-                    item_name: data.course.title || data.course.slug || 'Course',
-                    price: amount ?? undefined,
-                    quantity: 1,
-                  },
-                ]
-              : [],
+            items: data?.course ? [courseItem(data.course, amount)] : [],
           });
         } catch {
           // non-blocking
