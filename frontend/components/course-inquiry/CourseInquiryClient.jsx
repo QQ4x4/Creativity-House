@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { fadeUp, motionGpu, motionViewport } from '@/lib/motion';
 import {
   buildUserData,
+  countryFromPhone,
   createEventId,
   getOrCreateAnonymousId,
   pushDataLayer,
@@ -127,11 +128,13 @@ function CourseInquiryBody({ dictionary, lang }) {
     setFormError('');
     const eventId = createEventId();
     const anonymousId = getOrCreateAnonymousId();
+    const country = countryFromPhone(values.phone);
     try {
       await submitCourseInquiry({
         ...values,
         event_id: eventId,
         anonymous_id: anonymousId,
+        country,
       });
       try {
         const selectedCourse = courses.find(
@@ -148,6 +151,7 @@ function CourseInquiryBody({ dictionary, lang }) {
           buildUserData({
             email: values.email,
             phone: values.phone,
+            country,
             name: values.name,
           })
         );

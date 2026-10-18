@@ -112,6 +112,7 @@ class StoreInquiryRequest extends FormRequest
             // Dual-tracking: shared with GTM dataLayer for Meta CAPI deduplication.
             'event_id' => ['nullable', 'string', 'uuid', 'max:64'],
             'anonymous_id' => ['nullable', 'string', 'max:64'],
+            'country' => ['nullable', 'string', 'size:2'],
         ];
     }
 

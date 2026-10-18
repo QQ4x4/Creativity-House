@@ -342,29 +342,52 @@ export function userToTrackingData(user) {
 }
 
 /**
- * Fire `sign_up` or `login` with method + normalized user_data. Never throws.
+ * Map logical auth kind → Meta/GA dataLayer event name (must match CAPI).
+ * @param {'sign_up'|'login'|string} kind
+ * @returns {'CompleteRegistration'|'Login'|null}
+ */
+export function authEventName(kind) {
+  if (kind === 'sign_up' || kind === 'CompleteRegistration') return 'CompleteRegistration';
+  if (kind === 'login' || kind === 'Login') return 'Login';
+  return null;
+}
+
+/**
+ * Fire CompleteRegistration / Login with a shared event_id for Meta CAPI dedup.
+ * Returns the event_id that was pushed (so the same value can be sent to Laravel).
  *
- * @param {'sign_up'|'login'} eventName
+ * @param {'sign_up'|'login'|'CompleteRegistration'|'Login'} kind
  * @param {string} method e.g. 'email' | 'google'
  * @param {Record<string, unknown>|null|undefined} user
+ * @param {string} [eventId] reuse a pre-generated UUID
+ * @returns {string} event_id
  */
-export function trackAuthEvent(eventName, method, user) {
+export function trackAuthEvent(kind, method, user, eventId) {
+  const id = eventId || createEventId();
   try {
-    if (eventName !== 'sign_up' && eventName !== 'login') return;
+    const eventName = authEventName(kind);
+    if (!eventName) return id;
     pushDataLayer(
       eventName,
-      createEventId(),
+      id,
       { method: String(method || 'email') },
       userToTrackingData(user)
     );
   } catch {
     // non-blocking
   }
+  return id;
 }
 
 /**
  * Stash an auth event to fire after OTP / Google OAuth return.
- * @param {{ event: 'sign_up'|'login', method: string, user?: Record<string, unknown> }} pending
+ * @param {{
+ *   event: 'sign_up'|'login',
+ *   method: string,
+ *   user?: Record<string, unknown>,
+ *   eventId?: string,
+ *   skipClientFire?: boolean,
+ * }} pending
  */
 export function stashPendingAuthEvent(pending) {
   if (typeof window === 'undefined') return;
@@ -376,11 +399,29 @@ export function stashPendingAuthEvent(pending) {
         event: pending.event,
         method: pending.method || 'email',
         user: pending.user || {},
+        eventId: pending.eventId || null,
+        // Register already fired CompleteRegistration; OTP should only fire Login.
+        skipClientFire: Boolean(pending.skipClientFire),
         savedAt: Date.now(),
       })
     );
   } catch {
     // ignore
+  }
+}
+
+/**
+ * Read + clear a pending auth stash without firing.
+ * @returns {{ event?: string, method?: string, user?: object, eventId?: string|null, skipClientFire?: boolean }|null}
+ */
+export function consumePendingAuthEvent() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(PENDING_AUTH_KEY);
+    window.sessionStorage.removeItem(PENDING_AUTH_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
   }
 }
 
@@ -391,29 +432,31 @@ export function stashPendingAuthEvent(pending) {
  * @param {Record<string, unknown>|null|undefined} user
  * @param {'sign_up'|'login'} [fallbackEvent='login']
  * @param {string} [fallbackMethod='email']
+ * @param {string} [eventId]
+ * @returns {string} event_id used for the push (empty if skipped)
  */
-export function flushPendingAuthEvent(user, fallbackEvent = 'login', fallbackMethod = 'email') {
+export function flushPendingAuthEvent(
+  user,
+  fallbackEvent = 'login',
+  fallbackMethod = 'email',
+  eventId
+) {
   try {
-    let pending = null;
-    if (typeof window !== 'undefined') {
-      try {
-        const raw = window.sessionStorage.getItem(PENDING_AUTH_KEY);
-        window.sessionStorage.removeItem(PENDING_AUTH_KEY);
-        pending = raw ? JSON.parse(raw) : null;
-      } catch {
-        pending = null;
-      }
+    const pending = consumePendingAuthEvent();
+    if (pending?.skipClientFire) {
+      return '';
     }
 
-    const eventName =
+    const kind =
       pending?.event === 'sign_up' || pending?.event === 'login'
         ? pending.event
         : fallbackEvent;
     const method = pending?.method || fallbackMethod;
     const mergedUser = { ...(pending?.user || {}), ...(user || {}) };
+    const id = eventId || pending?.eventId || createEventId();
 
-    trackAuthEvent(eventName, method, mergedUser);
+    return trackAuthEvent(kind, method, mergedUser, id);
   } catch {
-    // non-blocking
+    return eventId || '';
   }
 }

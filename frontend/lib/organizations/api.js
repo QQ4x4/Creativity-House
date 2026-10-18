@@ -46,5 +46,9 @@ export async function submitOrganizationInquiry(data) {
     payload.anonymous_id = String(anonymousId);
   }
 
+  if (data.country) {
+    payload.country = String(data.country).toUpperCase().slice(0, 2);
+  }
+
   return apiPost(INQUIRY_ENDPOINT, payload);
 }

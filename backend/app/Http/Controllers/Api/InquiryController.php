@@ -52,6 +52,7 @@ class InquiryController extends Controller
                     'email' => $inquiry->email,
                     'phone' => $inquiry->phone_number,
                     'name' => $inquiry->full_name,
+                    'country' => $request->validated('country'),
                     'anonymous_id' => is_string($anonymousId) ? $anonymousId : null,
                     'client_ip_address' => $request->ip(),
                     'client_user_agent' => (string) $request->userAgent(),

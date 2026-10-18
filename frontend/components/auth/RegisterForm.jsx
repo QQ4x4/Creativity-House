@@ -23,7 +23,13 @@ import { createRegisterSchema } from '@/lib/validations/auth';
 import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
-import { stashPendingAuthEvent, trackAuthEvent } from '@/lib/tracking';
+import {
+  countryFromPhone,
+  createEventId,
+  getOrCreateAnonymousId,
+  stashPendingAuthEvent,
+  trackAuthEvent,
+} from '@/lib/tracking';
 
 export default function RegisterForm({ dictionary, lang }) {
   const router = useRouter();
@@ -63,12 +69,19 @@ export default function RegisterForm({ dictionary, lang }) {
 
   const onSubmit = async (values) => {
     setFormError('');
+    const eventId = createEventId();
+    const anonymousId = getOrCreateAnonymousId();
+    const country = countryFromPhone(values.phone_number);
 
     try {
       const recaptchaToken = await obtainRecaptchaToken(executeRecaptcha, 'register');
 
       await getCsrfCookie();
-      const payload = sanitizeRegisterPayload(values, recaptchaToken);
+      const payload = sanitizeRegisterPayload(values, recaptchaToken, {
+        event_id: eventId,
+        anonymous_id: anonymousId,
+        country,
+      });
       const data = await apiPost('/auth/register', payload);
 
       if (data?.email_sent === false) {
@@ -82,20 +95,24 @@ export default function RegisterForm({ dictionary, lang }) {
         first_name: values.first_name,
         last_name: values.last_name,
         phone_number: values.phone_number,
+        country,
       };
 
+      // Same event_id as Laravel Meta CAPI CompleteRegistration.
+      trackAuthEvent('sign_up', 'email', registeredUser, eventId);
+
       if (data?.requires_verification) {
-        // Account created; fire sign_up after OTP confirms the session.
+        // Skip re-firing CompleteRegistration on OTP; OTP will fire Login instead.
         stashPendingAuthEvent({
-          event: 'sign_up',
+          event: 'login',
           method: 'email',
           user: registeredUser,
+          skipClientFire: false,
         });
         router.push(`/${lang}/verify-otp?email=${encodeURIComponent(data.email)}`);
         return;
       }
 
-      trackAuthEvent('sign_up', 'email', registeredUser);
       router.push(`/${lang}`);
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') {

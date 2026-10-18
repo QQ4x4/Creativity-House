@@ -8,6 +8,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResendOtpRequest;
 use App\Http\Requests\Auth\VerifyOtpRequest;
+use App\Jobs\SendMetaCapiEvent;
 use App\Models\User;
 use App\Services\Checkout\StripeEnrollmentService;
 use App\Services\OtpService;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -82,6 +84,14 @@ class AuthController extends Controller
             ]);
         }
 
+        $eventId = $this->resolveEventId($request);
+        $this->dispatchMetaCapi(
+            'CompleteRegistration',
+            $eventId,
+            $this->metaUserFromModel($user, $request),
+            ['method' => 'email', 'status' => 'registered'],
+        );
+
         return response()->json([
             'success' => true,
             'message' => $emailSent
@@ -90,6 +100,7 @@ class AuthController extends Controller
             'email' => $user->email,
             'requires_verification' => true,
             'email_sent' => $emailSent,
+            'event_id' => $eventId,
         ], 201);
     }
 
@@ -117,10 +128,21 @@ class AuthController extends Controller
         Auth::login($user, true);
         $request->session()->regenerate();
 
+        // OTP completes an unverified login (or first session after register).
+        // Client sends the same event_id used for the Login dataLayer push.
+        $eventId = $this->resolveEventId($request);
+        $this->dispatchMetaCapi(
+            'Login',
+            $eventId,
+            $this->metaUserFromModel($user, $request),
+            ['method' => 'email', 'status' => 'otp_verified'],
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Email verified successfully.',
             'user' => $this->userPayload($user),
+            'event_id' => $eventId,
         ]);
     }
 
@@ -197,10 +219,19 @@ class AuthController extends Controller
         Auth::login($user, true);
         $request->session()->regenerate();
 
+        $eventId = $this->resolveEventId($request);
+        $this->dispatchMetaCapi(
+            'Login',
+            $eventId,
+            $this->metaUserFromModel($user, $request),
+            ['method' => 'email', 'status' => 'authenticated'],
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Login successful.',
             'user' => $this->userPayload($user),
+            'event_id' => $eventId,
         ]);
     }
 
@@ -265,6 +296,63 @@ class AuthController extends Controller
             // decides whether the UI is offered.
             'is_admin' => $user->isAdmin(),
         ];
+    }
+
+    private function resolveEventId(Request $request): string
+    {
+        $eventId = (string) ($request->input('event_id') ?? '');
+        if ($eventId !== '' && Str::isUuid($eventId)) {
+            return $eventId;
+        }
+
+        return (string) Str::uuid();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function metaUserFromModel(User $user, Request $request): array
+    {
+        return [
+            'email' => $user->email,
+            'phone' => $user->phone_number,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'name' => $user->full_name,
+            'country' => $request->input('country'),
+            'anonymous_id' => $request->input('anonymous_id'),
+            'client_ip_address' => $request->ip(),
+            'client_user_agent' => (string) $request->userAgent(),
+            'fbp' => $request->cookie('_fbp'),
+            'fbc' => $request->cookie('_fbc'),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $userData
+     * @param  array<string, mixed>  $customData
+     */
+    private function dispatchMetaCapi(
+        string $eventName,
+        string $eventId,
+        array $userData,
+        array $customData = [],
+    ): void {
+        try {
+            SendMetaCapiEvent::dispatch(
+                $eventName,
+                $eventId,
+                $userData,
+                $customData,
+                request()?->headers->get('Referer'),
+            )->afterResponse();
+        } catch (Throwable $e) {
+            Log::warning('Failed to dispatch Meta CAPI event.', [
+                'event_name' => $eventName,
+                'event_id' => $eventId,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

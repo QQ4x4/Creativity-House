@@ -11,7 +11,11 @@ import { useAuth } from '@/providers/AuthProvider';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
 import { FIELD_LIMITS } from '@/lib/fieldLimits';
-import { flushPendingAuthEvent } from '@/lib/tracking';
+import {
+  createEventId,
+  flushPendingAuthEvent,
+  getOrCreateAnonymousId,
+} from '@/lib/tracking';
 
 const RESEND_SECONDS = 60;
 
@@ -57,10 +61,16 @@ export default function VerifyOtpForm({ dictionary, lang }) {
     setError('');
 
     try {
+      // Shared event_id for Login dataLayer + Laravel Meta CAPI after OTP.
+      const eventId = createEventId();
+      const anonymousId = getOrCreateAnonymousId();
+
       await getCsrfCookie();
       const data = await apiPost('/auth/verify-otp', {
         email,
         code: otpCode,
+        event_id: eventId,
+        anonymous_id: anonymousId || undefined,
       });
 
       let user = data?.user ?? null;
@@ -70,8 +80,8 @@ export default function VerifyOtpForm({ dictionary, lang }) {
         user = await refreshUser();
       }
 
-      // sign_up (after register) or login (unverified login path) — see stashPendingAuthEvent.
-      flushPendingAuthEvent(user || { email }, 'sign_up', 'email');
+      // Register already pushed CompleteRegistration; OTP always maps to Login.
+      flushPendingAuthEvent(user || { email }, 'login', 'email', eventId);
 
       setSuccess(true);
       toast.success(t.otpSuccess);

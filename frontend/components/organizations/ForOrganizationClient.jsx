@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { fadeUp, motionGpu, motionViewport } from '@/lib/motion';
 import {
   buildUserData,
+  countryFromPhone,
   createEventId,
   getOrCreateAnonymousId,
   pushDataLayer,
@@ -84,11 +85,13 @@ export default function ForOrganizationClient({ dictionary, lang }) {
     setFormError('');
     const eventId = createEventId();
     const anonymousId = getOrCreateAnonymousId();
+    const country = countryFromPhone(values.phone);
     try {
       await submitOrganizationInquiry({
         ...values,
         event_id: eventId,
         anonymous_id: anonymousId,
+        country,
       });
       try {
         const selectedCourse = courses.find(
@@ -106,6 +109,7 @@ export default function ForOrganizationClient({ dictionary, lang }) {
           buildUserData({
             email: values.email,
             phone: values.phone,
+            country,
             name: values.name,
           })
         );

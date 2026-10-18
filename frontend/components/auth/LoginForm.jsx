@@ -17,7 +17,12 @@ import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { useAuth } from '@/providers/AuthProvider';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
-import { stashPendingAuthEvent, trackAuthEvent } from '@/lib/tracking';
+import {
+  createEventId,
+  getOrCreateAnonymousId,
+  stashPendingAuthEvent,
+  trackAuthEvent,
+} from '@/lib/tracking';
 
 export default function LoginForm({ dictionary, lang }) {
   const router = useRouter();
@@ -41,6 +46,8 @@ export default function LoginForm({ dictionary, lang }) {
 
   const onSubmit = async (values) => {
     setFormError('');
+    const eventId = createEventId();
+    const anonymousId = getOrCreateAnonymousId();
 
     try {
       const recaptchaToken = await obtainRecaptchaToken(executeRecaptcha, 'login');
@@ -50,15 +57,15 @@ export default function LoginForm({ dictionary, lang }) {
         email: values.email.trim().toLowerCase().slice(0, FIELD_LIMITS.email),
         password: values.password.slice(0, FIELD_LIMITS.password),
         recaptcha_token: recaptchaToken,
+        event_id: eventId,
+        anonymous_id: anonymousId || undefined,
       });
 
-      if (data?.user) {
-        setUser(data.user);
-        trackAuthEvent('login', 'email', data.user);
-      } else {
-        const user = await refreshUser();
-        trackAuthEvent('login', 'email', user || { email: values.email });
-      }
+      const user = data?.user || (await refreshUser()) || { email: values.email };
+      if (data?.user) setUser(data.user);
+
+      // Same event_id as Laravel Meta CAPI Login.
+      trackAuthEvent('login', 'email', user, eventId);
 
       toast.success(t.loginSuccess);
       router.push(`/${lang}`);
@@ -69,6 +76,7 @@ export default function LoginForm({ dictionary, lang }) {
           error.data?.requires_verification &&
           error.data?.email
         ) {
+          // Login CAPI fires after OTP with a fresh shared event_id.
           stashPendingAuthEvent({
             event: 'login',
             method: 'email',

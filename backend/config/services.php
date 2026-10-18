@@ -2,17 +2,7 @@
 
 return [
 
-    /*
-    |--------------------------------------------------------------------------
-    | Third Party Services
-    |--------------------------------------------------------------------------
-    |
-    | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
-    |
-    */
+
 
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
@@ -61,8 +51,10 @@ return [
      */
     'meta' => [
         'pixel_id' => env('META_PIXEL_ID'),
-        'capi_access_token' => env('META_CAPI_ACCESS_TOKEN'),
-        'test_event_code' => env('META_TEST_EVENT_CODE'),
+        'access_token' => env('META_CAPI_ACCESS_TOKEN'),
+        'capi_access_token' => env('META_CAPI_ACCESS_TOKEN'), // alias
+        'test_code' => env('META_TEST_EVENT_CODE'),
+        'test_event_code' => env('META_TEST_EVENT_CODE'), // alias
         'graph_version' => env('META_GRAPH_VERSION', 'v19.0'),
     ],
 

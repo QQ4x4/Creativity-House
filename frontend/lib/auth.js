@@ -43,13 +43,13 @@ export function formatValidationErrors(errorData) {
 /**
  * Normalize register payload for the API (phone required, E.164).
  */
-export function sanitizeRegisterPayload(values, recaptchaToken) {
+export function sanitizeRegisterPayload(values, recaptchaToken, extras = {}) {
   const phone = String(values.phone_number || '')
     .trim()
     .replace(/[^\d+]/g, '')
     .slice(0, FIELD_LIMITS.phone);
 
-  return {
+  const payload = {
     first_name: String(values.first_name || '').trim().slice(0, FIELD_LIMITS.name),
     last_name: String(values.last_name || '').trim().slice(0, FIELD_LIMITS.name),
     email: String(values.email || '').trim().toLowerCase().slice(0, FIELD_LIMITS.email),
@@ -61,6 +61,12 @@ export function sanitizeRegisterPayload(values, recaptchaToken) {
     ),
     recaptcha_token: recaptchaToken || 'local-dev-token',
   };
+
+  if (extras.event_id) payload.event_id = String(extras.event_id);
+  if (extras.anonymous_id) payload.anonymous_id = String(extras.anonymous_id);
+  if (extras.country) payload.country = String(extras.country).toUpperCase().slice(0, 2);
+
+  return payload;
 }
 
 /**
