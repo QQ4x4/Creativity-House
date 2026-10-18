@@ -322,3 +322,98 @@ export function trackPurchase({
     // ignore
   }
 }
+
+const PENDING_AUTH_KEY = 'ch_pending_auth_event';
+
+/**
+ * Map an auth/API user object into pushDataLayer's userData shape.
+ * @param {Record<string, unknown>|null|undefined} user
+ */
+export function userToTrackingData(user) {
+  if (!user || typeof user !== 'object') return {};
+  return buildUserData({
+    email: user.email,
+    phone: user.phone_number || user.phone,
+    country: user.country || user.country_code,
+    firstName: user.first_name || user.firstName,
+    lastName: user.last_name || user.lastName,
+    name: user.name,
+  });
+}
+
+/**
+ * Fire `sign_up` or `login` with method + normalized user_data. Never throws.
+ *
+ * @param {'sign_up'|'login'} eventName
+ * @param {string} method e.g. 'email' | 'google'
+ * @param {Record<string, unknown>|null|undefined} user
+ */
+export function trackAuthEvent(eventName, method, user) {
+  try {
+    if (eventName !== 'sign_up' && eventName !== 'login') return;
+    pushDataLayer(
+      eventName,
+      createEventId(),
+      { method: String(method || 'email') },
+      userToTrackingData(user)
+    );
+  } catch {
+    // non-blocking
+  }
+}
+
+/**
+ * Stash an auth event to fire after OTP / Google OAuth return.
+ * @param {{ event: 'sign_up'|'login', method: string, user?: Record<string, unknown> }} pending
+ */
+export function stashPendingAuthEvent(pending) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (!pending?.event) return;
+    window.sessionStorage.setItem(
+      PENDING_AUTH_KEY,
+      JSON.stringify({
+        event: pending.event,
+        method: pending.method || 'email',
+        user: pending.user || {},
+        savedAt: Date.now(),
+      })
+    );
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Consume + fire a pending auth event (OTP / Google handoff).
+ * Falls back to `fallbackEvent` when nothing was stashed.
+ *
+ * @param {Record<string, unknown>|null|undefined} user
+ * @param {'sign_up'|'login'} [fallbackEvent='login']
+ * @param {string} [fallbackMethod='email']
+ */
+export function flushPendingAuthEvent(user, fallbackEvent = 'login', fallbackMethod = 'email') {
+  try {
+    let pending = null;
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = window.sessionStorage.getItem(PENDING_AUTH_KEY);
+        window.sessionStorage.removeItem(PENDING_AUTH_KEY);
+        pending = raw ? JSON.parse(raw) : null;
+      } catch {
+        pending = null;
+      }
+    }
+
+    const eventName =
+      pending?.event === 'sign_up' || pending?.event === 'login'
+        ? pending.event
+        : fallbackEvent;
+    const method = pending?.method || fallbackMethod;
+    const mergedUser = { ...(pending?.user || {}), ...(user || {}) };
+
+    trackAuthEvent(eventName, method, mergedUser);
+  } catch {
+    // non-blocking
+  }
+}

@@ -2,11 +2,28 @@
 
 import { motion } from 'framer-motion';
 import { getGoogleOAuthUrl } from '@/lib/api';
+import { stashPendingAuthEvent } from '@/lib/tracking';
 
-export default function GoogleAuthButton({ label }) {
+/**
+ * @param {{ label: string, intent?: 'sign_up'|'login' }} props
+ * intent is stashed so AuthSuccessHandler can fire the correct GTM event after OAuth.
+ */
+export default function GoogleAuthButton({ label, intent = 'login' }) {
+  const handleClick = () => {
+    try {
+      stashPendingAuthEvent({
+        event: intent === 'sign_up' ? 'sign_up' : 'login',
+        method: 'google',
+      });
+    } catch {
+      // non-blocking
+    }
+  };
+
   return (
     <motion.a
       href={getGoogleOAuthUrl()}
+      onClick={handleClick}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.2 }}

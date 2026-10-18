@@ -11,6 +11,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
 import { FIELD_LIMITS } from '@/lib/fieldLimits';
+import { flushPendingAuthEvent } from '@/lib/tracking';
 
 const RESEND_SECONDS = 60;
 
@@ -62,11 +63,15 @@ export default function VerifyOtpForm({ dictionary, lang }) {
         code: otpCode,
       });
 
-      if (data?.user) {
-        setUser(data.user);
+      let user = data?.user ?? null;
+      if (user) {
+        setUser(user);
       } else {
-        await refreshUser();
+        user = await refreshUser();
       }
+
+      // sign_up (after register) or login (unverified login path) — see stashPendingAuthEvent.
+      flushPendingAuthEvent(user || { email }, 'sign_up', 'email');
 
       setSuccess(true);
       toast.success(t.otpSuccess);

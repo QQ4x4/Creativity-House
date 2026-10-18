@@ -17,6 +17,7 @@ import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { useAuth } from '@/providers/AuthProvider';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
+import { stashPendingAuthEvent, trackAuthEvent } from '@/lib/tracking';
 
 export default function LoginForm({ dictionary, lang }) {
   const router = useRouter();
@@ -53,8 +54,10 @@ export default function LoginForm({ dictionary, lang }) {
 
       if (data?.user) {
         setUser(data.user);
+        trackAuthEvent('login', 'email', data.user);
       } else {
-        await refreshUser();
+        const user = await refreshUser();
+        trackAuthEvent('login', 'email', user || { email: values.email });
       }
 
       toast.success(t.loginSuccess);
@@ -66,6 +69,11 @@ export default function LoginForm({ dictionary, lang }) {
           error.data?.requires_verification &&
           error.data?.email
         ) {
+          stashPendingAuthEvent({
+            event: 'login',
+            method: 'email',
+            user: { email: error.data.email },
+          });
           toast.warning(error.data?.message || t.otpSentTo);
           router.push(
             `/${lang}/verify-otp?email=${encodeURIComponent(error.data.email)}`
@@ -145,7 +153,7 @@ export default function LoginForm({ dictionary, lang }) {
         <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/10" />
       </div>
 
-      <GoogleAuthButton label={t.googleLogin} />
+      <GoogleAuthButton label={t.googleLogin} intent="login" />
 
       <p className="text-center text-sm text-gray-400">
         {t.noAccount}{' '}

@@ -23,6 +23,7 @@ import { createRegisterSchema } from '@/lib/validations/auth';
 import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
+import { stashPendingAuthEvent, trackAuthEvent } from '@/lib/tracking';
 
 export default function RegisterForm({ dictionary, lang }) {
   const router = useRouter();
@@ -76,11 +77,25 @@ export default function RegisterForm({ dictionary, lang }) {
         toast.success(t.registerSuccess);
       }
 
+      const registeredUser = {
+        email: data?.email || values.email,
+        first_name: values.first_name,
+        last_name: values.last_name,
+        phone_number: values.phone_number,
+      };
+
       if (data?.requires_verification) {
+        // Account created; fire sign_up after OTP confirms the session.
+        stashPendingAuthEvent({
+          event: 'sign_up',
+          method: 'email',
+          user: registeredUser,
+        });
         router.push(`/${lang}/verify-otp?email=${encodeURIComponent(data.email)}`);
         return;
       }
 
+      trackAuthEvent('sign_up', 'email', registeredUser);
       router.push(`/${lang}`);
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') {
@@ -251,7 +266,7 @@ export default function RegisterForm({ dictionary, lang }) {
         <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/10" />
       </div>
 
-      <GoogleAuthButton label={t.googleSignUp} />
+      <GoogleAuthButton label={t.googleSignUp} intent="sign_up" />
 
       <p className="text-center text-sm text-gray-400">
         {t.haveAccount}{' '}

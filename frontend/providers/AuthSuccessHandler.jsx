@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { apiPost, getCsrfCookie } from '@/lib/api';
 import { useAuth } from '@/providers/AuthProvider';
 import { needsPhoneNumber } from '@/providers/CompleteProfileGate';
+import { flushPendingAuthEvent } from '@/lib/tracking';
 
 const GOOGLE_ERROR_MESSAGES = {
   en: {
@@ -76,6 +77,9 @@ export default function AuthSuccessHandler() {
         if (cancelled) return;
 
         if (user) {
+          // Intent stashed by GoogleAuthButton (sign_up from register, login from login).
+          flushPendingAuthEvent(user, 'login', 'google');
+
           toast.success(
             isAr ? 'تم تسجيل الدخول عبر Google بنجاح' : 'Signed in with Google successfully'
           );
