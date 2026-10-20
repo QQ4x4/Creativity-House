@@ -1,7 +1,7 @@
 import { apiPost, getCsrfCookie } from '@/lib/api';
 import { sanitizeInquiryText } from '@/lib/validations/organization';
 import { FIELD_LIMITS } from '@/lib/fieldLimits';
-import { getOrCreateAnonymousId } from '@/lib/tracking';
+import { appendGoogleClickIds, getOrCreateAnonymousId } from '@/lib/tracking';
 
 export const INQUIRY_ENDPOINT = '/v1/inquiries';
 
@@ -52,5 +52,5 @@ export async function submitCourseInquiry(data) {
     payload.country = String(data.country).toUpperCase().slice(0, 2);
   }
 
-  return apiPost(INQUIRY_ENDPOINT, payload);
+  return apiPost(INQUIRY_ENDPOINT, appendGoogleClickIds(payload));
 }

@@ -24,6 +24,7 @@ import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
 import {
+  appendGoogleClickIds,
   countryFromPhone,
   createEventId,
   getOrCreateAnonymousId,
@@ -77,11 +78,13 @@ export default function RegisterForm({ dictionary, lang }) {
       const recaptchaToken = await obtainRecaptchaToken(executeRecaptcha, 'register');
 
       await getCsrfCookie();
-      const payload = sanitizeRegisterPayload(values, recaptchaToken, {
-        event_id: eventId,
-        anonymous_id: anonymousId,
-        country,
-      });
+      const payload = appendGoogleClickIds(
+        sanitizeRegisterPayload(values, recaptchaToken, {
+          event_id: eventId,
+          anonymous_id: anonymousId,
+          country,
+        })
+      );
       const data = await apiPost('/auth/register', payload);
 
       if (data?.email_sent === false) {

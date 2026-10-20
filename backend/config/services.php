@@ -59,6 +59,20 @@ return [
     ],
 
     /*
+     * Google Ads — Data Manager API (events:ingest) for server-side conversions.
+     * service_account_json: full JSON key string (or absolute path to the key file).
+     */
+    'google_ads' => [
+        'customer_id' => env('GOOGLE_ADS_CUSTOMER_ID'),
+        'lead_action_id' => env('GOOGLE_ADS_LEAD_ACTION_ID'),
+        'service_account_json' => env('GOOGLE_ADS_SERVICE_ACCOUNT_JSON'),
+        'validate_only' => filter_var(
+            env('GOOGLE_ADS_VALIDATE_ONLY', false),
+            FILTER_VALIDATE_BOOLEAN
+        ),
+    ],
+
+    /*
      * Bunny Stream. The API key is a full-access library credential and must
      * never reach the browser — the admin UI reads videos through
      * GET /api/v1/admin/bunny/videos instead.

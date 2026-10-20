@@ -18,6 +18,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
 import {
+  appendGoogleClickIds,
   createEventId,
   getOrCreateAnonymousId,
   stashPendingAuthEvent,
@@ -53,13 +54,16 @@ export default function LoginForm({ dictionary, lang }) {
       const recaptchaToken = await obtainRecaptchaToken(executeRecaptcha, 'login');
 
       await getCsrfCookie();
-      const data = await apiPost('/auth/login', {
-        email: values.email.trim().toLowerCase().slice(0, FIELD_LIMITS.email),
-        password: values.password.slice(0, FIELD_LIMITS.password),
-        recaptcha_token: recaptchaToken,
-        event_id: eventId,
-        anonymous_id: anonymousId || undefined,
-      });
+      const data = await apiPost(
+        '/auth/login',
+        appendGoogleClickIds({
+          email: values.email.trim().toLowerCase().slice(0, FIELD_LIMITS.email),
+          password: values.password.slice(0, FIELD_LIMITS.password),
+          recaptcha_token: recaptchaToken,
+          event_id: eventId,
+          anonymous_id: anonymousId || undefined,
+        })
+      );
 
       const user = data?.user || (await refreshUser()) || { email: values.email };
       if (data?.user) setUser(data.user);

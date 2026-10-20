@@ -38,6 +38,9 @@ class LoginRequest extends FormRequest
             'event_id' => ['nullable', 'string', 'uuid', 'max:64'],
             'anonymous_id' => ['nullable', 'string', 'max:64'],
             'country' => ['nullable', 'string', 'size:2'],
+            'gclid' => ['nullable', 'string', 'max:255'],
+            'gbraid' => ['nullable', 'string', 'max:255'],
+            'wbraid' => ['nullable', 'string', 'max:255'],
         ];
     }
 

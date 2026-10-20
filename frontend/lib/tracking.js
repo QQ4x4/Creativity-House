@@ -9,6 +9,105 @@ const ANONYMOUS_ID_KEY = 'ch_anonymous_id';
 const PURCHASE_FIRED_KEY = 'ch_purchase_event_ids';
 const CHECKOUT_CONTEXT_KEY = 'ch_checkout_context';
 
+/** Google Ads click IDs — URL → localStorage + cookies for enhanced conversions. */
+const GOOGLE_CLICK_KEYS = ['gclid', 'gbraid', 'wbraid'];
+const GOOGLE_CLICK_COOKIE_MAX_AGE = 90 * 24 * 60 * 60; // 90 days
+
+function setBrowserCookie(name, value, maxAgeSeconds) {
+  try {
+    const secure =
+      typeof window !== 'undefined' && window.location?.protocol === 'https:'
+        ? '; Secure'
+        : '';
+    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+  } catch {
+    // ignore
+  }
+}
+
+function readBrowserCookie(name) {
+  try {
+    if (typeof document === 'undefined') return '';
+    const needle = `${encodeURIComponent(name)}=`;
+    const parts = String(document.cookie || '').split(';');
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (trimmed.startsWith(needle)) {
+        return decodeURIComponent(trimmed.slice(needle.length));
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return '';
+}
+
+/**
+ * Capture gclid / gbraid / wbraid from the current URL into localStorage + cookies.
+ * Call on every client navigation / page load.
+ */
+export function captureGoogleClickIds() {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    for (const key of GOOGLE_CLICK_KEYS) {
+      const value = String(params.get(key) || '').trim();
+      if (!value) continue;
+      try {
+        window.localStorage.setItem(`_${key}`, value);
+        window.localStorage.setItem(key, value);
+      } catch {
+        // private mode
+      }
+      setBrowserCookie(`_${key}`, value, GOOGLE_CLICK_COOKIE_MAX_AGE);
+      setBrowserCookie(key, value, GOOGLE_CLICK_COOKIE_MAX_AGE);
+    }
+  } catch {
+    // non-blocking
+  }
+}
+
+/**
+ * @returns {{ gclid?: string, gbraid?: string, wbraid?: string }}
+ */
+export function getGoogleClickIds() {
+  if (typeof window === 'undefined') return {};
+
+  const out = {};
+  for (const key of GOOGLE_CLICK_KEYS) {
+    let value = '';
+    try {
+      value =
+        window.localStorage.getItem(`_${key}`) ||
+        window.localStorage.getItem(key) ||
+        '';
+    } catch {
+      value = '';
+    }
+    if (!value) {
+      value = readBrowserCookie(`_${key}`) || readBrowserCookie(key) || '';
+    }
+    value = String(value || '').trim();
+    if (value) out[key] = value;
+  }
+  return out;
+}
+
+/**
+ * Merge Google Ads click IDs into an API JSON body (inquiries, register, login).
+ * @template {Record<string, unknown>} T
+ * @param {T} payload
+ * @returns {T & { gclid?: string, gbraid?: string, wbraid?: string }}
+ */
+export function appendGoogleClickIds(payload = {}) {
+  try {
+    return { ...payload, ...getGoogleClickIds() };
+  } catch {
+    return payload;
+  }
+}
+
 function safeUuid() {
   try {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inquiry\StoreInquiryRequest;
+use App\Jobs\SendGoogleAdsConversion;
 use App\Jobs\SendMetaCapiEvent;
 use App\Mail\AdminInquiryAlertMail;
 use App\Models\Inquiry;
@@ -68,6 +69,27 @@ class InquiryController extends Controller
             )->afterResponse();
         } catch (Throwable $e) {
             Log::warning('Failed to dispatch Meta CAPI inquiry event.', [
+                'inquiry_id' => $inquiry->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        // Google Ads Data Manager (async) — uses gclid + hashed PII.
+        try {
+            SendGoogleAdsConversion::dispatch(
+                $eventId,
+                [
+                    'email' => $inquiry->email,
+                    'phone' => $inquiry->phone_number,
+                ],
+                [
+                    'gclid' => $request->input('gclid'),
+                    'gbraid' => $request->input('gbraid'),
+                    'wbraid' => $request->input('wbraid'),
+                ],
+            )->afterResponse();
+        } catch (Throwable $e) {
+            Log::warning('Failed to dispatch Google Ads conversion for inquiry.', [
                 'inquiry_id' => $inquiry->id,
                 'message' => $e->getMessage(),
             ]);

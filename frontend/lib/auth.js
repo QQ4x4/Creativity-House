@@ -44,6 +44,8 @@ export function formatValidationErrors(errorData) {
  * Normalize register payload for the API (phone required, E.164).
  */
 export function sanitizeRegisterPayload(values, recaptchaToken, extras = {}) {
+  // Lazy import avoided — callers that need click IDs pass them via extras,
+  // or appendGoogleClickIds is applied in RegisterForm / LoginForm.
   const phone = String(values.phone_number || '')
     .trim()
     .replace(/[^\d+]/g, '')
@@ -65,6 +67,9 @@ export function sanitizeRegisterPayload(values, recaptchaToken, extras = {}) {
   if (extras.event_id) payload.event_id = String(extras.event_id);
   if (extras.anonymous_id) payload.anonymous_id = String(extras.anonymous_id);
   if (extras.country) payload.country = String(extras.country).toUpperCase().slice(0, 2);
+  if (extras.gclid) payload.gclid = String(extras.gclid);
+  if (extras.gbraid) payload.gbraid = String(extras.gbraid);
+  if (extras.wbraid) payload.wbraid = String(extras.wbraid);
 
   return payload;
 }

@@ -7,6 +7,7 @@ import { AuthProvider } from '@/providers/AuthProvider';
 import AuthSuccessHandler from '@/providers/AuthSuccessHandler';
 import CompleteProfileGate from '@/providers/CompleteProfileGate';
 import PageViewTracker from '@/providers/PageViewTracker';
+import GoogleClickIdCapture from '@/providers/GoogleClickIdCapture';
 
 export default function ClientProviders({ children, lang }) {
   return (
@@ -33,6 +34,9 @@ export default function ClientProviders({ children, lang }) {
         </Suspense>
         <Suspense fallback={null}>
           <PageViewTracker lang={lang} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <GoogleClickIdCapture />
         </Suspense>
         <CompleteProfileGate lang={lang}>{children}</CompleteProfileGate>
       </AuthProvider>

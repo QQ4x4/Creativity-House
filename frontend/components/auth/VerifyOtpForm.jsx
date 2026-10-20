@@ -12,6 +12,7 @@ import { toastApiError } from '@/lib/toast';
 import { toast } from 'sonner';
 import { FIELD_LIMITS } from '@/lib/fieldLimits';
 import {
+  appendGoogleClickIds,
   createEventId,
   flushPendingAuthEvent,
   getOrCreateAnonymousId,
@@ -66,12 +67,15 @@ export default function VerifyOtpForm({ dictionary, lang }) {
       const anonymousId = getOrCreateAnonymousId();
 
       await getCsrfCookie();
-      const data = await apiPost('/auth/verify-otp', {
-        email,
-        code: otpCode,
-        event_id: eventId,
-        anonymous_id: anonymousId || undefined,
-      });
+      const data = await apiPost(
+        '/auth/verify-otp',
+        appendGoogleClickIds({
+          email,
+          code: otpCode,
+          event_id: eventId,
+          anonymous_id: anonymousId || undefined,
+        })
+      );
 
       let user = data?.user ?? null;
       if (user) {

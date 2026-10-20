@@ -8,6 +8,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResendOtpRequest;
 use App\Http\Requests\Auth\VerifyOtpRequest;
+use App\Jobs\SendGoogleAdsConversion;
 use App\Jobs\SendMetaCapiEvent;
 use App\Models\User;
 use App\Services\Checkout\StripeEnrollmentService;
@@ -91,6 +92,7 @@ class AuthController extends Controller
             $this->metaUserFromModel($user, $request),
             ['method' => 'email', 'status' => 'registered'],
         );
+        $this->dispatchGoogleAdsConversion($eventId, $user, $request);
 
         return response()->json([
             'success' => true,
@@ -137,6 +139,7 @@ class AuthController extends Controller
             $this->metaUserFromModel($user, $request),
             ['method' => 'email', 'status' => 'otp_verified'],
         );
+        $this->dispatchGoogleAdsConversion($eventId, $user, $request);
 
         return response()->json([
             'success' => true,
@@ -226,6 +229,7 @@ class AuthController extends Controller
             $this->metaUserFromModel($user, $request),
             ['method' => 'email', 'status' => 'authenticated'],
         );
+        $this->dispatchGoogleAdsConversion($eventId, $user, $request);
 
         return response()->json([
             'success' => true,
@@ -350,6 +354,32 @@ class AuthController extends Controller
             Log::warning('Failed to dispatch Meta CAPI event.', [
                 'event_name' => $eventName,
                 'event_id' => $eventId,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function dispatchGoogleAdsConversion(
+        string $transactionId,
+        User $user,
+        Request $request,
+    ): void {
+        try {
+            SendGoogleAdsConversion::dispatch(
+                $transactionId,
+                [
+                    'email' => $user->email,
+                    'phone' => $user->phone_number,
+                ],
+                [
+                    'gclid' => $request->input('gclid'),
+                    'gbraid' => $request->input('gbraid'),
+                    'wbraid' => $request->input('wbraid'),
+                ],
+            )->afterResponse();
+        } catch (Throwable $e) {
+            Log::warning('Failed to dispatch Google Ads conversion.', [
+                'transaction_id' => $transactionId,
                 'message' => $e->getMessage(),
             ]);
         }
