@@ -50,6 +50,47 @@ function backendImageRemotePatterns() {
   return patterns;
 }
 
+/**
+ * Google country domains must be listed one by one (CSP has no wildcard for the TLD).
+ * Full list: https://www.google.com/supported_domains
+ * Needed for Google Ads conversion / remarketing redirects (e.g. www.google.com.my).
+ * `https://*.google.com` does NOT match `www.google.com.my`.
+ */
+const GOOGLE_COUNTRY_DOMAINS = [
+  'https://www.google.com.my',
+  'https://www.google.com.sa',
+  'https://www.google.ae',
+  'https://www.google.com.kw',
+  'https://www.google.com.qa',
+  'https://www.google.com.om',
+  'https://www.google.com.bh',
+  'https://www.google.com.eg',
+  'https://www.google.jo',
+  'https://www.google.iq',
+  'https://www.google.com.lb',
+  'https://www.google.ps',
+  'https://www.google.dz',
+  'https://www.google.co.ma',
+  'https://www.google.tn',
+  'https://www.google.com.ly',
+  'https://www.google.com.tr',
+  'https://www.google.com.sg',
+  'https://www.google.co.id',
+  'https://www.google.co.uk',
+];
+
+/** Append sources that are not already present (exact string match). Preserves order. */
+function appendUnique(list, extras) {
+  const seen = new Set(list);
+  for (const src of extras) {
+    if (!seen.has(src)) {
+      list.push(src);
+      seen.add(src);
+    }
+  }
+  return list;
+}
+
 const nextConfig = {
   // Use the default `.next` output directory. A custom `distDir` (e.g.
   // `.next-build`) on Windows causes aggressive file-locking (errno -4094
@@ -169,7 +210,13 @@ const nextConfig = {
       'https://alb.reddit.com',
       'https://bat.bing.com',
       'https://www.clarity.ms',
-    ].join(' ');
+    ];
+    appendUnique(scriptSrc, [
+      'https://www.googletagmanager.com',
+      'https://www.googleadservices.com',
+      'https://www.google.com',
+    ]);
+    const scriptSrcHeader = scriptSrc.join(' ');
 
     const connectSrc = [
       "'self'",
@@ -210,7 +257,20 @@ const nextConfig = {
             'ws://127.0.0.1:*',
           ]
         : []),
-    ].join(' ');
+    ];
+    appendUnique(connectSrc, [
+      'https://www.googletagmanager.com',
+      'https://www.googleadservices.com',
+      'https://googleads.g.doubleclick.net',
+      'https://pagead2.googlesyndication.com',
+      'https://www.google.com',
+      'https://ad.doubleclick.net',
+      'https://*.google-analytics.com',
+      'https://*.analytics.google.com',
+      'https://*.g.doubleclick.net',
+      ...GOOGLE_COUNTRY_DOMAINS,
+    ]);
+    const connectSrcHeader = connectSrc.join(' ');
 
     const imgSrc = [
       "'self'",
@@ -241,7 +301,18 @@ const nextConfig = {
       'https://bat.bing.com',
       // Existing remote images (Cloudinary, S3, Railway, BunnyCDN, etc.)
       'https:',
-    ].join(' ');
+    ];
+    appendUnique(imgSrc, [
+      'https://www.googletagmanager.com',
+      'https://www.googleadservices.com',
+      'https://googleads.g.doubleclick.net',
+      'https://pagead2.googlesyndication.com',
+      'https://www.google.com',
+      'https://*.google-analytics.com',
+      'https://*.g.doubleclick.net',
+      ...GOOGLE_COUNTRY_DOMAINS,
+    ]);
+    const imgSrcHeader = imgSrc.join(' ');
 
     const frameSrc = [
       "'self'",
@@ -257,16 +328,18 @@ const nextConfig = {
       'https://web.facebook.com',
       'https://*.snapchat.com',
       'https://*.pinterest.com',
-    ].join(' ');
+    ];
+    appendUnique(frameSrc, ['https://www.googletagmanager.com']);
+    const frameSrcHeader = frameSrc.join(' ');
 
     const csp = [
       "default-src 'self'",
-      `script-src ${scriptSrc}`,
+      `script-src ${scriptSrcHeader}`,
       "style-src 'self' 'unsafe-inline'",
-      `img-src ${imgSrc}`,
+      `img-src ${imgSrcHeader}`,
       "font-src 'self' data:",
-      `connect-src ${connectSrc}`,
-      `frame-src ${frameSrc}`,
+      `connect-src ${connectSrcHeader}`,
+      `frame-src ${frameSrcHeader}`,
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
