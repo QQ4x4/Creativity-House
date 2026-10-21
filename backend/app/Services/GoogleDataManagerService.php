@@ -66,11 +66,9 @@ class GoogleDataManagerService
         $wbraid = trim((string) ($adIdentifiers['wbraid'] ?? ''));
 
         if ($gclid === '' && $gbraid === '' && $wbraid === '') {
-            if (config('app.debug')) {
-                Log::debug('Google Ads Data Manager skipped — no gclid/gbraid/wbraid.', [
-                    'transaction_id' => $transactionId,
-                ]);
-            }
+            Log::info('Google Ads Data Manager skipped — no gclid/gbraid/wbraid.', [
+                'transaction_id' => $transactionId,
+            ]);
 
             return false;
         }
@@ -156,10 +154,19 @@ class GoogleDataManagerService
             /** @var Response $response */
             $response = $pending->post(self::INGEST_URL, $payload);
 
-            if (config('app.debug') || ! $response->successful()) {
-                Log::log($response->successful() ? 'debug' : 'warning', 'Google Ads Data Manager response.', [
+            if ($response->successful()) {
+                Log::info('Google Ads Data Manager response.', [
                     'transaction_id' => $transactionId,
                     'status' => $response->status(),
+                    'validate_only' => $payload['validateOnly'],
+                    'request_id' => $response->json('requestId'),
+                    'field_warnings' => $response->json('fieldWarnings'),
+                ]);
+            } else {
+                Log::warning('Google Ads Data Manager response.', [
+                    'transaction_id' => $transactionId,
+                    'status' => $response->status(),
+                    'validate_only' => $payload['validateOnly'],
                     'body' => $response->json() ?? $response->body(),
                 ]);
             }
