@@ -92,7 +92,6 @@ class AuthController extends Controller
             $this->metaUserFromModel($user, $request),
             ['method' => 'email', 'status' => 'registered'],
         );
-        $this->dispatchGoogleAdsConversion($eventId, $user, $request);
 
         return response()->json([
             'success' => true,
@@ -125,6 +124,9 @@ class AuthController extends Controller
             ]);
         }
 
+        // Capture before markEmailAsVerified so we only fire sign-up once.
+        $isFirstEmailVerification = ! $user->hasVerifiedEmail();
+
         $user->markEmailAsVerified();
 
         Auth::login($user, true);
@@ -139,7 +141,15 @@ class AuthController extends Controller
             $this->metaUserFromModel($user, $request),
             ['method' => 'email', 'status' => 'otp_verified'],
         );
-        $this->dispatchGoogleAdsConversion($eventId, $user, $request);
+
+        if ($isFirstEmailVerification) {
+            $this->dispatchGoogleAdsConversion(
+                'signup-'.$user->id,
+                $user,
+                $request,
+                config('services.google_ads.signup_action_id'),
+            );
+        }
 
         return response()->json([
             'success' => true,
@@ -229,7 +239,6 @@ class AuthController extends Controller
             $this->metaUserFromModel($user, $request),
             ['method' => 'email', 'status' => 'authenticated'],
         );
-        $this->dispatchGoogleAdsConversion($eventId, $user, $request);
 
         return response()->json([
             'success' => true,
@@ -363,7 +372,13 @@ class AuthController extends Controller
         string $transactionId,
         User $user,
         Request $request,
+        ?string $conversionActionId = null,
     ): void {
+        // Never fall back to the lead action — callers must pass an explicit action ID.
+        if (blank($conversionActionId)) {
+            return;
+        }
+
         try {
             SendGoogleAdsConversion::dispatch(
                 $transactionId,
@@ -376,6 +391,7 @@ class AuthController extends Controller
                     'gbraid' => $request->input('gbraid'),
                     'wbraid' => $request->input('wbraid'),
                 ],
+                $conversionActionId,
             )->afterResponse();
         } catch (Throwable $e) {
             Log::warning('Failed to dispatch Google Ads conversion.', [

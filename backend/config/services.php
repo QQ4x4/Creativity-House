@@ -65,6 +65,7 @@ return [
     'google_ads' => [
         'customer_id' => env('GOOGLE_ADS_CUSTOMER_ID'),
         'lead_action_id' => env('GOOGLE_ADS_LEAD_ACTION_ID'),
+        'signup_action_id' => env('GOOGLE_ADS_SIGNUP_ACTION_ID'),
         'service_account_json' => env('GOOGLE_ADS_SERVICE_ACCOUNT_JSON'),
         'validate_only' => filter_var(
             env('GOOGLE_ADS_VALIDATE_ONLY', false),
