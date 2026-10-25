@@ -100,6 +100,39 @@ const nextConfig = {
     remotePatterns: backendImageRemotePatterns(),
   },
 
+  /**
+   * Permanent redirects for old WordPress URLs reported in Search Console.
+   * Destination uses /en/... (site x-default / SEO canonical preference) so
+   * middleware does not add a second locale hop.
+   * permanent: true → 308 (Next.js treats like a 301 for Google).
+   * Note: with default trailingSlash=false, /services/ may first 308 to
+   * /services, then to /en/courses (two hops). Query strings are preserved.
+   */
+  async redirects() {
+    return [
+      {
+        source: '/services',
+        destination: '/en/courses',
+        permanent: true,
+      },
+      {
+        source: '/services/',
+        destination: '/en/courses',
+        permanent: true,
+      },
+      {
+        source: '/contact',
+        destination: '/en/course-inquiry',
+        permanent: true,
+      },
+      {
+        source: '/contact/',
+        destination: '/en/course-inquiry',
+        permanent: true,
+      },
+    ];
+  },
+
   // Keep Watchpack scoped to the project. Only relative / filename patterns —
   // never absolute C:/… paths (those become the scan root on Windows).
   webpack: (config, { dev }) => {

@@ -45,6 +45,37 @@ function getPreferredLocale(request) {
 export function middleware(request) {
   const { pathname } = request.nextUrl;
 
+  // Legacy WordPress Elementor page — no Next.js equivalent. Soft-delete for SEO.
+  if (
+    pathname === '/elementor-page-2615' ||
+    pathname === '/elementor-page-2615/'
+  ) {
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Page removed | Creativity House</title>
+</head>
+<body>
+  <main>
+    <h1>This page was removed</h1>
+    <p>The content at this address is no longer available.</p>
+    <p><a href="/">Return to the homepage</a></p>
+  </main>
+</body>
+</html>`;
+
+    return new NextResponse(html, {
+      status: 410,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'public, max-age=86400',
+      },
+    });
+  }
+
   // Check if the pathname already starts with a supported locale
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
