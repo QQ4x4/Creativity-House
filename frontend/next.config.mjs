@@ -334,6 +334,10 @@ const nextConfig = {
       'https://bat.bing.com',
       // Existing remote images (Cloudinary, S3, Railway, BunnyCDN, etc.)
       'https:',
+      // Local Laravel public disk — CSP `https:` does not cover http://localhost:8000.
+      ...(isDev
+        ? ['http://localhost:8000', 'http://127.0.0.1:8000']
+        : []),
     ];
     appendUnique(imgSrc, [
       'https://www.googletagmanager.com',

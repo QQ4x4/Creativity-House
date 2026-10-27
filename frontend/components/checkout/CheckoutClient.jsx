@@ -21,7 +21,9 @@ import GlassAuthInput from '@/components/auth/GlassAuthInput';
 import GlassPhoneInput from '@/components/auth/GlassPhoneInput';
 import GlassCountrySelect from '@/components/checkout/GlassCountrySelect';
 import StripePaymentForm from '@/components/checkout/StripePaymentForm';
-import { fetchPublicCourse } from '@/lib/catalog/api';
+import { fetchPublicCourse, fetchPublicOccurrence } from '@/lib/catalog/api';
+import { formatMoney } from '@/lib/catalog/schedules';
+import OccurrenceWhen from '@/components/catalog/schedules/OccurrenceWhen';
 import { createPaymentIntent } from '@/lib/checkout/api';
 import { getStripePromise, getStripePublishableKey } from '@/lib/checkout/stripe';
 import { applyServerErrors } from '@/lib/auth';
@@ -47,6 +49,45 @@ import {
 const stripePublishableKey = getStripePublishableKey();
 const stripePromise = getStripePromise();
 
+function CheckoutTrainer({ trainer }) {
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const showPhoto = Boolean(trainer?.photo) && !photoFailed;
+  const initials = (trainer?.name || '?')
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() || '')
+    .join('');
+
+  return (
+    <div className="mt-2 flex min-w-0 items-center gap-2">
+      {showPhoto ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={trainer.photo}
+          alt=""
+          width={28}
+          height={28}
+          className="h-7 w-7 rounded-full object-cover"
+          onError={() => setPhotoFailed(true)}
+        />
+      ) : (
+        <span
+          aria-hidden
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-plum-100 text-[10px] font-bold text-plum-800 dark:bg-plum-500/20 dark:text-plum-100"
+        >
+          {initials}
+        </span>
+      )}
+      <div className="min-w-0">
+        <p className="truncate text-xs font-medium text-gray-800 dark:text-gray-100">{trainer.name}</p>
+        {trainer.title ? (
+          <p className="truncate text-[11px] text-gray-500">{trainer.title}</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function CheckoutBody({ dictionary, lang }) {
   const labels = dictionary.catalog;
   const searchParams = useSearchParams();
@@ -57,8 +98,12 @@ function CheckoutBody({ dictionary, lang }) {
   const [mounted, setMounted] = useState(false);
   const slug = searchParams.get('course') || '';
   const mode = searchParams.get('mode') || 'live';
+  const scheduleId = searchParams.get('schedule') || '';
+  const occurrenceDate = searchParams.get('date') || '';
 
   const [course, setCourse] = useState(null);
+  const [batch, setBatch] = useState(null);
+  const [batchError, setBatchError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [step, setStep] = useState(1);
   const [clientSecret, setClientSecret] = useState('');
@@ -207,10 +252,67 @@ function CheckoutBody({ dictionary, lang }) {
     };
   }, [slug, lang, router]);
 
+  useEffect(() => {
+    if (!slug || !scheduleId || !occurrenceDate) {
+      setBatch(null);
+      setBatchError('');
+      return undefined;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const occurrence = await fetchPublicOccurrence(
+          slug,
+          scheduleId,
+          occurrenceDate,
+          lang
+        );
+        if (cancelled) return;
+        if (!occurrence || !occurrence.isBookable) {
+          setBatch(null);
+          setBatchError(
+            labels.schedules?.batchUnavailable ||
+              'That start date is no longer available. Please choose another schedule.'
+          );
+          return;
+        }
+        setBatch(occurrence);
+        setBatchError('');
+      } catch {
+        if (!cancelled) {
+          setBatch(null);
+          setBatchError(
+            labels.schedules?.batchUnavailable ||
+              'That start date is no longer available. Please choose another schedule.'
+          );
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, scheduleId, occurrenceDate, lang, labels.schedules?.batchUnavailable]);
+
+  // Match Instructor section: fill empty occurrence trainer fields from course.
+  const batchTrainer = useMemo(() => {
+    if (!batch?.trainer && !course?.instructor) return null;
+    const t = batch?.trainer || {};
+    const i = course?.instructor || {};
+    return {
+      name: t.name || i.name || null,
+      title: t.title || i.title || null,
+      photo: t.photo || i.photo || null,
+    };
+  }, [batch?.trainer, course?.instructor]);
+
   const selected = course?.modes?.[mode] || course?.modes?.[course?.defaultMode];
-  const total = selected?.price ?? course?.price;
+  const total = batch?.price ?? selected?.price ?? course?.price;
+  const checkoutMode = batch?.deliveryMode || mode;
 
   const goToPayment = async () => {
+    if (batchError) return;
     const valid = await billingForm.trigger();
     if (!valid || !course?.id) return;
 
@@ -223,7 +325,7 @@ function CheckoutBody({ dictionary, lang }) {
     });
     const numericTotal = Number.isFinite(Number(total)) ? Number(total) : undefined;
     const currency = String(course.currency || 'USD').toUpperCase();
-    const items = [courseItem(course, numericTotal, mode)];
+    const items = [courseItem(course, numericTotal, checkoutMode)];
 
     try {
       pushDataLayer(
@@ -235,6 +337,8 @@ function CheckoutBody({ dictionary, lang }) {
           content_type: 'product',
           value: numericTotal,
           currency,
+          schedule_id: batch?.scheduleId,
+          occurrence_date: batch?.occurrenceDate,
           ecommerce: { value: numericTotal, currency, items },
         },
         trackingUser
@@ -247,10 +351,12 @@ function CheckoutBody({ dictionary, lang }) {
     try {
       const result = await createPaymentIntent({
         courseId: course.id,
-        mode,
+        mode: checkoutMode,
         email: billing.email,
         name: billing.fullName,
         phone: billing.phoneNumber,
+        scheduleId: batch?.scheduleId,
+        occurrenceDate: batch?.occurrenceDate,
       });
 
       const secret =
@@ -446,7 +552,7 @@ function CheckoutBody({ dictionary, lang }) {
                         <button
                           type="button"
                           onClick={goToPayment}
-                          disabled={isCreatingIntent}
+                          disabled={isCreatingIntent || Boolean(batchError)}
                           className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-5 text-sm font-semibold text-white transition-all duration-300 hover:from-plum-600 hover:to-plum-400 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                         >
                           {isCreatingIntent ? (
@@ -556,18 +662,58 @@ function CheckoutBody({ dictionary, lang }) {
                   {course.title}
                 </p>
                 <span className="mt-2 inline-flex rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-plum-800 dark:border-gold-400/30 dark:bg-gold-400/10 dark:text-gold-200">
-                  {labels.modes[mode] || course.badge || mode}
+                  {labels.modes[checkoutMode] || course.badge || checkoutMode}
                 </span>
                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  {labels.selectedMode}: {labels.modes[mode] || mode}
+                  {labels.selectedMode}: {labels.modes[checkoutMode] || checkoutMode}
                 </p>
+
+                {batch ? (
+                  <div className="mt-4 rounded-2xl border border-plum-200 bg-plum-50/70 p-3 dark:border-plum-400/25 dark:bg-plum-500/10">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-plum-700 dark:text-gold-300">
+                      {batch.batchNumber != null
+                        ? (labels.schedules?.batchNumber || 'Batch {n}').replace(
+                            '{n}',
+                            String(batch.batchNumber)
+                          )
+                        : labels.schedules?.selectedBatch || 'Selected batch'}
+                    </p>
+                    <div className="mt-1">
+                      <OccurrenceWhen
+                        occurrence={batch}
+                        lang={lang}
+                        dateClassName="text-sm font-bold text-gray-900 dark:text-white"
+                        timeClassName="text-xs text-gray-600 dark:text-gray-300"
+                        as="p"
+                      />
+                    </div>
+                    {batch.format ? (
+                      <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">{batch.format}</p>
+                    ) : null}
+                    {batchTrainer?.name ? (
+                      <CheckoutTrainer trainer={batchTrainer} />
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {batchError ? (
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-100">
+                    <p>{batchError}</p>
+                    <Link
+                      href={`/${lang}/courses/${course.slug}#schedules`}
+                      className="mt-2 inline-flex min-h-10 font-semibold underline-offset-2 hover:underline"
+                    >
+                      {labels.schedules?.backToSchedules || 'Choose another schedule'}
+                    </Link>
+                  </div>
+                ) : null}
 
                 <div className="mt-5 flex items-end justify-between border-t border-gray-200 pt-4 dark:border-white/10">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     {labels.total}
                   </span>
                   <span className="text-2xl font-extrabold text-plum-700 dark:text-gold-300">
-                    ${total}
+                    {formatMoney(total, course.currency || batch?.currency || 'USD', lang)}
                   </span>
                 </div>
 

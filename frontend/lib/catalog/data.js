@@ -853,6 +853,32 @@ export function localizeCatalogCourse(course, lang = 'en') {
       lessons: ar ? mod.lessons_ar : mod.lessons_en,
     })),
     schedule: ar ? course.schedule_ar : course.schedule_en,
+    schedules: (() => {
+      const list = Array.isArray(course.schedules)
+        ? course.schedules
+        : Array.isArray(course.localizedSchedules)
+          ? course.localizedSchedules
+          : [];
+      // Same instructor fallbacks as the Instructor section (photo/title/name).
+      const instructorFallback = {
+        name: pickInstructor(course, ar, 'name'),
+        title: pickInstructor(course, ar, 'title'),
+        photo: course.instructor_photo || INSTRUCTOR.photo,
+      };
+      return list.map((occurrence) => {
+        if (!occurrence || typeof occurrence !== 'object') return occurrence;
+        const trainer = occurrence.trainer || {};
+        return {
+          ...occurrence,
+          trainer: {
+            ...trainer,
+            name: trainer.name || instructorFallback.name || null,
+            title: trainer.title || instructorFallback.title || null,
+            photo: trainer.photo || instructorFallback.photo || null,
+          },
+        };
+      });
+    })(),
     modes,
     pricingTiers,
     seo: {

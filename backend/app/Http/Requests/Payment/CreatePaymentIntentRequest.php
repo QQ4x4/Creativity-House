@@ -25,6 +25,10 @@ class CreatePaymentIntentRequest extends FormRequest
                 Rule::exists('courses', 'id')->whereNull('deleted_at'),
             ],
             'mode' => ['nullable', 'string', Rule::in(['live', 'recorded', 'simulator'])],
+            // Optional: buying a specific batch. Both must be sent together;
+            // PaymentController re-validates the pair against the rule.
+            'schedule_id' => ['nullable', 'integer', 'min:1', 'required_with:occurrence_date'],
+            'occurrence_date' => ['nullable', 'date_format:Y-m-d', 'required_with:schedule_id'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'phone' => ['required', 'string', 'max:20', 'regex:/^\+[1-9]\d{6,14}$/'],
@@ -44,6 +48,8 @@ class CreatePaymentIntentRequest extends FormRequest
             'name.required' => 'Your full name is required.',
             'phone.required' => 'A phone number is required.',
             'phone.regex' => 'Enter a valid international phone number.',
+            'occurrence_date.required_with' => 'Select a start date for this batch.',
+            'schedule_id.required_with' => 'Select a batch for this start date.',
         ];
     }
 

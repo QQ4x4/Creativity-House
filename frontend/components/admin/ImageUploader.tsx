@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { ImageIcon, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
@@ -21,6 +21,8 @@ interface ImageUploaderProps {
   value?: string | null;
   /** Called with the permanent public URL after a successful upload. */
   onUploaded: (url: string) => void;
+  /** Optional: clear the stored URL (Remove photo). */
+  onCleared?: () => void;
   /** Optional short label shown above the dropzone. */
   label?: string;
   /** Preview variant — cover is wide; avatar is a square thumb inside the zone. */
@@ -36,12 +38,18 @@ interface ImageUploaderProps {
 export function ImageUploader({
   value,
   onUploaded,
+  onCleared,
   label = 'Upload image',
   variant = 'cover',
   className,
   disabled = false,
 }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
+  const [previewFailed, setPreviewFailed] = useState(false);
+
+  useEffect(() => {
+    setPreviewFailed(false);
+  }, [value]);
 
   const onDrop = useCallback(
     async (accepted: File[]) => {
@@ -54,6 +62,7 @@ export function ImageUploader({
         if (!result?.url) {
           throw new Error('Upload succeeded but no URL was returned.');
         }
+        setPreviewFailed(false);
         onUploaded(result.url);
         toast.success('Image uploaded.');
       } catch (error) {
@@ -108,10 +117,11 @@ export function ImageUploader({
             <Loader2 className="h-7 w-7 animate-spin text-plum-600 dark:text-gold-300" aria-hidden />
             <p className="text-sm font-medium">Uploading…</p>
           </div>
-        ) : value ? (
+        ) : value && !previewFailed ? (
           <div className="flex w-full flex-col items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
+              key={value}
               src={value}
               alt="Uploaded preview"
               className={cn(
@@ -120,14 +130,26 @@ export function ImageUploader({
                   ? 'h-20 w-20 rounded-full'
                   : 'h-28 w-full max-w-sm rounded-xl'
               )}
-              onError={(event) => {
-                event.currentTarget.style.display = 'none';
-              }}
+              onError={() => setPreviewFailed(true)}
             />
             <p className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
               <Upload className="h-3.5 w-3.5" aria-hidden />
               Drop a new image to replace, or click to browse
             </p>
+            {onCleared ? (
+              <button
+                type="button"
+                className="text-xs font-semibold text-red-600 underline-offset-2 hover:underline dark:text-red-400"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setPreviewFailed(false);
+                  onCleared();
+                }}
+              >
+                Remove photo
+              </button>
+            ) : null}
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 text-gray-600 dark:text-gray-300">

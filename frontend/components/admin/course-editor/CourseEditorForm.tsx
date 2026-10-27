@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useForm, type FieldErrors, type FieldPath } from 'react-hook-form';
+import { useForm, useWatch, type FieldErrors, type FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
   BookOpen,
+  CalendarDays,
   DollarSign,
   ExternalLink,
   Loader2,
@@ -37,12 +38,13 @@ import {
   syncAdminCurriculum,
   updateAdminCourse,
 } from '@/lib/admin/api';
-import type { AdminCourseDto } from '@/lib/admin/types';
+import type { AdminCourseDto, DeliveryMode } from '@/lib/admin/types';
 import { CurriculumTab } from './CurriculumTab';
 import { GeneralTab } from './GeneralTab';
 import { InstructorTab } from './InstructorTab';
 import { MarketingTab } from './MarketingTab';
 import { PricingTab } from './PricingTab';
+import { SchedulesTab } from './SchedulesTab';
 
 const TABS = [
   { value: 'general', label: 'General', icon: Settings2 },
@@ -50,6 +52,7 @@ const TABS = [
   { value: 'marketing', label: 'Marketing', icon: Megaphone },
   { value: 'instructor', label: 'Instructor', icon: UserRound },
   { value: 'curriculum', label: 'Curriculum', icon: BookOpen },
+  { value: 'schedules', label: 'Schedules', icon: CalendarDays },
 ] as const;
 
 /** Which tab owns each top-level form field, for the error badges. */
@@ -130,7 +133,19 @@ export function CourseEditorForm({ course, lang, defaultLibraryId }: CourseEdito
     reset,
     setError,
     handleSubmit,
+    control,
   } = form;
+
+  const courseInstructor = useWatch({
+    control,
+    name: [
+      'instructor_name',
+      'instructor_name_ar',
+      'instructor_title_en',
+      'instructor_title_ar',
+      'instructor_photo',
+    ],
+  });
 
   const errorsByTab = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -347,6 +362,21 @@ export function CourseEditorForm({ course, lang, defaultLibraryId }: CourseEdito
             <CurriculumTab
               defaultLibraryId={defaultLibraryId}
               courseId={course?.id ?? 0}
+            />
+          </TabsContent>
+
+          <TabsContent value="schedules">
+            <SchedulesTab
+              courseId={course?.id ?? null}
+              currency={course?.currency || 'USD'}
+              availableModes={(course?.available_modes ?? []) as DeliveryMode[]}
+              courseInstructor={{
+                instructor_name: courseInstructor?.[0] ?? null,
+                instructor_name_ar: courseInstructor?.[1] ?? null,
+                instructor_title_en: courseInstructor?.[2] ?? null,
+                instructor_title_ar: courseInstructor?.[3] ?? null,
+                instructor_photo: courseInstructor?.[4] ?? null,
+              }}
             />
           </TabsContent>
         </Tabs>

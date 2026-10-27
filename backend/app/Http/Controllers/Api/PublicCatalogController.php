@@ -5,13 +5,18 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PublicCourseResource;
 use App\Models\Course;
+use App\Services\Schedules\Occurrence;
+use App\Services\Schedules\ScheduleOccurrenceService;
 use App\Services\Student\EnrollmentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PublicCatalogController extends Controller
 {
-    public function __construct(private readonly EnrollmentService $enrollment) {}
+    public function __construct(
+        private readonly EnrollmentService $enrollment,
+        private readonly ScheduleOccurrenceService $schedules,
+    ) {}
 
     /**
      * GET /api/courses — published public catalog.
@@ -53,7 +58,12 @@ class PublicCatalogController extends Controller
     {
         abort_unless($course->is_published && $course->is_public, 404);
 
-        $course->load(['modules.subModules.lessons', 'modules.lessons', 'pricingTiers']);
+        $course->load([
+            'modules.subModules.lessons',
+            'modules.lessons',
+            'pricingTiers',
+            'schedules' => fn ($query) => $query->where('is_active', true)->with('exceptions'),
+        ]);
 
         $isEnrolled = false;
         $user = $request->user('sanctum') ?? auth('sanctum')->user();
@@ -61,6 +71,14 @@ class PublicCatalogController extends Controller
             $isEnrolled = $this->enrollment->isEnrolled((int) $user->id, (int) $course->id);
         }
 
-        return (new PublicCourseResource($course))->withIsEnrolled($isEnrolled);
+        $occurrences = $this->schedules
+            ->upcomingForCourse($course)
+            ->map(fn (Occurrence $occurrence) => $occurrence->toArray())
+            ->values()
+            ->all();
+
+        return (new PublicCourseResource($course))
+            ->withIsEnrolled($isEnrolled)
+            ->withSchedules($occurrences);
     }
 }

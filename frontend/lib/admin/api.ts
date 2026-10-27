@@ -13,9 +13,12 @@ import { apiClient, apiDelete, apiGet, apiPost, apiPut, ApiError, getCsrfCookie 
 import { ADMIN_ENDPOINTS } from './endpoints';
 import type {
   AdminCourseDto,
+  AdminCourseScheduleDto,
   AdminLessonDto,
   AdminLessonResourceDto,
   AdminModuleDto,
+  AdminOccurrenceDto,
+  AdminScheduleExceptionDto,
   BunnyCollection,
   BunnyVideo,
   BunnyVideoListResult,
@@ -286,4 +289,117 @@ export async function replyAdminInquiry(
     data?: InquiryDto;
   };
   return unwrap<InquiryDto>(response?.data ?? response);
+}
+
+/* ─── Course schedules ──────────────────────────────────────────────────── */
+
+export async function fetchAdminSchedules(courseId: number | string): Promise<{
+  schedules: AdminCourseScheduleDto[];
+  suggestedBatchNumber: number;
+  usedBatchNumbers: number[];
+}> {
+  const payload = (await apiGet(ADMIN_ENDPOINTS.schedules(courseId))) as {
+    data?: AdminCourseScheduleDto[];
+    meta?: { suggested_batch_number?: number; used_batch_numbers?: number[] };
+  } | null;
+  const schedules = unwrap<AdminCourseScheduleDto[]>(payload) ?? [];
+  const suggested = Number(payload?.meta?.suggested_batch_number);
+  return {
+    schedules,
+    suggestedBatchNumber: Number.isFinite(suggested) && suggested >= 1 ? suggested : 1,
+    usedBatchNumbers: Array.isArray(payload?.meta?.used_batch_numbers)
+      ? payload!.meta!.used_batch_numbers!.map(Number).filter((n) => Number.isFinite(n) && n >= 1)
+      : [],
+  };
+}
+
+export async function fetchAdminSchedule(
+  courseId: number | string,
+  scheduleId: number | string
+): Promise<AdminCourseScheduleDto> {
+  return unwrap<AdminCourseScheduleDto>(
+    await apiGet(ADMIN_ENDPOINTS.schedule(courseId, scheduleId))
+  );
+}
+
+export async function createAdminSchedule(
+  courseId: number | string,
+  payload: Record<string, unknown>
+): Promise<AdminCourseScheduleDto> {
+  return unwrap<AdminCourseScheduleDto>(await apiPost(ADMIN_ENDPOINTS.schedules(courseId), payload));
+}
+
+export async function updateAdminSchedule(
+  courseId: number | string,
+  scheduleId: number | string,
+  payload: Record<string, unknown>
+): Promise<AdminCourseScheduleDto> {
+  return unwrap<AdminCourseScheduleDto>(
+    await apiPut(ADMIN_ENDPOINTS.schedule(courseId, scheduleId), payload)
+  );
+}
+
+export async function deleteAdminSchedule(
+  courseId: number | string,
+  scheduleId: number | string
+): Promise<void> {
+  await apiDelete(ADMIN_ENDPOINTS.schedule(courseId, scheduleId));
+}
+
+export async function duplicateAdminSchedule(
+  courseId: number | string,
+  scheduleId: number | string
+): Promise<AdminCourseScheduleDto> {
+  return unwrap<AdminCourseScheduleDto>(
+    await apiPost(ADMIN_ENDPOINTS.scheduleDuplicate(courseId, scheduleId), {})
+  );
+}
+
+export async function previewAdminSchedule(
+  courseId: number | string,
+  payload: Record<string, unknown>,
+  signal?: AbortSignal
+): Promise<AdminOccurrenceDto[]> {
+  const response = await apiClient.request({
+    method: 'post',
+    url: ADMIN_ENDPOINTS.schedulesPreview(courseId),
+    data: payload,
+    signal,
+  });
+  return unwrap<AdminOccurrenceDto[]>(response.data) ?? [];
+}
+
+export async function fetchAdminScheduleOccurrences(
+  courseId: number | string,
+  scheduleId: number | string,
+  params: { limit?: number; include_past?: boolean } = {}
+): Promise<AdminOccurrenceDto[]> {
+  const query = new URLSearchParams();
+  if (params.limit) query.set('limit', String(params.limit));
+  if (params.include_past) query.set('include_past', '1');
+  const suffix = query.toString() ? `?${query}` : '';
+  return (
+    unwrap<AdminOccurrenceDto[]>(
+      await apiGet(`${ADMIN_ENDPOINTS.scheduleOccurrences(courseId, scheduleId)}${suffix}`)
+    ) ?? []
+  );
+}
+
+export async function upsertAdminOccurrence(
+  courseId: number | string,
+  scheduleId: number | string,
+  date: string,
+  payload: Record<string, unknown>
+): Promise<AdminScheduleExceptionDto> {
+  return unwrap<AdminScheduleExceptionDto>(
+    await apiPut(ADMIN_ENDPOINTS.scheduleOccurrence(courseId, scheduleId, date), payload)
+  );
+}
+
+export async function deleteAdminOccurrence(
+  courseId: number | string,
+  scheduleId: number | string,
+  date: string
+): Promise<void> {
+  await apiDelete(ADMIN_ENDPOINTS.scheduleOccurrence(courseId, scheduleId, date));
 }

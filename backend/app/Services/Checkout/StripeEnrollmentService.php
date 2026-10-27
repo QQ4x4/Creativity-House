@@ -4,9 +4,11 @@ namespace App\Services\Checkout;
 
 use App\Enums\PaymentStatus;
 use App\Models\Course;
+use App\Models\CourseSchedule;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\AccountClaimOtpService;
+use App\Services\Schedules\ScheduleOccurrenceService;
 use App\Services\Student\ProgressService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +27,7 @@ class StripeEnrollmentService
         private readonly ProgressService $progress,
         private readonly AccountClaimOtpService $claimOtp,
         private readonly CheckoutService $checkoutPricing,
+        private readonly ScheduleOccurrenceService $schedules,
     ) {}
 
     /**
@@ -175,6 +178,17 @@ class StripeEnrollmentService
 
         $mode = $this->checkoutPricing->resolveMode($course, $requestedMode);
         $expectedCents = (int) round($this->checkoutPricing->resolveAmount($course, $mode) * 100);
+
+        // Batch purchase: price and delivery mode come from the occurrence the
+        // buyer actually paid for, so the amount guard below still holds.
+        $scheduleStamp = $this->resolveScheduleStamp($intent, $course, $metadata);
+
+        if ($scheduleStamp !== null) {
+            $mode = $scheduleStamp['delivery_mode'] ?: $mode;
+            $expectedCents = $scheduleStamp['expected_cents'];
+            unset($scheduleStamp['delivery_mode'], $scheduleStamp['expected_cents']);
+        }
+
         $paidCents = (int) ($intent->amount_received ?: $intent->amount);
 
         if ($paidCents !== $expectedCents) {
@@ -191,7 +205,7 @@ class StripeEnrollmentService
 
         [$firstName, $lastName] = $this->splitName($name);
 
-        return DB::transaction(function () use ($intent, $course, $email, $firstName, $lastName, $phone, $name, $mode, $paidCents): Order {
+        return DB::transaction(function () use ($intent, $course, $email, $firstName, $lastName, $phone, $name, $mode, $paidCents, $scheduleStamp): Order {
             $existingByIntent = Order::query()
                 ->where('stripe_payment_intent_id', $intent->id)
                 ->lockForUpdate()
@@ -279,7 +293,7 @@ class StripeEnrollmentService
                     'billing_last_name' => $lastName ?: $user->last_name,
                     'billing_phone' => $phone !== '' ? $phone : $user->phone_number,
                     'delivery_mode' => $mode,
-                ]);
+                ] + ($scheduleStamp ?? []));
             }
 
             $this->progress->progressFor($user, $course);
@@ -306,6 +320,63 @@ class StripeEnrollmentService
 
             return $order->refresh();
         });
+    }
+
+    /**
+     * Resolve the batch recorded in the PaymentIntent metadata.
+     *
+     * The buyer has already paid at this point, so a batch that filled up or
+     * closed between intent and webhook is logged and still enrolled — never
+     * refused. Only a schedule that no longer resolves at all is dropped.
+     *
+     * @param  array<string, mixed>  $metadata
+     * @return array{course_schedule_id: int, schedule_occurrence_date: string, schedule_starts_at: string, delivery_mode: ?string, expected_cents: int}|null
+     */
+    private function resolveScheduleStamp(PaymentIntent $intent, Course $course, array $metadata): ?array
+    {
+        $scheduleId = (int) ($metadata['schedule_id'] ?? 0);
+        $occurrenceDate = trim((string) ($metadata['occurrence_date'] ?? ''));
+
+        if ($scheduleId < 1 || $occurrenceDate === '') {
+            return null;
+        }
+
+        $schedule = CourseSchedule::query()
+            ->where('course_id', $course->id)
+            ->find($scheduleId);
+
+        $occurrence = $schedule === null
+            ? null
+            : $this->schedules->findOccurrence($schedule, $occurrenceDate, $course);
+
+        if ($occurrence === null) {
+            Log::warning('Paid batch no longer resolves — enrolling without a schedule stamp.', [
+                'payment_intent_id' => $intent->id,
+                'course_id' => $course->id,
+                'schedule_id' => $scheduleId,
+                'occurrence_date' => $occurrenceDate,
+            ]);
+
+            return null;
+        }
+
+        if (! $occurrence->isBookable()) {
+            Log::warning('Batch closed between payment intent and webhook — enrolling anyway.', [
+                'payment_intent_id' => $intent->id,
+                'course_id' => $course->id,
+                'schedule_id' => $scheduleId,
+                'occurrence_date' => $occurrenceDate,
+                'status' => $occurrence->status,
+            ]);
+        }
+
+        return [
+            'course_schedule_id' => $occurrence->scheduleId,
+            'schedule_occurrence_date' => $occurrence->occurrenceDate,
+            'schedule_starts_at' => $occurrence->startAt->toDateTimeString(),
+            'delivery_mode' => $occurrence->deliveryMode,
+            'expected_cents' => (int) round($occurrence->price * 100),
+        ];
     }
 
     /**

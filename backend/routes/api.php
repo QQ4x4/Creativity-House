@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\Api\Admin\BunnyController;
 use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
+use App\Http\Controllers\Api\Admin\CourseScheduleController as AdminCourseScheduleController;
 use App\Http\Controllers\Api\Admin\CurriculumController;
 use App\Http\Controllers\Api\Admin\ImageUploadController;
 use App\Http\Controllers\Api\Admin\InquiryController as AdminInquiryController;
 use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Api\Admin\LessonResourceUploadController;
 use App\Http\Controllers\Api\Admin\ModuleController as AdminModuleController;
+use App\Http\Controllers\Api\Admin\ScheduleOccurrenceController as AdminScheduleOccurrenceController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\ClaimAccountController;
 use App\Http\Controllers\Api\Auth\GoogleAuthController;
@@ -19,6 +21,7 @@ use App\Http\Controllers\Api\LessonResourceController;
 use App\Http\Controllers\Api\OrganizationInquiryController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PublicCatalogController;
+use App\Http\Controllers\Api\PublicScheduleController;
 use App\Http\Controllers\Api\Student\CourseController;
 use App\Http\Controllers\Api\Student\OrderController;
 use App\Http\Controllers\Api\Student\ProfileController;
@@ -88,6 +91,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 */
 Route::get('/courses', [PublicCatalogController::class, 'index']);
 Route::get('/courses/{course}', [PublicCatalogController::class, 'show']);
+
+// Re-validate a batch that arrived via a checkout deep link. Not scope-bound —
+// PublicScheduleController checks the schedule really belongs to the course.
+Route::get('/courses/{course}/schedules/{schedule}/occurrences/{date}', [PublicScheduleController::class, 'occurrence'])
+    ->where('date', '\d{4}-\d{2}-\d{2}')
+    ->name('api.courses.schedules.occurrence');
 
 /*
 |--------------------------------------------------------------------------
@@ -290,4 +299,32 @@ Route::middleware(['auth:sanctum', 'admin'])
             ->name('lessons.update');
         Route::delete('/courses/{course}/lessons/{lesson}', [AdminLessonController::class, 'destroy'])
             ->name('lessons.destroy');
+
+        // ─── Course schedules (batches) ─────────────────────────────────────
+        // `preview` is declared before `{schedule}` so it is not swallowed by
+        // the wildcard.
+        Route::post('/courses/{course}/schedules/preview', [AdminCourseScheduleController::class, 'preview'])
+            ->name('schedules.preview');
+
+        Route::get('/courses/{course}/schedules', [AdminCourseScheduleController::class, 'index'])
+            ->name('schedules.index');
+        Route::post('/courses/{course}/schedules', [AdminCourseScheduleController::class, 'store'])
+            ->name('schedules.store');
+        Route::get('/courses/{course}/schedules/{schedule}', [AdminCourseScheduleController::class, 'show'])
+            ->name('schedules.show');
+        Route::match(['put', 'patch'], '/courses/{course}/schedules/{schedule}', [AdminCourseScheduleController::class, 'update'])
+            ->name('schedules.update');
+        Route::delete('/courses/{course}/schedules/{schedule}', [AdminCourseScheduleController::class, 'destroy'])
+            ->name('schedules.destroy');
+        Route::post('/courses/{course}/schedules/{schedule}/duplicate', [AdminCourseScheduleController::class, 'duplicate'])
+            ->name('schedules.duplicate');
+
+        Route::get('/courses/{course}/schedules/{schedule}/occurrences', [AdminCourseScheduleController::class, 'occurrences'])
+            ->name('schedules.occurrences.index');
+        Route::put('/courses/{course}/schedules/{schedule}/occurrences/{date}', [AdminScheduleOccurrenceController::class, 'update'])
+            ->where('date', '\d{4}-\d{2}-\d{2}')
+            ->name('schedules.occurrences.update');
+        Route::delete('/courses/{course}/schedules/{schedule}/occurrences/{date}', [AdminScheduleOccurrenceController::class, 'destroy'])
+            ->where('date', '\d{4}-\d{2}-\d{2}')
+            ->name('schedules.occurrences.destroy');
     });

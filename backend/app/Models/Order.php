@@ -38,6 +38,9 @@ class Order extends Model
         'billing_phone',
         'billing_country',
         'delivery_mode',
+        'course_schedule_id',
+        'schedule_occurrence_date',
+        'schedule_starts_at',
         'stripe_session_id',
         'stripe_payment_intent_id',
     ];
@@ -53,6 +56,9 @@ class Order extends Model
             'amount' => 'decimal:2',
             'payment_status' => PaymentStatus::class,
             'paid_at' => 'datetime',
+            'course_schedule_id' => 'integer',
+            'schedule_occurrence_date' => 'date',
+            'schedule_starts_at' => 'datetime',
         ];
     }
 
@@ -97,6 +103,16 @@ class Order extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    /**
+     * The batch this order was bought for, when the course offers schedules.
+     *
+     * @return BelongsTo<CourseSchedule, $this>
+     */
+    public function courseSchedule(): BelongsTo
+    {
+        return $this->belongsTo(CourseSchedule::class, 'course_schedule_id');
     }
 
     /**

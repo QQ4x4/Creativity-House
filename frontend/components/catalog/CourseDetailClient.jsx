@@ -18,8 +18,14 @@ import {
   Users,
 } from 'lucide-react';
 import PublicShell from './PublicShell';
+import CourseSchedules from './schedules/CourseSchedules';
+import FeaturedScheduleCard, {
+  MobileNextBatchLine,
+} from './schedules/FeaturedScheduleCard';
 import { fetchPublicCourse } from '@/lib/catalog/api';
 import { resolveDeliveryModeBadge } from '@/lib/catalog/modeBadge';
+import { pickFeaturedOccurrence } from '@/lib/catalog/schedules';
+import { useNow } from '@/hooks/useNow';
 import { useAuth } from '@/providers/AuthProvider';
 import { buildUserData, courseItem, createEventId, pushDataLayer } from '@/lib/tracking';
 
@@ -104,6 +110,8 @@ function PricingCard({
   isCheckingOut,
   onBuyNow,
   isEnrolled = false,
+  featuredOccurrence = null,
+  now = null,
 }) {
   const tiers = course.pricingTiers || [];
   const activeTier = tiers.find((t) => t.mode === mode) || null;
@@ -179,6 +187,13 @@ function PricingCard({
             className={`mt-5 inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 text-sm font-semibold text-white shadow-[0_0_24px_rgba(168,85,247,0.35)] transition-all duration-300 hover:from-plum-600 hover:to-plum-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 disabled:cursor-wait disabled:opacity-80 ${
               isCheckingOut ? 'animate-pulse shadow-[0_0_28px_rgba(212,175,55,0.45)]' : ''
             }`}
+          />
+
+          <FeaturedScheduleCard
+            occurrence={featuredOccurrence}
+            lang={lang}
+            labels={labels.schedules || {}}
+            now={now}
           />
         </>
       )}
@@ -305,6 +320,23 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
   const learnHref = course?.id ? `/${lang}/courses/${course.id}/learn` : `/${lang}/my-courses`;
   const modeBadge = course ? resolveDeliveryModeBadge(course, labels) : '';
 
+  const featuredOccurrence = useMemo(
+    () => pickFeaturedOccurrence(course?.schedules || [], mode),
+    [course?.schedules, mode]
+  );
+  const scheduleNow = useNow({
+    urgent: Boolean(
+      featuredOccurrence?.startAt &&
+        new Date(featuredOccurrence.startAt).getTime() - Date.now() < 24 * 3600 * 1000
+    ),
+  });
+  const scheduleLabels = {
+    ...(labels.schedules || {}),
+    modes: labels.modes,
+    alreadyEnrolled: labels.alreadyEnrolled,
+    enrollNow: labels.enrollNow || labels.buyNow,
+  };
+
   if (!isLoading && !course) {
     return (
       <PublicShell dictionary={dictionary} lang={lang}>
@@ -396,6 +428,8 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
                   isCheckingOut={isCheckingOut}
                   onBuyNow={handleBuyNow}
                   isEnrolled={isEnrolled}
+                  featuredOccurrence={featuredOccurrence}
+                  now={scheduleNow}
                 />
               </div>
             </header>
@@ -468,7 +502,20 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
 
                 <section className="rounded-3xl border border-gray-200 bg-white p-6 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{labels.schedule}</h2>
-                  <p className="mt-3 leading-relaxed text-gray-600 dark:text-gray-300">{course.schedule}</p>
+                  {course.schedule ? (
+                    <p className="mt-3 leading-relaxed text-gray-600 dark:text-gray-300">
+                      {course.schedule}
+                    </p>
+                  ) : null}
+                  <CourseSchedules
+                    schedules={course.schedules || []}
+                    course={course}
+                    mode={mode}
+                    lang={lang}
+                    labels={scheduleLabels}
+                    isEnrolled={isEnrolled}
+                    onSwitchMode={setMode}
+                  />
                 </section>
 
                 <section className="rounded-3xl border border-gray-200 bg-white p-6 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90">
@@ -513,7 +560,7 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
                     {labels.alreadyEnrolled || 'You own this course'}
                   </p>
                 ) : (
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-lg font-extrabold text-plum-700 dark:text-gold-300">
                       $
                       {(
@@ -522,11 +569,12 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
                         course.price
                       )}
                     </p>
-                    <p className="text-[11px] text-emerald-800 dark:text-emerald-200">
-                      {course.pricingTiers?.find((t) => t.mode === mode)?.guaranteeTitle ||
-                        course.modes?.[mode]?.guaranteeTitle ||
-                        labels.guarantee}
-                    </p>
+                    <MobileNextBatchLine
+                      occurrence={featuredOccurrence}
+                      lang={lang}
+                      labels={scheduleLabels}
+                      now={scheduleNow}
+                    />
                   </div>
                 )}
                 <div className="flex items-center gap-2">

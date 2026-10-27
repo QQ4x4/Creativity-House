@@ -7,10 +7,12 @@ use App\Http\Requests\Payment\CreateCheckoutSessionRequest;
 use App\Http\Requests\Payment\CreatePaymentIntentRequest;
 use App\Jobs\SendMetaCapiEvent;
 use App\Models\Course;
+use App\Models\CourseSchedule;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Checkout\CheckoutService;
 use App\Services\Checkout\StripeEnrollmentService;
+use App\Services\Schedules\ScheduleOccurrenceService;
 use App\Services\Student\EnrollmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,6 +32,7 @@ class PaymentController extends Controller
         private readonly StripeEnrollmentService $enrollment,
         private readonly EnrollmentService $studentEnrollment,
         private readonly CheckoutService $checkoutPricing,
+        private readonly ScheduleOccurrenceService $schedules,
     ) {}
 
     /**
@@ -176,6 +179,37 @@ class PaymentController extends Controller
             );
             $unitAmount = (int) round($this->checkoutPricing->resolveAmount($course, $mode) * 100);
 
+            // Buying a specific batch: the price comes from the occurrence, and
+            // the date must still be bookable right now.
+            $occurrence = null;
+            $scheduleId = $request->validated('schedule_id');
+
+            if ($scheduleId !== null) {
+                $schedule = CourseSchedule::query()
+                    ->where('course_id', $course->id)
+                    ->where('is_active', true)
+                    ->find((int) $scheduleId);
+
+                $occurrence = $schedule === null
+                    ? null
+                    : $this->schedules->findOccurrence(
+                        $schedule,
+                        (string) $request->validated('occurrence_date'),
+                        $course,
+                    );
+
+                if ($occurrence === null || ! $occurrence->isBookable()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'That start date is no longer available. Please choose another one.',
+                        'schedule_unavailable' => true,
+                    ], 422);
+                }
+
+                $mode = $occurrence->deliveryMode ?: $mode;
+                $unitAmount = (int) round($occurrence->price * 100);
+            }
+
             if ($unitAmount < 50) {
                 return response()->json([
                     'success' => false,
@@ -206,6 +240,9 @@ class PaymentController extends Controller
                 'metadata' => array_filter([
                     'course_id' => (string) $course->id,
                     'mode' => $mode,
+                    // Read back by StripeEnrollmentService to stamp the order.
+                    'schedule_id' => $occurrence !== null ? (string) $occurrence->scheduleId : null,
+                    'occurrence_date' => $occurrence?->occurrenceDate,
                     'email' => $email,
                     'name' => $name,
                     'phone' => $phone,
@@ -226,6 +263,8 @@ class PaymentController extends Controller
                     'amount' => $unitAmount,
                     'currency' => $intent->currency,
                     'mode' => $mode,
+                    'schedule_id' => $occurrence?->scheduleId,
+                    'occurrence_date' => $occurrence?->occurrenceDate,
                 ],
             ]);
         } catch (ApiErrorException $exception) {

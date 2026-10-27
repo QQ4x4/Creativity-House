@@ -11,4 +11,6 @@ const encode = (value) => encodeURIComponent(String(value));
 export const CATALOG_ENDPOINTS = {
   courses: '/courses',
   course: (slug) => `/courses/${encode(slug)}`,
+  occurrence: (course, scheduleId, date) =>
+    `/courses/${encode(course)}/schedules/${encode(scheduleId)}/occurrences/${encode(date)}`,
 };

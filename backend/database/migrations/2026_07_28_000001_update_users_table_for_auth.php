@@ -38,10 +38,14 @@ return new class extends Migration
             });
 
         // Enforce NOT NULL after backfill (MySQL-safe without doctrine/dbal change()).
-        DB::statement('ALTER TABLE users MODIFY first_name VARCHAR(50) NOT NULL');
-        DB::statement('ALTER TABLE users MODIFY last_name VARCHAR(50) NOT NULL');
-        DB::statement('ALTER TABLE users MODIFY email VARCHAR(50) NOT NULL');
-        DB::statement('ALTER TABLE users MODIFY password VARCHAR(255) NULL');
+        // ALTER ... MODIFY is MySQL-only, and SQLite cannot alter a column at
+        // all — the test database just keeps the nullable definitions above.
+        if ($this->supportsModifyColumn()) {
+            DB::statement('ALTER TABLE users MODIFY first_name VARCHAR(50) NOT NULL');
+            DB::statement('ALTER TABLE users MODIFY last_name VARCHAR(50) NOT NULL');
+            DB::statement('ALTER TABLE users MODIFY email VARCHAR(50) NOT NULL');
+            DB::statement('ALTER TABLE users MODIFY password VARCHAR(255) NULL');
+        }
     }
 
     /**
@@ -49,8 +53,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('ALTER TABLE users MODIFY password VARCHAR(255) NOT NULL');
-        DB::statement('ALTER TABLE users MODIFY email VARCHAR(255) NOT NULL');
+        if ($this->supportsModifyColumn()) {
+            DB::statement('ALTER TABLE users MODIFY password VARCHAR(255) NOT NULL');
+            DB::statement('ALTER TABLE users MODIFY email VARCHAR(255) NOT NULL');
+        }
 
         Schema::table('users', function (Blueprint $table) {
             $table->dropUnique(['google_id']);
@@ -64,5 +70,10 @@ return new class extends Migration
                 'is_active',
             ]);
         });
+    }
+
+    private function supportsModifyColumn(): bool
+    {
+        return in_array(DB::connection()->getDriverName(), ['mysql', 'mariadb'], true);
     }
 };

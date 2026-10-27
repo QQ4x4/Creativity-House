@@ -187,6 +187,142 @@ export interface BunnyVideoListResult {
   message?: string;
 }
 
+/** One generated batch from ScheduleOccurrenceService (admin shape). */
+export interface AdminOccurrenceDto {
+  schedule_id: number;
+  occurrence_date: string;
+  start_at: string;
+  end_at: string;
+  timezone: string;
+  utc_offset_label: string;
+  local_start_date: string;
+  local_end_date: string;
+  start_time: string;
+  end_time: string;
+  duration_days: number;
+  time_slot: string;
+  format: string;
+  location_en: string | null;
+  location_ar: string | null;
+  batch_number: number | null;
+  /** Present on admin payloads when this date has an explicit override. */
+  batch_number_override?: number | null;
+  title_en: string | null;
+  title_ar: string | null;
+  delivery_mode: DeliveryMode | null;
+  price: number;
+  original_price: number | null;
+  currency: string;
+  discount_percent: number | null;
+  promo_text_en: string | null;
+  promo_text_ar: string | null;
+  seats_total: number | null;
+  seats_left: number | null;
+  seats_taken?: number;
+  show_seats_left: boolean;
+  status: string;
+  is_bookable: boolean;
+  cta_type: 'enroll' | 'inquiry';
+  show_countdown: boolean;
+  is_featured: boolean;
+  trainer: {
+    name_en: string | null;
+    name_ar: string | null;
+    title_en: string | null;
+    title_ar: string | null;
+    photo: string | null;
+  };
+  /** Raw exception trainer fields only (never the course-instructor fallback). */
+  trainer_override?: {
+    name_en: string | null;
+    name_ar: string | null;
+    photo: string | null;
+  } | null;
+  note_en: string | null;
+  note_ar: string | null;
+  is_exception: boolean;
+}
+
+export interface AdminScheduleExceptionDto {
+  id: number;
+  course_schedule_id: number;
+  occurrence_date: string;
+  status: 'modified' | 'cancelled' | 'sold_out';
+  start_time: string | null;
+  end_time: string | null;
+  duration_days: number | null;
+  price: number | null;
+  original_price: number | null;
+  seats_total: number | null;
+  batch_number: number | null;
+  trainer_name_en: string | null;
+  trainer_name_ar: string | null;
+  trainer_photo: string | null;
+  note_en: string | null;
+  note_ar: string | null;
+}
+
+/** Course instructor fields used when "Use course instructor" is checked. */
+export interface CourseInstructorPreview {
+  instructor_name: string | null;
+  instructor_name_ar: string | null;
+  instructor_title_en: string | null;
+  instructor_title_ar: string | null;
+  instructor_photo: string | null;
+}
+
+/** Raw editable batch rule from AdminCourseScheduleResource. */
+export interface AdminCourseScheduleDto {
+  id: number;
+  course_id: number;
+  delivery_mode: DeliveryMode | null;
+  title_en: string | null;
+  title_ar: string | null;
+  batch_number: number | null;
+  time_slot: string | null;
+  resolved_time_slot?: string;
+  format: 'online' | 'in_person' | 'hybrid';
+  location_en: string | null;
+  location_ar: string | null;
+  timezone: string;
+  start_time: string;
+  end_time: string;
+  duration_days: number;
+  recurrence_type: 'once' | 'custom_dates' | 'weekly' | 'monthly_days';
+  starts_on: string;
+  custom_dates: string[];
+  repeat_custom_monthly: boolean;
+  weekdays: number[];
+  repeat_interval: number;
+  month_days: number[];
+  missing_day_policy: 'skip' | 'last_day';
+  ends_type: 'never' | 'on_date' | 'after_count';
+  ends_on: string | null;
+  max_occurrences: number | null;
+  price: number | null;
+  original_price: number | null;
+  promo_text_en: string | null;
+  promo_text_ar: string | null;
+  seats_total: number | null;
+  show_seats_left: boolean;
+  enrollment_closes_hours: number;
+  cta_type: 'enroll' | 'inquiry';
+  trainer_name_en: string | null;
+  trainer_name_ar: string | null;
+  trainer_title_en: string | null;
+  trainer_title_ar: string | null;
+  trainer_photo: string | null;
+  show_countdown: boolean;
+  is_featured: boolean;
+  is_active: boolean;
+  notes_en: string | null;
+  notes_ar: string | null;
+  sort_order: number;
+  exceptions?: AdminScheduleExceptionDto[];
+  next_occurrences?: AdminOccurrenceDto[];
+  seats_sold?: number;
+}
+
 export type InquiryType = 'user' | 'organization';
 export type InquiryStatus = 'unread' | 'read' | 'replied';
 

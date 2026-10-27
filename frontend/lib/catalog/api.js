@@ -6,6 +6,7 @@
 import { apiGet } from '@/lib/api';
 import { CATALOG_ENDPOINTS } from './endpoints';
 import { localizeCatalogCourse } from './data';
+import { localizeOccurrence, localizeOccurrences } from './schedules';
 
 function unwrapList(payload) {
   if (Array.isArray(payload)) return payload;
@@ -55,12 +56,22 @@ function normalizePublicCourse(raw, lang) {
       learning_outcomes_ar: raw.learning_outcomes_ar ?? raw.learning_outcomes,
       schedule_en: raw.schedule_en ?? raw.schedule,
       schedule_ar: raw.schedule_ar ?? raw.schedule,
+      schedules: localizeOccurrences(raw.schedules, lang),
     },
     lang
   );
   return localized
     ? { ...localized, isEnrolled, is_enrolled: isEnrolled }
     : null;
+}
+
+/** Re-validate a batch on the checkout page. */
+export async function fetchPublicOccurrence(courseSlugOrId, scheduleId, date, lang = 'en') {
+  const payload = await apiGet(
+    CATALOG_ENDPOINTS.occurrence(courseSlugOrId, scheduleId, date)
+  );
+  const raw = payload?.data ?? payload;
+  return localizeOccurrence(raw, lang);
 }
 
 export async function fetchPublicCatalog(lang = 'en') {

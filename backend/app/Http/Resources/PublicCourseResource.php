@@ -16,9 +16,25 @@ class PublicCourseResource extends JsonResource
 {
     private ?bool $isEnrolled = null;
 
+    /** @var list<array<string, mixed>>|null */
+    private ?array $schedules = null;
+
     public function withIsEnrolled(bool $isEnrolled): static
     {
         $this->isEnrolled = $isEnrolled;
+
+        return $this;
+    }
+
+    /**
+     * Opt-in: only the course detail endpoint attaches generated batches, so
+     * the catalog listing payload is unchanged.
+     *
+     * @param  list<array<string, mixed>>  $schedules
+     */
+    public function withSchedules(array $schedules): static
+    {
+        $this->schedules = $schedules;
 
         return $this;
     }
@@ -85,6 +101,10 @@ class PublicCourseResource extends JsonResource
             'modes' => $this->modesPayload(),
             'pricing_tiers' => $this->pricingTiersPayload(),
             'is_enrolled' => (bool) $isEnrolled,
+            // Absent on the catalog listing — see withSchedules().
+            $this->mergeWhen($this->schedules !== null, fn (): array => [
+                'schedules' => $this->schedules,
+            ]),
             'seo' => [
                 'title' => $this->seo_title,
                 'description' => $this->seo_description,

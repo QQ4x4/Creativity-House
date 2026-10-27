@@ -20,4 +20,19 @@ export const ADMIN_ENDPOINTS = {
   inquiryUnreadCounts: '/v1/admin/inquiries/unread-counts',
   inquiry: (id: number | string) => `/v1/admin/inquiries/${id}`,
   inquiryReply: (id: number | string) => `/v1/admin/inquiries/${id}/reply`,
+
+  schedules: (courseId: number | string) => `/v1/admin/courses/${courseId}/schedules`,
+  schedule: (courseId: number | string, scheduleId: number | string) =>
+    `/v1/admin/courses/${courseId}/schedules/${scheduleId}`,
+  scheduleDuplicate: (courseId: number | string, scheduleId: number | string) =>
+    `/v1/admin/courses/${courseId}/schedules/${scheduleId}/duplicate`,
+  schedulesPreview: (courseId: number | string) =>
+    `/v1/admin/courses/${courseId}/schedules/preview`,
+  scheduleOccurrences: (courseId: number | string, scheduleId: number | string) =>
+    `/v1/admin/courses/${courseId}/schedules/${scheduleId}/occurrences`,
+  scheduleOccurrence: (
+    courseId: number | string,
+    scheduleId: number | string,
+    date: string
+  ) => `/v1/admin/courses/${courseId}/schedules/${scheduleId}/occurrences/${date}`,
 } as const;

@@ -17,6 +17,8 @@ export const CLAIM_RESEND_ENDPOINT = '/v1/auth/claim-account/resend';
  *   email: string,
  *   name: string,
  *   phone: string,
+ *   scheduleId?: number|string|null,
+ *   occurrenceDate?: string|null,
  * }} data
  */
 export async function createPaymentIntent(data) {
@@ -36,6 +38,11 @@ export async function createPaymentIntent(data) {
 
   if (data.mode) {
     payload.mode = data.mode;
+  }
+
+  if (data.scheduleId != null && data.occurrenceDate) {
+    payload.schedule_id = Number(data.scheduleId);
+    payload.occurrence_date = String(data.occurrenceDate);
   }
 
   const anonymousId = getOrCreateAnonymousId();

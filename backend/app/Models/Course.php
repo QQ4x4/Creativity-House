@@ -131,6 +131,16 @@ class Course extends Model
     }
 
     /**
+     * Batch rules (dates are expanded on read by ScheduleOccurrenceService).
+     *
+     * @return HasMany<CourseSchedule, $this>
+     */
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(CourseSchedule::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /**
      * @return HasMany<Order, $this>
      */
     public function orders(): HasMany
