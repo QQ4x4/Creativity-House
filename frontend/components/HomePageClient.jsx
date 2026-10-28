@@ -2,20 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 
-import dynamic from 'next/dynamic';
 import Header from './layout/Header';
 import Footer from './layout/Footer';
 import ThirdPartyScripts from './future/ThirdPartyScripts';
 import AIChatbotWrapper from './future/AIChatbotWrapper';
 
 import HeroSection from './sections/HeroSection';
-import Skeleton from './ui/Skeleton';
-
-const StatsSection = dynamic(() => import('./sections/StatsSection'), { ssr: false, loading: () => <Skeleton h="h-[300px]" /> });
-const ServicesSection = dynamic(() => import('./sections/ServicesSection'), { ssr: false, loading: () => <Skeleton h="h-[800px]" /> });
-const AboutSection = dynamic(() => import('./sections/AboutSection'), { ssr: false, loading: () => <Skeleton h="h-[600px]" /> });
-const TestimonialsSection = dynamic(() => import('./sections/TestimonialsSection'), { ssr: false, loading: () => <Skeleton h="h-[600px]" /> });
-const ContactSection = dynamic(() => import('./sections/ContactSection'), { ssr: false, loading: () => <Skeleton h="h-[360px]" /> });
+import StatsSection from './sections/StatsSection';
+import ServicesSection from './sections/ServicesSection';
+import AboutSection from './sections/AboutSection';
+import TestimonialsSection from './sections/TestimonialsSection';
+import ContactSection from './sections/ContactSection';
 
 export default function HomePageClient({ dictionary, lang }) {
     const [scrolled, setScrolled] = useState(false);
@@ -44,7 +41,7 @@ export default function HomePageClient({ dictionary, lang }) {
 
             <Footer dictionary={dictionary} lang={lang} />
 
-            {/* Future wrappers for analytics and integrations */}
+            {/* Future wrappers for analytics and integrations — browser-only load deferred inside */}
             <ThirdPartyScripts />
             <AIChatbotWrapper />
         </div>

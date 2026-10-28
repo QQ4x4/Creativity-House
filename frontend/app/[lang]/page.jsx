@@ -9,11 +9,8 @@ import { seoConfig } from '@/config/seo';
  *  1. Loads the dictionary server-side via getDictionary()
  *  2. Generates full SEO metadata (title, description, hreflang, OG, JSON-LD)
  *  3. Pre-renders static params for both /en and /ar via SSG
- *  4. Dynamically imports the heavy client-side HomePageClient with ssr: false
- *     to prevent Framer Motion from blocking the initial server render
- *
- * The loading fallback provides a meaningful skeleton with key semantic
- * headings visible to crawlers during hydration.
+ *  4. Renders HomePageClient with SSR so section copy is in the initial HTML
+ *     (localized /en vs /ar) for crawlers; Framer Motion still hydrates client-side.
  */
 
 import HomePageClient from '@/components/HomePageClient';
