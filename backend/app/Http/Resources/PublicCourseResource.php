@@ -114,9 +114,8 @@ class PublicCourseResource extends JsonResource
     }
 
     /**
-     * Syllabus preview derived from the `modules` + `lessons` tables — the same
-     * rows the student player reads, so the marketing page can never drift from
-     * the real curriculum.
+     * Syllabus preview derived from the `modules` + `sub_modules` tables —
+     * domain titles/durations and sub-domain titles only (no lesson titles).
      *
      * Falls back to the legacy `courses.curriculum` JSON for courses that have
      * not been migrated to modules yet.
@@ -140,20 +139,14 @@ class PublicCourseResource extends JsonResource
                 ? $module->subModules->flatMap(fn ($sub) => $sub->lessons)
                 : $module->lessons;
 
-            $titles = $lessons->pluck('title')->map(strval(...))->values()->all();
             $seconds = (int) $lessons->sum('duration');
 
+            // Public marketing syllabus lists domains + sub-domains only — never lesson titles.
             $subModules = $module->relationLoaded('subModules')
-                ? $module->subModules->map(function ($subModule): array {
-                    $subTitles = $subModule->lessons->pluck('title')->map(strval(...))->values()->all();
-
-                    return [
-                        'title_en' => $subModule->title_en,
-                        'title_ar' => $subModule->title_ar ?: $subModule->title_en,
-                        'lessons_en' => $subTitles,
-                        'lessons_ar' => $subTitles,
-                    ];
-                })->values()->all()
+                ? $module->subModules->map(fn ($subModule): array => [
+                    'title_en' => $subModule->title_en,
+                    'title_ar' => $subModule->title_ar ?: $subModule->title_en,
+                ])->values()->all()
                 : [];
 
             return [
@@ -162,9 +155,6 @@ class PublicCourseResource extends JsonResource
                 'duration_en' => $module->duration_label_en ?: $this->durationLabel($seconds, 'en'),
                 'duration_ar' => $module->duration_label_ar
                     ?: ($module->duration_label_en ?: $this->durationLabel($seconds, 'ar')),
-                // Flat lesson titles kept for marketing pages that expect 2 levels.
-                'lessons_en' => $titles,
-                'lessons_ar' => $titles,
                 'sub_modules' => $subModules,
             ];
         })->values()->all();

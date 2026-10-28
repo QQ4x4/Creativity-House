@@ -850,7 +850,16 @@ export function localizeCatalogCourse(course, lang = 'en') {
     curriculum: (course.curriculum || []).map((mod) => ({
       title: ar ? mod.title_ar : mod.title_en,
       duration: ar ? mod.duration_ar : mod.duration_en,
-      lessons: ar ? mod.lessons_ar : mod.lessons_en,
+      // Public page lists sub-domains only — never lesson titles.
+      subModules: Array.isArray(mod.sub_modules)
+        ? mod.sub_modules
+            .map((sub) => ({
+              title: ar
+                ? sub.title_ar || sub.title_en || null
+                : sub.title_en || sub.title_ar || null,
+            }))
+            .filter((sub) => Boolean(sub.title))
+        : [],
     })),
     schedule: ar ? course.schedule_ar : course.schedule_en,
     schedules: (() => {

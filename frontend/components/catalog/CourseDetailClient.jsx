@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Clock,
   Globe,
+  Layers,
   Loader2,
   MessageCircle,
   ShieldCheck,
@@ -470,26 +471,50 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
                   <div className="mt-4 space-y-2">
                     {(course.curriculum || []).map((mod, index) => {
                       const open = openModule === index;
+                      const subModules = mod.subModules || [];
+                      const hasSubs = subModules.length > 0;
+                      const headerClass =
+                        'flex min-h-[48px] w-full items-center justify-between gap-3 px-4 py-3 text-start text-gray-900 dark:text-white';
+
                       return (
-                        <div key={mod.title} className="overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10">
-                          <button
-                            type="button"
-                            onClick={() => setOpenModule(open ? -1 : index)}
-                            className="flex min-h-[48px] w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-start text-gray-900 transition-colors duration-300 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-plum-400/50 dark:text-white dark:hover:bg-white/5 dark:focus-visible:ring-amber-400/50"
-                            aria-expanded={open}
-                          >
-                            <span>
-                              <span className="block font-semibold">{mod.title}</span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">{mod.duration}</span>
-                            </span>
-                            <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} aria-hidden />
-                          </button>
-                          {open ? (
+                        <div
+                          key={mod.title || index}
+                          className="overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10"
+                        >
+                          {hasSubs ? (
+                            <button
+                              type="button"
+                              onClick={() => setOpenModule(open ? -1 : index)}
+                              className={`${headerClass} cursor-pointer transition-colors duration-300 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-plum-400/50 dark:hover:bg-white/5 dark:focus-visible:ring-amber-400/50`}
+                              aria-expanded={open}
+                            >
+                              <span>
+                                <span className="block font-semibold">{mod.title}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {mod.duration}
+                                </span>
+                              </span>
+                              <ChevronDown
+                                className={`h-4 w-4 shrink-0 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+                                aria-hidden
+                              />
+                            </button>
+                          ) : (
+                            <div className={headerClass}>
+                              <span>
+                                <span className="block font-semibold">{mod.title}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {mod.duration}
+                                </span>
+                              </span>
+                            </div>
+                          )}
+                          {hasSubs && open ? (
                             <ul className="space-y-1 border-t border-gray-200 px-4 py-3 text-sm text-gray-600 dark:border-white/10 dark:text-gray-300">
-                              {(mod.lessons || []).map((lesson) => (
-                                <li key={lesson} className="flex items-center gap-2">
-                                  <BookOpen className="h-3.5 w-3.5 text-gold-400" aria-hidden />
-                                  {lesson}
+                              {subModules.map((sub) => (
+                                <li key={sub.title} className="flex items-center gap-2">
+                                  <Layers className="h-3.5 w-3.5 shrink-0 text-gold-400" aria-hidden />
+                                  {sub.title}
                                 </li>
                               ))}
                             </ul>

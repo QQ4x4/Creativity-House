@@ -262,8 +262,8 @@ export default function LearnClient({ dictionary, lang, courseId }) {
             </GlassPanel>
           </div>
 
-          {/* Desktop lesson directory */}
-          <aside className="hidden max-h-[calc(100vh-8rem)] overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90 dark:shadow-2xl dark:shadow-black/40 lg:sticky lg:top-24 lg:block">
+          {/* Desktop lesson directory — sticky panel with its own vertical scroll */}
+          <aside className="hidden rounded-3xl border border-gray-200 bg-white shadow-sm backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90 dark:shadow-2xl dark:shadow-black/40 lg:sticky lg:top-24 lg:flex lg:h-[calc(100dvh-7rem)] lg:max-h-[calc(100dvh-7rem)] lg:flex-col lg:overflow-hidden">
             {sidebar}
           </aside>
         </div>

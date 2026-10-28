@@ -1,16 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Lock, Play, Unlock } from 'lucide-react';
 import ProgressBar from '@/components/dashboard/ProgressBar';
 import { formatDuration } from '@/lib/student/types';
+import { cn } from '@/lib/utils';
 
-function LessonRow({ lesson, activeLessonId, labels, onSelectLesson }) {
+function LessonRow({ lesson, activeLessonId, labels, onSelectLesson, activeRef }) {
   const isActive = String(lesson.id) === String(activeLessonId);
 
   return (
-    <li>
+    <li ref={isActive ? activeRef : undefined}>
       <button
         type="button"
         disabled={lesson.locked}
@@ -91,9 +92,12 @@ export default function LessonSidebar({
   progress,
   labels,
   onSelectLesson,
+  className = '',
 }) {
   const [openModules, setOpenModules] = useState(() => new Set());
   const [openSubModules, setOpenSubModules] = useState(() => new Set());
+  const listRef = useRef(null);
+  const activeRef = useRef(null);
 
   useEffect(() => {
     const owning = modules.find((module) =>
@@ -122,6 +126,27 @@ export default function LessonSidebar({
     });
   }, [modules, activeLessonId]);
 
+  // Keep the active lesson visible inside the sidebar scroller (not the page).
+  useEffect(() => {
+    const el = activeRef.current;
+    if (!el) return;
+
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Wait a tick so expand animations / layout settle before scrolling.
+    const frame = window.requestAnimationFrame(() => {
+      el.scrollIntoView({
+        block: 'nearest',
+        inline: 'nearest',
+        behavior: prefersReduced ? 'auto' : 'smooth',
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeLessonId, openModules, openSubModules]);
+
   const toggleModule = (moduleId) => {
     setOpenModules((current) => {
       const next = new Set(current);
@@ -143,8 +168,8 @@ export default function LessonSidebar({
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-gray-200 p-4 dark:border-white/10">
+    <div className={cn('flex h-full min-h-0 flex-col', className)}>
+      <div className="shrink-0 border-b border-gray-200 p-4 dark:border-white/10">
         <p className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">
           {labels.lessonDirectory}
         </p>
@@ -159,8 +184,9 @@ export default function LessonSidebar({
       </div>
 
       <nav
+        ref={listRef}
         aria-label={labels.lessonDirectory}
-        className="glass-country-dropdown-scroll flex-1 overflow-y-auto p-2"
+        className="glass-country-dropdown-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-2"
       >
         {modules.map((module, moduleIndex) => {
           const isOpen = openModules.has(String(module.id));
@@ -250,6 +276,7 @@ export default function LessonSidebar({
                                       activeLessonId={activeLessonId}
                                       labels={labels}
                                       onSelectLesson={onSelectLesson}
+                                      activeRef={activeRef}
                                     />
                                   ))}
                                 </motion.ul>
@@ -267,6 +294,7 @@ export default function LessonSidebar({
                             activeLessonId={activeLessonId}
                             labels={labels}
                             onSelectLesson={onSelectLesson}
+                            activeRef={activeRef}
                           />
                         ))}
                       </ul>
