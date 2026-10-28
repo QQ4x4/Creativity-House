@@ -9,7 +9,7 @@ export async function generateMetadata({ params }) {
   const { lang } = await params;
   return {
     title: lang === 'ar' ? 'الملف الشخصي | دار الإبداع' : 'Profile | Creativity House',
-    robots: { index: false, follow: false },
+    robots: { index: false, follow: true },
   };
 }
 

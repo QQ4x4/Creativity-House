@@ -18,7 +18,7 @@ export async function generateMetadata({ params }) {
   return {
     title,
     description,
-    robots: { index: false, follow: false },
+    robots: { index: false, follow: true },
     alternates: {
       canonical: canonicalUrl,
       languages: {

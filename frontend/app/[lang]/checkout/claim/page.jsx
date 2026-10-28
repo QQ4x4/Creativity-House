@@ -12,7 +12,7 @@ export async function generateMetadata({ params }) {
       lang === 'ar'
         ? 'تفعيل الحساب | دار الإبداع'
         : 'Activate account | Creativity House',
-    robots: { index: false, follow: false },
+    robots: { index: false, follow: true },
   };
 }
 

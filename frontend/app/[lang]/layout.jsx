@@ -49,7 +49,7 @@ const cairo = Cairo({
  * Without this Next.js falls back to localhost:3000, causing a build warning.
  */
 export const metadata = {
-  metadataBase: new URL('https://creativity-house.com'),
+  metadataBase: new URL('https://www.creativity-house.com'),
 };
 
 export function generateStaticParams() {

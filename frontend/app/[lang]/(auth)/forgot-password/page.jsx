@@ -19,6 +19,7 @@ export async function generateMetadata({ params }) {
   return {
     title,
     description,
+    robots: { index: false, follow: true },
     alternates: {
       canonical: `${seoConfig.siteUrl}/${lang}/forgot-password`,
       languages: {

@@ -9,8 +9,8 @@
  */
 
 export const seoConfig = {
-  /** Production domain — used for canonical URLs and hreflang links */
-  siteUrl: 'https://creativity-house.com',
+  /** Production domain — used for canonical URLs, hreflang, sitemap, robots */
+  siteUrl: 'https://www.creativity-house.com',
 
   /** Site name for Open Graph */
   siteName: 'Creativity House',
@@ -41,8 +41,8 @@ export const seoConfig = {
     alternateName: 'دار الإبداع',
     description:
       'Accredited PMP® and professional project management training — live, recorded, and exam simulator programs.',
-    url: 'https://creativity-house.com',
-    logo: 'https://creativity-house.com/logo.png',
+    url: 'https://www.creativity-house.com',
+    logo: 'https://www.creativity-house.com/logo.png',
     contactPoint: {
       '@type': 'ContactPoint',
       telephone: '+60178918602',

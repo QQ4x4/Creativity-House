@@ -102,10 +102,11 @@ export const config = {
   /*
    * Match all request paths EXCEPT:
    * - api / sanctum (Laravel proxies via next.config rewrites — must NOT get /en|/ar)
+   * - sitemap.xml / robots.txt (Metadata Routes — must stay at site root)
    * - _next internals (static files, image optimization)
    * - public assets (favicon, icons, logo, etc.)
    */
   matcher: [
-    '/((?!api|sanctum|_next/static|_next/image|favicon\\.svg|icons\\.svg|logo\\.png|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico)$).*)',
+    '/((?!api|sanctum|sitemap\\.xml|robots\\.txt|_next/static|_next/image|favicon\\.svg|icons\\.svg|logo\\.png|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico)$).*)',
   ],
 };
