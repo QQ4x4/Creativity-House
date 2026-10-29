@@ -534,8 +534,6 @@ export default function CourseDetailClient({
                   </div>
                 </section>
 
-                {faqSlot}
-
                 <section className="rounded-3xl border border-gray-200 bg-white p-6 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{labels.schedule}</h2>
                   {course.schedule ? (
@@ -584,6 +582,8 @@ export default function CourseDetailClient({
                     </div>
                   </div>
                 </section>
+
+                {faqSlot}
               </div>
 
               <div className="hidden lg:block" aria-hidden />
