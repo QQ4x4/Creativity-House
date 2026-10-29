@@ -165,7 +165,37 @@
       "expertise_label": "Areas of Expertise",
       "expertise": ["Project Management", "Leadership & Coaching", "Strategic Planning"],
       "badges": ["20+ Years", "Certified Trainer", "International"]
-    }
+    },
+    "atp": {
+      "badge": "PMI Authorized Training Partner",
+      "title": "What ATP status means for learners",
+      "description": "As a PMI Authorized Training Partner, Creativity House delivers PMI-approved PMP® curriculum taught by qualified instructors. Completing our PMP preparation program provides the 35 contact hours of project management education required to apply for the PMP exam.",
+      "points": [
+        "PMI-approved content aligned with the current PMP Exam Content Outline",
+        "Instructors who meet PMI ATP qualification standards",
+        "35 contact hours of project management education for your PMP application",
+        "Training available in Arabic and English for professionals across MENA and beyond"
+      ]
+    },
+    "faqTitle": "Frequently asked questions",
+    "faq": [
+      {
+        "question": "Who is Creativity House?",
+        "answer": "Creativity House is an accredited project management training provider and PMI Authorized Training Partner. We deliver PMP® and PMI-RMP® programs, corporate training, and professional development for individuals and organizations."
+      },
+      {
+        "question": "Is Creativity House PMI-authorized?",
+        "answer": "Yes. Creativity House is a PMI Authorized Training Partner (ATP). Our PMP preparation courses use PMI-approved materials and qualified instructors, and provide the contact hours needed for the PMP exam application."
+      },
+      {
+        "question": "Which countries do you serve?",
+        "answer": "Our programs are delivered online for learners across the MENA region and worldwide. Professionals from many countries join our live cohorts and recorded academies."
+      },
+      {
+        "question": "How do I contact you?",
+        "answer": "Use the Course Inquiry form on this website, email info@creativity-house.com, or call +6017-891 8602. For corporate programs, visit the For Organizations page to request a consultation."
+      }
+    ]
   },
   "auth": {
     "backHome": "Home",
@@ -453,6 +483,9 @@
     "country": "Country",
     "countryPlaceholder": "Select country",
     "continueToPayment": "Continue to payment",
+    "purchaseNotAvailable": "This option is not available for purchase right now. Please contact us.",
+    "emailAlreadyOwnsCourse": "This email already has access to this course. {login} with it to start learning.",
+    "emailAlreadyOwnsLogin": "Log in",
     "cardDetails": "Card details",
     "cardNumber": "Card number",
     "expiry": "Expiry date",
@@ -532,6 +565,41 @@
       "Interactive learning formats (In-person or virtual PMP-live-training).",
       "Accredited development pathways for teams and project leaders.",
       "Content strictly designed for immediate practical application."
+    ],
+    "programsTitle": "Corporate training programs",
+    "programsIntro": "We design corporate PMP®, PMI-RMP®, and project management fundamentals programs for teams. Delivery can be live virtual, blended, or cohort-based to match your calendar. Progress reporting helps L&D leaders track attendance and completion across the organization.",
+    "programs": [
+      {
+        "title": "PMP® for teams",
+        "body": "Group preparation for the PMP exam with PMI ATP materials, 35 contact hours, and shared study cadences for your project managers."
+      },
+      {
+        "title": "PMI-RMP® & risk skills",
+        "body": "Risk management pathways for teams that need stronger identification, analysis, and response practices on complex programs."
+      },
+      {
+        "title": "Project management fundamentals",
+        "body": "Foundational workshops for new project leads and cross-functional contributors who need a shared PM vocabulary and practical tools."
+      }
+    ],
+    "faqTitle": "Corporate training FAQ",
+    "faq": [
+      {
+        "question": "Can you train our whole team?",
+        "answer": "Yes. We run private cohorts sized for your department or company, with schedules agreed with your L&D or PMO sponsor."
+      },
+      {
+        "question": "Is training online or on-site?",
+        "answer": "Most corporate programs are delivered live online. On-site or hybrid formats can be discussed depending on location and group size."
+      },
+      {
+        "question": "Can the program be customised?",
+        "answer": "Yes. We can emphasise industry scenarios, tools your teams already use, and the mix of PMP exam prep versus workplace application."
+      },
+      {
+        "question": "How do we get a quote?",
+        "answer": "Submit the consultation form on this page with team size, preferred dates, and goals. Our corporate team typically replies within 24 hours."
+      }
     ]
   },
   "courseInquiry": {
@@ -566,5 +634,73 @@
       "Ask about flexible delivery: PMP-live-training vs. self-paced",
       "Receive expert guidance for your career growth within 24 hours"
     ]
+  },
+  "seoPages": {
+    "courses": {
+      "introTitle": "Accredited PMP® and PMI-RMP® training",
+      "intro": "Creativity House is a PMI Authorized Training Partner offering project management courses for professionals who want to earn PMP® or PMI-RMP® credentials. Choose live virtual cohorts with instructor-led sessions, recorded academies for self-paced study, or exam simulators to rehearse under real test conditions. Our PMP preparation pathways include the 35 contact hours of project management education required for the exam application, with content available in Arabic and English for learners across the MENA region.",
+      "chooseTitle": "How to choose your course",
+      "choose": [
+        {
+          "title": "Live training",
+          "body": "Instructor-led virtual cohorts with scheduled sessions, Q&A, and peer accountability — ideal if you want structure and live coaching toward the PMP exam."
+        },
+        {
+          "title": "Recorded academy",
+          "body": "Self-paced video libraries and study plans you can complete around work. Best when you need flexibility while still covering PMI-aligned domains."
+        },
+        {
+          "title": "Exam simulator",
+          "body": "Timed practice exams and question banks that mirror PMP-style items. Use alone for drill, or alongside a live or recorded program."
+        }
+      ],
+      "faqTitle": "Courses FAQ",
+      "faq": [
+        {
+          "question": "What is PMP®?",
+          "answer": "PMP® (Project Management Professional) is PMI’s globally recognized credential for project managers. It validates that you can lead projects using standardized processes, people skills, and business awareness aligned with PMI standards."
+        },
+        {
+          "question": "Which course should I choose?",
+          "answer": "Choose live training for scheduled coaching, a recorded academy for flexible self-study, or a simulator if you mainly need exam practice. Many learners combine a full program with simulator access. Contact us if you are unsure which path fits your timeline."
+        },
+        {
+          "question": "Do I get 35 contact hours?",
+          "answer": "Our PMP preparation programs are designed to provide the 35 contact hours of project management education required to apply for the PMP exam, delivered as a PMI Authorized Training Partner."
+        },
+        {
+          "question": "Is training available in Arabic?",
+          "answer": "Yes. Creativity House delivers programs in Arabic and English so professionals across the MENA region can learn in the language that works best for them."
+        }
+      ]
+    },
+    "courseDetail": {
+      "faqTitle": "Course FAQ",
+      "faq": [
+        {
+          "question": "Is this course accredited by PMI?",
+          "answer": "Creativity House is a PMI Authorized Training Partner (ATP). This course provides the 35 contact hours of project management education required to apply for the PMP exam."
+        },
+        {
+          "question": "What are the PMP eligibility requirements?",
+          "answer": "Per PMI, you need 35 contact hours of project management education, plus either 36 months of project experience with a four-year degree, or 60 months of project experience with a secondary diploma."
+        },
+        {
+          "question": "Is the course available in Arabic?",
+          "answer": ""
+        },
+        {
+          "question": "How much does the course cost?",
+          "answer": "See the live price in the pricing card on this page. Amounts may vary by delivery mode (live, recorded, or simulator)."
+        },
+        {
+          "question": "How do I register?",
+          "answer": "Choose a delivery mode and batch if shown, then click the buy or enroll button on this page. You can also send a question via the Course Inquiry form."
+        }
+      ],
+      "languageFallback": "This course is delivered in Arabic and English.",
+      "languageAnswer": "This course is delivered in {language}.",
+      "inquiryLinkLabel": "Course Inquiry"
+    }
   }
 }

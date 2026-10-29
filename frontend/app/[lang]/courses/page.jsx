@@ -1,6 +1,8 @@
 import { getDictionary } from '@/i18n/getDictionary';
 import { seoConfig } from '@/config/seo';
 import CourseCatalogClient from '@/components/catalog/CourseCatalogClient';
+import JsonLd from '@/components/seo/JsonLd';
+import { buildFaqPageJsonLd } from '@/lib/seo/faqJsonLd';
 
 export async function generateStaticParams() {
   return [{ lang: 'en' }, { lang: 'ar' }];
@@ -10,12 +12,12 @@ export async function generateMetadata({ params }) {
   const { lang } = await params;
   const title =
     lang === 'ar'
-      ? 'الدورات التدريبية | دار الإبداع'
-      : 'Courses | Creativity House';
+      ? 'دورات إدارة المشاريع PMP و PMI-RMP | دار الإبداع'
+      : 'Project Management Courses: PMP & PMI-RMP | Creativity House';
   const description =
     lang === 'ar'
-      ? 'تصفح برامج PMP® و PMI-RMP® المباشرة والمسجّلة ومحاكيات الامتحان.'
-      : 'Browse live, recorded, and simulator PMP® and PMI-RMP® programs.';
+      ? 'تصفّح دورات PMP® و PMI-RMP®: دفعات مباشرة ودورات مسجّلة ومحاكيات اختبار. تدريب معتمد في إدارة المشاريع للمحترفين في الشرق الأوسط.'
+      : 'Explore PMP® and PMI-RMP® courses: live cohorts, recorded academies and exam simulators. Accredited project management training for professionals in MENA.';
   const canonicalUrl = `${seoConfig.siteUrl}/${lang}/courses`;
 
   return {
@@ -50,5 +52,12 @@ export async function generateMetadata({ params }) {
 export default async function CoursesPage({ params }) {
   const { lang } = await params;
   const dictionary = await getDictionary(lang);
-  return <CourseCatalogClient dictionary={dictionary} lang={lang} />;
+  const faqLd = buildFaqPageJsonLd(dictionary.seoPages?.courses?.faq);
+
+  return (
+    <>
+      <JsonLd data={faqLd} />
+      <CourseCatalogClient dictionary={dictionary} lang={lang} />
+    </>
+  );
 }

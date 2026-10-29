@@ -7,9 +7,51 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import type { CourseFormValues } from '@/lib/admin/schema';
 import { BilingualBulletList, BilingualField, BulletList, TextField } from './fields';
 
+function SeoCharCount({ value, soft, hard }: { value: string; soft: number; hard: number }) {
+  const len = value?.length ?? 0;
+  const overSoft = len > soft;
+  const overHard = len > hard;
+  return (
+    <p
+      className={`mt-1 text-xs ${
+        overHard ? 'text-red-600 dark:text-red-400' : overSoft ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500'
+      }`}
+    >
+      {len}/{hard} (recommended ≤ {soft})
+    </p>
+  );
+}
+
+function GooglePreview({
+  title,
+  description,
+  slug,
+}: {
+  title: string;
+  description: string;
+  slug: string;
+}) {
+  const displayTitle = title.trim() || 'Course title preview';
+  const displayDesc = description.trim() || 'Meta description preview will appear here.';
+  const url = `https://www.creativity-house.com/en/courses/${slug || 'course-slug'}`;
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-[#0d0514]/60">
+      <p className="truncate text-sm text-[#202124] dark:text-gray-300">{url}</p>
+      <p className="mt-1 truncate text-xl leading-snug text-[#1a0dab] dark:text-[#8ab4f8]">{displayTitle}</p>
+      <p className="mt-1 line-clamp-2 text-sm leading-snug text-[#4d5156] dark:text-gray-400">{displayDesc}</p>
+    </div>
+  );
+}
+
 export function MarketingTab() {
   const { control, setValue } = useFormContext<CourseFormValues>();
   const coverImage = useWatch({ control, name: 'cover_image' });
+  const slug = useWatch({ control, name: 'slug' }) || '';
+  const seoTitleEn = useWatch({ control, name: 'seo_title_en' }) || '';
+  const seoDescEn = useWatch({ control, name: 'seo_description_en' }) || '';
+  const seoTitleAr = useWatch({ control, name: 'seo_title_ar' }) || '';
+  const seoDescAr = useWatch({ control, name: 'seo_description_ar' }) || '';
 
   return (
     <div className="space-y-6">
@@ -116,11 +158,67 @@ export function MarketingTab() {
       <Card>
         <CardHeader>
           <CardTitle>SEO</CardTitle>
-          <CardDescription>Overrides the default title and meta description.</CardDescription>
+          <CardDescription>
+            Overrides the default title and meta description per language. Recommended title ≤ 60
+            chars, description ≤ 160 chars.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <TextField name="seo_title" label="SEO title" />
-          <TextField name="seo_description" label="SEO description" multiline rows={3} />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <TextField name="seo_title_en" label="SEO title (EN)" maxLength={70} showCounter={false} />
+              <SeoCharCount value={seoTitleEn} soft={60} hard={70} />
+            </div>
+            <div>
+              <TextField name="seo_title_ar" label="SEO title (AR)" dir="rtl" maxLength={70} showCounter={false} />
+              <SeoCharCount value={seoTitleAr} soft={60} hard={70} />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <TextField
+                name="seo_description_en"
+                label="SEO description (EN)"
+                multiline
+                rows={3}
+                maxLength={170}
+                showCounter={false}
+              />
+              <SeoCharCount value={seoDescEn} soft={160} hard={170} />
+            </div>
+            <div>
+              <TextField
+                name="seo_description_ar"
+                label="SEO description (AR)"
+                multiline
+                rows={3}
+                dir="rtl"
+                maxLength={170}
+                showCounter={false}
+              />
+              <SeoCharCount value={seoDescAr} soft={160} hard={170} />
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+              Google-style preview (EN)
+            </p>
+            <GooglePreview title={seoTitleEn} description={seoDescEn} slug={slug} />
+          </div>
+
+          <TextField
+            name="seo_title"
+            label="Legacy SEO title (fallback)"
+            description="Used only if language-specific titles are empty."
+          />
+          <TextField
+            name="seo_description"
+            label="Legacy SEO description (fallback)"
+            multiline
+            rows={2}
+          />
           <BulletList
             name="seo_keywords"
             label="SEO keywords"

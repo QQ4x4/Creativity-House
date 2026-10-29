@@ -150,6 +150,10 @@ export interface AdminCourseDto {
 
   seo_title: string | null;
   seo_description: string | null;
+  seo_title_en: string | null;
+  seo_title_ar: string | null;
+  seo_description_en: string | null;
+  seo_description_ar: string | null;
   seo_keywords: string[];
 
   modules: AdminModuleDto[];

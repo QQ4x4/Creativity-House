@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Search } from 'lucide-react';
 import PublicShell from './PublicShell';
 import CatalogCourseCard from './CatalogCourseCard';
+import { CoursesSeoSections } from '@/components/seo/SeoContentBlocks';
 import { CATALOG_CATEGORIES } from '@/lib/catalog/data';
 import { fetchPublicCatalog } from '@/lib/catalog/api';
 import { useAuth } from '@/providers/AuthProvider';
@@ -189,6 +190,8 @@ export default function CourseCatalogClient({ dictionary, lang }) {
             : null}
         </div>
       </section>
+
+      <CoursesSeoSections dictionary={dictionary} />
     </PublicShell>
   );
 }

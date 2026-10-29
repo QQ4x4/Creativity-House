@@ -124,6 +124,10 @@ class StoreCourseRequest extends FormRequest
 
             'seo_title' => ['nullable', 'string', 'max:'.config('field_limits.medium')],
             'seo_description' => ['nullable', 'string', 'max:'.config('field_limits.medium')],
+            'seo_title_en' => ['nullable', 'string', 'max:70'],
+            'seo_title_ar' => ['nullable', 'string', 'max:70'],
+            'seo_description_en' => ['nullable', 'string', 'max:170'],
+            'seo_description_ar' => ['nullable', 'string', 'max:170'],
             'seo_keywords' => ['nullable', 'array'],
             'seo_keywords.*' => ['string', 'max:'.config('field_limits.short')],
         ];

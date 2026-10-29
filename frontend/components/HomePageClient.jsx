@@ -28,7 +28,7 @@ export default function HomePageClient({ dictionary, lang }) {
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
-            <Header dictionary={dictionary} lang={lang} scrolled={scrolled} />
+            <Header dictionary={dictionary} lang={lang} scrolled={scrolled} lightHero />
             
             <main>
                 <HeroSection dictionary={dictionary} lang={lang} />

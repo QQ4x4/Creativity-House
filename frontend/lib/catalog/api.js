@@ -19,7 +19,7 @@ function unwrapOne(payload) {
   return payload.data ?? payload.course ?? payload;
 }
 
-function normalizePublicCourse(raw, lang) {
+export function normalizePublicCourse(raw, lang) {
   if (!raw) return null;
   const isEnrolled = Boolean(raw.is_enrolled ?? raw.isEnrolled);
   if (raw.title && raw.slug && !raw.title_en) {
@@ -60,9 +60,21 @@ function normalizePublicCourse(raw, lang) {
     },
     lang
   );
-  return localized
-    ? { ...localized, isEnrolled, is_enrolled: isEnrolled }
-    : null;
+  if (!localized) return null;
+
+  // localizeCatalogCourse returns a trimmed public shape — keep SEO fields for metadata.
+  return {
+    ...localized,
+    isEnrolled,
+    is_enrolled: isEnrolled,
+    seo_title_en: raw.seo_title_en ?? raw.seo?.title_en ?? null,
+    seo_title_ar: raw.seo_title_ar ?? raw.seo?.title_ar ?? null,
+    seo_description_en: raw.seo_description_en ?? raw.seo?.description_en ?? null,
+    seo_description_ar: raw.seo_description_ar ?? raw.seo?.description_ar ?? null,
+    seo_title: raw.seo_title ?? raw.seo?.title ?? null,
+    seo_description: raw.seo_description ?? raw.seo?.description ?? null,
+    seo: raw.seo ?? null,
+  };
 }
 
 /** Re-validate a batch on the checkout page. */

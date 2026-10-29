@@ -84,6 +84,10 @@ class AdminCourseResource extends JsonResource
             /* ─── SEO ────────────────────────────────────────────────────── */
             'seo_title' => $this->seo_title,
             'seo_description' => $this->seo_description,
+            'seo_title_en' => $this->seo_title_en,
+            'seo_title_ar' => $this->seo_title_ar,
+            'seo_description_en' => $this->seo_description_en,
+            'seo_description_ar' => $this->seo_description_ar,
             'seo_keywords' => array_values($this->seo_keywords ?? []),
 
             /* ─── Curriculum ─────────────────────────────────────────────── */

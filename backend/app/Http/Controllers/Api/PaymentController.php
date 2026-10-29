@@ -149,11 +149,12 @@ class PaymentController extends Controller
                     'success' => false,
                     'message' => 'You already own this course.',
                     'already_enrolled' => true,
+                    'reason' => 'current_user',
                     'data' => [
                         'course_id' => $course->id,
                         'course_slug' => $course->slug,
                     ],
-                ], 400);
+                ], 409);
             }
 
             $email = $request->validated('email');
@@ -164,13 +165,10 @@ class PaymentController extends Controller
             ) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You already own this course.',
+                    'message' => 'This email already has access to this course.',
                     'already_enrolled' => true,
-                    'data' => [
-                        'course_id' => $course->id,
-                        'course_slug' => $course->slug,
-                    ],
-                ], 400);
+                    'reason' => 'email_owner',
+                ], 409);
             }
 
             $mode = $this->checkoutPricing->resolveMode(

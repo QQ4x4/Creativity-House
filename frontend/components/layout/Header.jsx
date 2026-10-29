@@ -10,7 +10,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/providers/AuthProvider';
 import { usePathname } from 'next/navigation';
 
-export default function Header({ dictionary, lang, scrolled }) {
+export default function Header({ dictionary, lang, scrolled, lightHero = false }) {
     const isRTL = lang === 'ar';
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [hoveredNav, setHoveredNav] = useState(null);
@@ -30,6 +30,9 @@ export default function Header({ dictionary, lang, scrolled }) {
     const isPortalFlow =
         pathname?.startsWith(`/${lang}/profile`) || pathname?.startsWith(`/${lang}/my-courses`);
     const solid = Boolean(scrolled || isCatalogFlow || isPortalFlow);
+    /* Homepage light hero: transparent bar uses theme colors (purple logo / dark links).
+     * About and other dark heroes keep the white-on-dark transparent styles. */
+    const onLight = Boolean(lightHero && !solid);
 
     useEffect(() => {
         setMounted(true);
@@ -70,7 +73,7 @@ export default function Header({ dictionary, lang, scrolled }) {
             return (
                 <div
                     className={`h-10 w-28 animate-pulse rounded-full ${
-                        solid ? 'bg-gray-200 dark:bg-slate-700' : 'bg-white/20'
+                        solid || onLight ? 'bg-gray-200 dark:bg-slate-700' : 'bg-white/20'
                     } ${mobile ? 'mx-4 my-2' : ''}`}
                     aria-hidden
                 />
@@ -121,7 +124,7 @@ export default function Header({ dictionary, lang, scrolled }) {
                         type="button"
                         onClick={() => setUserMenuOpen((open) => !open)}
                         className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-3 py-1.5 transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 ${
-                            solid
+                            solid || onLight
                                 ? 'border-gray-200 bg-white/80 text-gray-900 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:hover:bg-white/10'
                                 : 'border-white/20 bg-white/10 text-white hover:bg-white/15'
                         }`}
@@ -224,7 +227,7 @@ export default function Header({ dictionary, lang, scrolled }) {
                 <Link
                     href={`/${lang}/login`}
                     className={`min-h-[44px] inline-flex items-center font-medium transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 rounded-lg px-2 ${
-                        solid
+                        solid || onLight
                             ? 'text-gray-900 hover:text-plum-700 dark:text-white dark:hover:text-gold-300'
                             : 'text-white hover:text-gold-300'
                     }`}
@@ -255,7 +258,9 @@ export default function Header({ dictionary, lang, scrolled }) {
                                 alt="Creativity House Logo"
                                 width="160"
                                 height="64"
-                                className={`h-16 w-auto object-contain transition-all duration-300 dark:brightness-0 dark:invert ${solid ? '' : 'brightness-0 invert'}`}
+                                className={`h-16 w-auto object-contain transition-all duration-300 dark:brightness-0 dark:invert ${
+                                    solid || onLight ? '' : 'brightness-0 invert'
+                                }`}
                             />
                         </motion.a>
 
@@ -268,7 +273,7 @@ export default function Header({ dictionary, lang, scrolled }) {
                                     <motion.span
                                         key={link.href}
                                         onMouseEnter={() => setHoveredNav(link.name)}
-                                        className={`font-medium transition-all duration-300 relative cursor-pointer ${solid ? 'text-gray-900 dark:text-white' : 'text-white'} ${hoveredNav === link.name || (link.match && pathname?.startsWith(link.match)) ? '!text-gold-400' : ''}`}
+                                        className={`font-medium transition-all duration-300 relative cursor-pointer ${solid || onLight ? 'text-gray-900 dark:text-white' : 'text-white'} ${hoveredNav === link.name || (link.match && pathname?.startsWith(link.match)) ? '!text-gold-400' : ''}`}
                                         animate={{
                                             scale: hoveredNav === null ? 1 : hoveredNav === link.name ? 1.2 : 0.9,
                                             filter: hoveredNav === null ? 'blur(0px)' : hoveredNav === link.name ? 'blur(0px)' : 'blur(3px)',
@@ -296,14 +301,14 @@ export default function Header({ dictionary, lang, scrolled }) {
                                     </motion.span>
                                 ))}
                             </div>
-                            <LanguageSwitcher scrolled={solid} dictionary={dictionary} lang={lang} />
+                            <LanguageSwitcher scrolled={solid || onLight} dictionary={dictionary} lang={lang} />
                             <AuthActions />
                             <motion.button
                                 onClick={toggleTheme}
                                 whileHover={{ scale: 1.2, rotate: 180 }}
                                 whileTap={{ scale: 0.8 }}
                                 transition={{ type: 'spring', stiffness: 300 }}
-                                className={`p-2.5 min-h-[44px] min-w-[44px] rounded-full transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 ${solid
+                                className={`p-2.5 min-h-[44px] min-w-[44px] rounded-full transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/50 ${solid || onLight
                                     ? 'text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-slate-800'
                                     : 'text-white hover:bg-white/20'
                                     }`}
@@ -314,12 +319,12 @@ export default function Header({ dictionary, lang, scrolled }) {
                         </div>
 
                         <div className="flex items-center gap-2 md:hidden">
-                            <LanguageSwitcher scrolled={solid} dictionary={dictionary} lang={lang} />
+                            <LanguageSwitcher scrolled={solid || onLight} dictionary={dictionary} lang={lang} />
                             <motion.button
                                 onClick={toggleTheme}
                                 whileHover={{ scale: 1.2, rotate: 180 }}
                                 whileTap={{ scale: 0.8 }}
-                                className={`p-2.5 min-h-[44px] min-w-[44px] rounded-full transition-all duration-300 cursor-pointer ${solid
+                                className={`p-2.5 min-h-[44px] min-w-[44px] rounded-full transition-all duration-300 cursor-pointer ${solid || onLight
                                     ? 'text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-slate-800'
                                     : 'text-white hover:bg-white/20'
                                     }`}
@@ -333,9 +338,9 @@ export default function Header({ dictionary, lang, scrolled }) {
                                 aria-label="Toggle menu"
                             >
                                 {isMenuOpen ? (
-                                    <X className={`w-6 h-6 ${solid ? 'text-gray-900 dark:text-white' : 'text-white'}`} />
+                                    <X className={`w-6 h-6 ${solid || onLight ? 'text-gray-900 dark:text-white' : 'text-white'}`} />
                                 ) : (
-                                    <Menu className={`w-6 h-6 ${solid ? 'text-gray-900 dark:text-white' : 'text-white'}`} />
+                                    <Menu className={`w-6 h-6 ${solid || onLight ? 'text-gray-900 dark:text-white' : 'text-white'}`} />
                                 )}
                             </button>
                         </div>

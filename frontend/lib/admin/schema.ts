@@ -182,6 +182,10 @@ export const courseFormSchema = z
     /* ─── SEO ──────────────────────────────────────────────────────────── */
     seo_title: z.string().max(FIELD_LIMITS.medium),
     seo_description: z.string().max(FIELD_LIMITS.medium),
+    seo_title_en: z.string().max(70),
+    seo_title_ar: z.string().max(70),
+    seo_description_en: z.string().max(170),
+    seo_description_ar: z.string().max(170),
     seo_keywords: z.array(bulletItemSchema),
 
     /* ─── Curriculum ───────────────────────────────────────────────────── */
@@ -485,6 +489,10 @@ export function defaultFormValues(): CourseFormValues {
 
     seo_title: '',
     seo_description: '',
+    seo_title_en: '',
+    seo_title_ar: '',
+    seo_description_en: '',
+    seo_description_ar: '',
     seo_keywords: [],
 
     modules: [],
@@ -590,6 +598,10 @@ export function toFormValues(course: AdminCourseDto): CourseFormValues {
 
     seo_title: course.seo_title ?? '',
     seo_description: course.seo_description ?? '',
+    seo_title_en: course.seo_title_en ?? '',
+    seo_title_ar: course.seo_title_ar ?? '',
+    seo_description_en: course.seo_description_en ?? '',
+    seo_description_ar: course.seo_description_ar ?? '',
     seo_keywords: toBullets(course.seo_keywords),
 
     modules: (course.modules ?? []).map((module) => {
@@ -726,6 +738,10 @@ export function toCoursePayload(values: CourseFormValues): Record<string, unknow
 
     seo_title: nullable(values.seo_title),
     seo_description: nullable(values.seo_description),
+    seo_title_en: nullable(values.seo_title_en),
+    seo_title_ar: nullable(values.seo_title_ar),
+    seo_description_en: nullable(values.seo_description_en),
+    seo_description_ar: nullable(values.seo_description_ar),
     seo_keywords: fromBullets(values.seo_keywords),
   };
 }

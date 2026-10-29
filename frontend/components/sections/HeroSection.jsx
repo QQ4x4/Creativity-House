@@ -14,38 +14,10 @@ export default function HeroSection({ dictionary, lang }) {
     const contactHref = `/${lang}/course-inquiry`;
 
     return (
-        <section id="home" className="relative min-h-screen flex items-center overflow-hidden bg-slate-900">
-            <div className="absolute inset-0">
-                <motion.img
-                    src={images.hero}
-                    alt="Creativity House — PMP certification and professional project management training"
-                    width="1920"
-                    height="1080"
-                    fetchPriority="high"
-                    className="w-full h-full object-cover opacity-40"
-                    initial={{ scale: 1.2 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 20, repeat: Infinity, repeatType: 'reverse', ease: 'linear' }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-plum-900/80 to-plum-950/80" />
-            </div>
-
-            {/* Floating particles — CSS animated, deferred until idle for better LCP/INP */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {[...Array(6)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="absolute w-2 h-2 rounded-full bg-gold-400/30 deferred-particle"
-                        style={{
-                            left: `${15 + i * 15}%`,
-                            top: `${20 + (i % 3) * 25}%`,
-                            animationDelay: `${i * 0.5}s`,
-                            animationDuration: `${4 + i}s`,
-                        }}
-                    />
-                ))}
-            </div>
-
+        <section
+            id="home"
+            className="relative min-h-screen flex items-center overflow-hidden bg-slate-50 transition-colors duration-300 dark:bg-[#0e0a16]"
+        >
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
                 <div className="grid lg:grid-cols-2 gap-12 items-center">
                     <motion.div
@@ -54,19 +26,19 @@ export default function HeroSection({ dictionary, lang }) {
                         transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                     >
                         <motion.div
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm mb-6"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-200 bg-purple-50 text-sm font-semibold text-plum-800 mb-6 dark:border-white/20 dark:bg-white/10 dark:text-white dark:backdrop-blur-sm dark:font-normal"
                             whileHover={{ scale: 1.05, borderColor: 'rgba(212,175,55,0.5)' }}
                         >
                             <motion.div
                                 animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
                                 transition={{ duration: 2, repeat: Infinity }}
                             >
-                                <Sparkles className="w-4 h-4 text-gold-400" />
+                                <Sparkles className="w-4 h-4 text-plum-600 dark:text-gold-400" />
                             </motion.div>
                             <span>{dictionary.hero.badge}</span>
                         </motion.div>
 
-                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
+                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white leading-tight mb-6">
                             <motion.span
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -76,7 +48,7 @@ export default function HeroSection({ dictionary, lang }) {
                                 {dictionary.hero.title1}
                             </motion.span>
                             <motion.span
-                                className="block bg-gradient-to-r from-plum-400 to-gold-400 bg-clip-text text-transparent"
+                                className="block bg-gradient-to-r from-plum-700 to-gold-600 dark:from-plum-400 dark:to-gold-400 bg-clip-text text-transparent"
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.5, duration: 0.8 }}
@@ -86,7 +58,7 @@ export default function HeroSection({ dictionary, lang }) {
                         </h1>
 
                         <motion.p
-                            className="text-lg text-slate-300 mb-8 max-w-xl"
+                            className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-xl"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.7, duration: 0.8 }}
@@ -106,14 +78,14 @@ export default function HeroSection({ dictionary, lang }) {
                                 </Link>
                             </MagneticButton>
                             <MagneticButton className="w-full sm:w-auto">
-                                <Link href={contactHref} className="inline-flex w-full items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 py-4 font-semibold text-white backdrop-blur-sm transition-all hover:border-gold-400/50 hover:bg-white/20 sm:w-auto">
+                                <Link href={contactHref} className="inline-flex w-full items-center justify-center rounded-full border border-plum-600 bg-transparent px-8 py-4 font-semibold text-plum-700 transition-all hover:bg-plum-50 dark:border-white/30 dark:bg-white/10 dark:text-white dark:backdrop-blur-sm dark:hover:border-gold-400/50 dark:hover:bg-white/20 sm:w-auto">
                                     {dictionary.hero.contactUs}
                                 </Link>
                             </MagneticButton>
                         </motion.div>
 
                         <motion.div
-                            className="flex items-center gap-8 mt-12 pt-8 border-t border-white/20"
+                            className="flex items-center gap-8 mt-12 pt-8 border-t border-gray-200 dark:border-white/20"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 1.1, duration: 0.8 }}
@@ -128,8 +100,8 @@ export default function HeroSection({ dictionary, lang }) {
                                     whileHover={{ scale: 1.1, y: -5 }}
                                     transition={{ type: 'spring', stiffness: 400 }}
                                 >
-                                    <div className="text-3xl font-bold text-white">{s.val}</div>
-                                    <div className="text-sm text-slate-400">{s.lab}</div>
+                                    <div className="text-3xl font-bold text-gray-900 dark:text-white">{s.val}</div>
+                                    <div className="text-sm text-gray-600 dark:text-slate-400">{s.lab}</div>
                                 </motion.div>
                             ))}
                         </motion.div>

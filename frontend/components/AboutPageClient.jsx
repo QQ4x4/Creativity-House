@@ -1,20 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import Header from './layout/Header';
 import Footer from './layout/Footer';
 import AboutHeroSection from './sections/about/AboutHeroSection';
-
-const AboutSocialProofSection = dynamic(
-    () => import('./sections/about/AboutSocialProofSection'),
-    { ssr: false, loading: () => <div className="w-full h-[600px] bg-slate-100 dark:bg-slate-800 animate-pulse" /> }
-);
-
-const AboutTrainerSection = dynamic(
-    () => import('./sections/about/AboutTrainerSection'),
-    { ssr: false, loading: () => <div className="w-full h-[500px] bg-slate-100 dark:bg-slate-800 animate-pulse" /> }
-);
+import AboutSocialProofSection from './sections/about/AboutSocialProofSection';
+import AboutTrainerSection from './sections/about/AboutTrainerSection';
+import { AboutAtpSection } from './seo/SeoContentBlocks';
+import FaqSection from './seo/FaqSection';
 
 export default function AboutPageClient({ dictionary, lang }) {
     const [scrolled, setScrolled] = useState(false);
@@ -32,8 +25,13 @@ export default function AboutPageClient({ dictionary, lang }) {
 
             <main>
                 <AboutHeroSection dictionary={dictionary} lang={lang} />
+                <AboutAtpSection dictionary={dictionary} />
                 <AboutSocialProofSection dictionary={dictionary} lang={lang} />
                 <AboutTrainerSection dictionary={dictionary} lang={lang} />
+                <FaqSection
+                    title={dictionary.about_page?.faqTitle}
+                    items={dictionary.about_page?.faq || []}
+                />
             </main>
 
             <Footer dictionary={dictionary} lang={lang} />

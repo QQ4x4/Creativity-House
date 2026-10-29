@@ -135,6 +135,10 @@ class UpdateCourseRequest extends FormRequest
             /* ─── SEO ────────────────────────────────────────────────────── */
             'seo_title' => ['sometimes', 'nullable', 'string', 'max:'.config('field_limits.medium')],
             'seo_description' => ['sometimes', 'nullable', 'string', 'max:'.config('field_limits.medium')],
+            'seo_title_en' => ['sometimes', 'nullable', 'string', 'max:70'],
+            'seo_title_ar' => ['sometimes', 'nullable', 'string', 'max:70'],
+            'seo_description_en' => ['sometimes', 'nullable', 'string', 'max:170'],
+            'seo_description_ar' => ['sometimes', 'nullable', 'string', 'max:170'],
             'seo_keywords' => ['sometimes', 'nullable', 'array'],
             'seo_keywords.*' => ['string', 'max:'.config('field_limits.short')],
         ];

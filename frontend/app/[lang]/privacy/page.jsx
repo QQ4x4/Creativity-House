@@ -11,8 +11,8 @@ export async function generateMetadata({ params }) {
   const { lang } = await params;
   const title =
     lang === 'ar'
-      ? 'سياسة الخصوصية | دار الإبداع'
-      : 'Privacy Policy | Creativity House';
+      ? 'سياسة الخصوصية | منصة دار الإبداع لتدريب PMP'
+      : 'Privacy Policy | Creativity House PMP Training Platform';
   const description =
     lang === 'ar'
       ? 'كيف تجمع دار الإبداع معلوماتك وتستخدمها وتحميها عند استخدام موقعنا ومنصة التدريب.'

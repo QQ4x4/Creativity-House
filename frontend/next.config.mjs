@@ -101,6 +101,14 @@ const nextConfig = {
   },
 
   /**
+   * Always emit <title>/<meta> into <head> for every user agent.
+   * Without this, Next.js 15.2+ streams metadata into <body> for unknown bots
+   * (UbersuggestBot, many AI crawlers), which audits report as "no title".
+   */
+  htmlLimitedBots: /.*/,
+
+
+  /**
    * Permanent redirects for old WordPress URLs reported in Search Console.
    * Destination uses /en/... (site x-default / SEO canonical preference) so
    * middleware does not add a second locale hop.

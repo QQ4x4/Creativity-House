@@ -110,6 +110,7 @@ function CheckoutBody({ dictionary, lang }) {
   const [paymentIntentId, setPaymentIntentId] = useState('');
   const [isCreatingIntent, setIsCreatingIntent] = useState(false);
   const [billingDetails, setBillingDetails] = useState(null);
+  const [emailOwnerAccess, setEmailOwnerAccess] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -188,6 +189,7 @@ function CheckoutBody({ dictionary, lang }) {
   const billingForm = useForm({
     resolver: zodResolver(createCheckoutBillingSchema(lang)),
     mode: 'onBlur',
+    reValidateMode: 'onChange',
     defaultValues: {
       fullName: '',
       email: '',
@@ -310,9 +312,12 @@ function CheckoutBody({ dictionary, lang }) {
   const selected = course?.modes?.[mode] || course?.modes?.[course?.defaultMode];
   const total = batch?.price ?? selected?.price ?? course?.price;
   const checkoutMode = batch?.deliveryMode || mode;
+  const numericTotal = Number.isFinite(Number(total)) ? Number(total) : NaN;
+  const purchaseUnavailable =
+    !Number.isFinite(numericTotal) || numericTotal <= 0 || numericTotal < 0.5;
 
   const goToPayment = async () => {
-    if (batchError) return;
+    if (batchError || purchaseUnavailable) return;
     const valid = await billingForm.trigger();
     if (!valid || !course?.id) return;
 
@@ -323,7 +328,6 @@ function CheckoutBody({ dictionary, lang }) {
       country: billing.country,
       name: billing.fullName,
     });
-    const numericTotal = Number.isFinite(Number(total)) ? Number(total) : undefined;
     const currency = String(course.currency || 'USD').toUpperCase();
     const items = [courseItem(course, numericTotal, checkoutMode)];
 
@@ -348,6 +352,7 @@ function CheckoutBody({ dictionary, lang }) {
     }
 
     setIsCreatingIntent(true);
+    setEmailOwnerAccess(false);
     try {
       const result = await createPaymentIntent({
         courseId: course.id,
@@ -404,14 +409,22 @@ function CheckoutBody({ dictionary, lang }) {
     } catch (error) {
       if (
         error instanceof ApiError &&
-        (error.status === 400 || error.data?.already_enrolled)
+        error.status === 409 &&
+        error.data?.already_enrolled
       ) {
-        router.replace(
-          course?.id
-            ? `/${lang}/courses/${course.id}/learn`
-            : `/${lang}/my-courses`
-        );
-        return;
+        if (error.data?.reason === 'current_user') {
+          router.replace(
+            course?.id
+              ? `/${lang}/courses/${course.id}/learn`
+              : `/${lang}/my-courses`
+          );
+          return;
+        }
+        if (error.data?.reason === 'email_owner') {
+          setStep(1);
+          setEmailOwnerAccess(true);
+          return;
+        }
       }
       const fieldMessage = applyServerErrors(
         billingForm.setError,
@@ -502,8 +515,36 @@ function CheckoutBody({ dictionary, lang }) {
                           autoComplete="email"
                           error={billingForm.formState.errors.email?.message}
                           variant="portal"
-                          {...billingForm.register('email')}
+                          {...billingForm.register('email', {
+                            onChange: () => setEmailOwnerAccess(false),
+                          })}
                         />
+                        {emailOwnerAccess ? (
+                          <p
+                            className="-mt-3 text-sm text-red-600 dark:text-red-300"
+                            role="alert"
+                          >
+                            {(
+                              labels.emailAlreadyOwnsCourse ||
+                              'This email already has access to this course. {login} with it to start learning.'
+                            )
+                              .split('{login}')
+                              .reduce((nodes, part, index) => {
+                                if (index === 0) return [part];
+                                return [
+                                  ...nodes,
+                                  <Link
+                                    key="email-owner-login"
+                                    href={`/${lang}/login?redirect=/my-courses`}
+                                    className="font-semibold underline underline-offset-2 hover:text-plum-700 dark:hover:text-gold-300"
+                                  >
+                                    {labels.emailAlreadyOwnsLogin || 'Log in'}
+                                  </Link>,
+                                  part,
+                                ];
+                              }, [])}
+                          </p>
+                        ) : null}
 
                         <Controller
                           control={billingForm.control}
@@ -515,7 +556,12 @@ function CheckoutBody({ dictionary, lang }) {
                               lang={lang}
                               name={field.name}
                               value={field.value}
-                              onChange={field.onChange}
+                              onChange={(value) => {
+                                billingForm.setValue('phoneNumber', value, {
+                                  shouldValidate: true,
+                                  shouldDirty: true,
+                                });
+                              }}
                               onBlur={field.onBlur}
                               error={billingForm.formState.errors.phoneNumber?.message}
                               variant="portal"
@@ -549,10 +595,21 @@ function CheckoutBody({ dictionary, lang }) {
                           </p>
                         ) : null}
 
+                        {purchaseUnavailable ? (
+                          <p className="text-sm text-amber-700 dark:text-amber-300" role="status">
+                            {labels.purchaseNotAvailable ||
+                              'This option is not available for purchase right now. Please contact us.'}
+                          </p>
+                        ) : null}
+
                         <button
                           type="button"
                           onClick={goToPayment}
-                          disabled={isCreatingIntent || Boolean(batchError)}
+                          disabled={
+                            isCreatingIntent ||
+                            Boolean(batchError) ||
+                            purchaseUnavailable
+                          }
                           className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-5 text-sm font-semibold text-white transition-all duration-300 hover:from-plum-600 hover:to-plum-400 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                         >
                           {isCreatingIntent ? (

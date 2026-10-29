@@ -10,12 +10,12 @@ export async function generateMetadata({ params }) {
   const { lang } = await params;
   const title =
     lang === 'ar'
-      ? 'استفسار عن الدورة | دار الإبداع'
-      : 'Course Inquiry | Creativity House';
+      ? 'استفسر عن دورات PMP وإدارة المشاريع | دار الإبداع'
+      : 'Ask About PMP & Project Management Courses | Creativity House';
   const description =
     lang === 'ar'
-      ? 'اسألنا عن أي شيء يتعلق بالدورة قبل التسجيل. نرد عادة خلال 24 ساعة.'
-      : 'Ask us anything about a course before you enroll. We typically reply within 24 hours.';
+      ? 'اسألنا عن دورات PMP® وإدارة المشاريع قبل التسجيل. نرد عادة خلال 24 ساعة حول المواعيد والمتطلبات والاختبار.'
+      : 'Ask us anything about PMP® and project management courses before you enroll. We typically reply within 24 hours.';
   const canonicalUrl = `${seoConfig.siteUrl}/${lang}/course-inquiry`;
 
   return {

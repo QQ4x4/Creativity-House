@@ -231,25 +231,34 @@ function PricingCard({
   );
 }
 
-export default function CourseDetailClient({ dictionary, lang, slug }) {
+export default function CourseDetailClient({
+  dictionary,
+  lang,
+  slug,
+  initialCourse = null,
+  faqSlot = null,
+}) {
   const labels = dictionary.catalog;
   const router = useRouter();
   const { user } = useAuth();
-  const [course, setCourse] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [course, setCourse] = useState(initialCourse);
+  const [isLoading, setIsLoading] = useState(!initialCourse);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [mode, setMode] = useState('live');
+  const [mode, setMode] = useState(
+    () => initialCourse?.defaultMode || initialCourse?.availableModes?.[0] || 'live'
+  );
   const [openModule, setOpenModule] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setIsLoading(true);
+      // Keep SSR content visible — only show skeleton when we have no initial course.
+      if (!initialCourse) setIsLoading(true);
       try {
         const { data } = await fetchPublicCourse(slug, lang);
         if (cancelled) return;
         if (!data) {
-          setCourse(null);
+          if (!initialCourse) setCourse(null);
           return;
         }
         setCourse(data);
@@ -257,7 +266,7 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
         setMode(initialMode);
         trackViewItem(data, initialMode, user);
       } catch {
-        if (!cancelled) setCourse(null);
+        if (!cancelled && !initialCourse) setCourse(null);
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -524,6 +533,8 @@ export default function CourseDetailClient({ dictionary, lang, slug }) {
                     })}
                   </div>
                 </section>
+
+                {faqSlot}
 
                 <section className="rounded-3xl border border-gray-200 bg-white p-6 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{labels.schedule}</h2>

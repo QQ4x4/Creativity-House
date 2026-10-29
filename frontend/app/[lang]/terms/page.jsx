@@ -11,8 +11,8 @@ export async function generateMetadata({ params }) {
   const { lang } = await params;
   const title =
     lang === 'ar'
-      ? 'شروط الخدمة | دار الإبداع'
-      : 'Terms of Service | Creativity House';
+      ? 'شروط الخدمة | منصة دار الإبداع لتدريب PMP'
+      : 'Terms of Service | Creativity House PMP Training Platform';
   const description =
     lang === 'ar'
       ? 'شروط وأحكام استخدام موقع ودورات ومنصات دار الإبداع.'

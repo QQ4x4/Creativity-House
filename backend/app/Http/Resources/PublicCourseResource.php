@@ -105,9 +105,17 @@ class PublicCourseResource extends JsonResource
             $this->mergeWhen($this->schedules !== null, fn (): array => [
                 'schedules' => $this->schedules,
             ]),
+            'seo_title_en' => $this->seo_title_en,
+            'seo_title_ar' => $this->seo_title_ar,
+            'seo_description_en' => $this->seo_description_en,
+            'seo_description_ar' => $this->seo_description_ar,
             'seo' => [
                 'title' => $this->seo_title,
                 'description' => $this->seo_description,
+                'title_en' => $this->seo_title_en ?: $this->seo_title,
+                'title_ar' => $this->seo_title_ar ?: $this->seo_title,
+                'description_en' => $this->seo_description_en ?: $this->seo_description,
+                'description_ar' => $this->seo_description_ar ?: $this->seo_description,
                 'keywords' => $this->seo_keywords ?? [],
             ],
         ];

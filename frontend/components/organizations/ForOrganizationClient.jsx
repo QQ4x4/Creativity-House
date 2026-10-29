@@ -9,6 +9,7 @@ import PublicShell from '@/components/catalog/PublicShell';
 import GlassAuthInput from '@/components/auth/GlassAuthInput';
 import GlassPhoneInput from '@/components/auth/GlassPhoneInput';
 import OrganizationCourseSelect from '@/components/organizations/OrganizationCourseSelect';
+import { OrganizationsSeoSections } from '@/components/seo/SeoContentBlocks';
 import { fetchPublicCatalog } from '@/lib/catalog/api';
 import { submitOrganizationInquiry } from '@/lib/organizations/api';
 import { applyServerErrors } from '@/lib/auth';
@@ -371,6 +372,8 @@ export default function ForOrganizationClient({ dictionary, lang }) {
           </motion.div>
         </div>
       </section>
+
+      <OrganizationsSeoSections dictionary={dictionary} />
     </PublicShell>
   );
 }
