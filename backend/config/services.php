@@ -84,4 +84,29 @@ return [
         'base_url' => env('BUNNY_STREAM_BASE_URL', 'https://video.bunnycdn.com'),
     ],
 
+    /*
+     * GoHighLevel (LeadConnector) Private Integration — server-side only.
+     * Token never reaches the browser. When disabled / misconfigured, all
+     * outbound calls are silent no-ops.
+     */
+    'gohighlevel' => [
+        'enabled' => filter_var(env('GHL_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+        'private_token' => env('GHL_PRIVATE_TOKEN'),
+        'location_id' => env('GHL_LOCATION_ID'),
+        'api_base' => env('GHL_API_BASE', 'https://services.leadconnectorhq.com'),
+        'api_version' => env('GHL_API_VERSION', '2021-07-28'),
+        'pipeline_id' => env('GHL_PIPELINE_ID'),
+        'stages' => [
+            'lead' => env('GHL_STAGE_LEAD_ID'),
+            'inquiry' => env('GHL_STAGE_INQUIRY_ID'),
+            'checkout' => env('GHL_STAGE_CHECKOUT_ID'),
+            'won' => env('GHL_STAGE_WON_ID'),
+        ],
+        'webhook_secret' => env('GHL_WEBHOOK_SECRET'),
+        'inbound_enroll_enabled' => filter_var(
+            env('GHL_INBOUND_ENROLL_ENABLED', false),
+            FILTER_VALIDATE_BOOLEAN
+        ),
+    ],
+
 ];

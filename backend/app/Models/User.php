@@ -36,6 +36,8 @@ class User extends Authenticatable implements FilamentUser
         'google_id',
         'is_active',
         'account_status',
+        'ghl_contact_id',
+        'marketing_opt_out',
         'is_admin',
         'email_verified_at',
         'verification_code',
@@ -77,6 +79,7 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
             'is_active' => 'boolean',
             'is_admin' => 'boolean',
+            'marketing_opt_out' => 'boolean',
             'notification_preferences' => 'array',
         ];
     }

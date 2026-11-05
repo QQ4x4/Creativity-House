@@ -105,6 +105,28 @@ html[dir="ltr"] textarea {
   will-change: transform, opacity;
 }
 
+/* Homepage hero liquid shapes — slow float */
+@keyframes hero-liquid-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.hero-liquid-float {
+  animation: hero-liquid-float 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-liquid-float {
+    animation: none;
+  }
+}
+
 /* ─── Glass phone input (react-phone-number-input) ───
  * Restores flag + country select after Tailwind preflight / dark glass theme.
  * Phone numbers always render LTR so the selector stays on the visual left.

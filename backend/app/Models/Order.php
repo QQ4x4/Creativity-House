@@ -43,6 +43,8 @@ class Order extends Model
         'schedule_starts_at',
         'stripe_session_id',
         'stripe_payment_intent_id',
+        'ghl_contact_id',
+        'ghl_opportunity_id',
     ];
 
     /**

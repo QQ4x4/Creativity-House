@@ -10,10 +10,12 @@ use App\Http\Requests\Auth\ResendOtpRequest;
 use App\Http\Requests\Auth\VerifyOtpRequest;
 use App\Jobs\SendGoogleAdsConversion;
 use App\Jobs\SendMetaCapiEvent;
+use App\Jobs\SyncGhlRegistration;
 use App\Models\User;
 use App\Services\Checkout\StripeEnrollmentService;
 use App\Services\OtpService;
 use App\Services\RecaptchaService;
+use App\Support\GhlAttribution;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -92,6 +94,18 @@ class AuthController extends Controller
             $this->metaUserFromModel($user, $request),
             ['method' => 'email', 'status' => 'registered'],
         );
+
+        try {
+            SyncGhlRegistration::dispatch([
+                'user_id' => $user->id,
+                ...GhlAttribution::fromRequest($request),
+            ])->afterResponse();
+        } catch (Throwable $e) {
+            Log::warning('Failed to dispatch GoHighLevel registration sync.', [
+                'user_id' => $user->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json([
             'success' => true,

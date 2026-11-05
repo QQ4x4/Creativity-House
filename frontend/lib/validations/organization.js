@@ -6,19 +6,19 @@ const messages = {
   en: {
     required: 'This field is required.',
     nameMin: 'Full name must be at least 2 characters.',
-    companyMin: 'Company name must be at least 2 characters.',
+    companyMin: 'Please enter your company name.',
     email: 'Enter a valid work email address.',
-    phone: 'Enter a valid international phone number.',
-    phoneRequired: 'Phone number is required.',
+    phone: 'Please enter a valid phone number with country code.',
+    phoneRequired: 'Please enter a valid phone number with country code.',
     messageMin: 'Please describe your requirements in at least 20 characters.',
   },
   ar: {
     required: 'هذا الحقل مطلوب.',
     nameMin: 'يجب أن يكون الاسم الكامل حرفين على الأقل.',
-    companyMin: 'يجب أن يكون اسم الشركة حرفين على الأقل.',
+    companyMin: 'يرجى إدخال اسم الشركة.',
     email: 'أدخل بريد عمل إلكتروني صالحًا.',
-    phone: 'أدخل رقم هاتف دولي صالحًا.',
-    phoneRequired: 'رقم الهاتف مطلوب.',
+    phone: 'يرجى إدخال رقم هاتف صحيح مع رمز الدولة.',
+    phoneRequired: 'يرجى إدخال رقم هاتف صحيح مع رمز الدولة.',
     messageMin: 'يرجى وصف متطلباتك في 20 حرفًا على الأقل.',
   },
 };
@@ -55,7 +55,7 @@ export function createOrganizationInquirySchema(lang = 'en') {
     company_name: z
       .string()
       .trim()
-      .min(1, m.required)
+      .min(1, m.companyMin)
       .min(2, m.companyMin)
       .max(FIELD_LIMITS.medium, maxMessage(FIELD_LIMITS.medium, lang))
       .transform((value) => sanitizeInquiryText(value, FIELD_LIMITS.medium)),

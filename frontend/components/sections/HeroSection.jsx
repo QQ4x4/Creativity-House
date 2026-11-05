@@ -1,25 +1,32 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import MagneticButton from '../ui/MagneticButton';
-import TiltCard from '../ui/TiltCard';
-import { images } from '@/config/site';
+
+const HERO_IMAGE_LIGHT = '/images/hero_images/creativity-house-hero-team-light.webp';
+const HERO_IMAGE_DARK = '/images/hero_images/creativity-house-hero-team-dark.webp';
 
 export default function HeroSection({ dictionary, lang }) {
     const isRTL = lang === 'ar';
     const coursesHref = `/${lang}/courses`;
     const contactHref = `/${lang}/course-inquiry`;
+    const imageAlt =
+        dictionary.hero.imageAlt ||
+        (isRTL
+            ? 'مدرب يعرض مخطط نمو على متدربة'
+            : 'Trainer presenting a growth chart to a learner');
 
     return (
         <section
             id="home"
-            className="relative min-h-screen flex items-center overflow-hidden bg-slate-50 transition-colors duration-300 dark:bg-[#0e0a16]"
+            className="relative min-h-screen flex items-center overflow-x-clip bg-slate-50 transition-colors duration-300 dark:bg-[#0e0a16]"
         >
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
-                <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="relative max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-32">
+                <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-8">
                     <motion.div
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -84,43 +91,34 @@ export default function HeroSection({ dictionary, lang }) {
                             </MagneticButton>
                         </motion.div>
 
-                        <motion.div
-                            className="flex items-center gap-8 mt-12 pt-8 border-t border-gray-200 dark:border-white/20"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 1.1, duration: 0.8 }}
-                        >
-                            {[
-                                { val: dictionary.hero.projectsValue, lab: dictionary.hero.projectsLabel },
-                                { val: dictionary.hero.clientsValue, lab: dictionary.hero.clientsLabel },
-                                { val: dictionary.hero.yearsValue, lab: dictionary.hero.yearsLabel },
-                            ].map((s, i) => (
-                                <motion.div
-                                    key={i}
-                                    whileHover={{ scale: 1.1, y: -5 }}
-                                    transition={{ type: 'spring', stiffness: 400 }}
-                                >
-                                    <div className="text-3xl font-bold text-gray-900 dark:text-white">{s.val}</div>
-                                    <div className="text-sm text-gray-600 dark:text-slate-400">{s.lab}</div>
-                                </motion.div>
-                            ))}
-                        </motion.div>
                     </motion.div>
 
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.7, rotateY: isRTL ? 15 : -15 }}
-                        animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-                        transition={{ duration: 1.2, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                        className="hidden lg:block"
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                        className="w-full lg:overflow-visible"
                     >
-                        <TiltCard className="relative" intensity={10}>
-                            <motion.div
-                                className="absolute -inset-4 bg-gradient-to-r from-plum-700 to-plum-500 rounded-3xl blur-3xl opacity-30"
-                                animate={{ opacity: [0.2, 0.4, 0.2], scale: [1, 1.05, 1] }}
-                                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                        <div className="relative mx-auto w-full max-w-[640px] lg:ml-auto lg:mr-0 lg:max-w-none lg:w-full lg:origin-right lg:scale-[1.25] lg:translate-x-40 rtl:lg:ml-0 rtl:lg:mr-auto rtl:lg:origin-left rtl:lg:-translate-x-16">
+                            <Image
+                                src={HERO_IMAGE_LIGHT}
+                                alt={imageAlt}
+                                width={3200}
+                                height={1755}
+                                priority
+                                sizes="(min-width:1024px) 55vw, 100vw"
+                                className="h-auto w-full object-contain dark:hidden"
                             />
-                            <img src={images.crm} alt="CRM Dashboard preview" width="600" height="400" loading="lazy" decoding="async" className="relative rounded-2xl shadow-2xl" />
-                        </TiltCard>
+                            <Image
+                                src={HERO_IMAGE_DARK}
+                                alt={imageAlt}
+                                width={3200}
+                                height={1755}
+                                priority
+                                sizes="(min-width:1024px) 55vw, 100vw"
+                                className="hidden h-auto w-full object-contain dark:block"
+                            />
+                        </div>
                     </motion.div>
                 </div>
             </div>

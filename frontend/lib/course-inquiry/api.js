@@ -9,30 +9,29 @@ export const INQUIRY_ENDPOINT = '/v1/inquiries';
  * @param {{
  *   name: string,
  *   email: string,
- *   phone?: string | null,
+ *   phone: string,
  *   course_id?: string | number | null,
  *   message: string,
  *   event_id?: string,
  *   anonymous_id?: string | null,
+ *   country?: string | null,
  * }} data
  */
 export async function submitCourseInquiry(data) {
   await getCsrfCookie();
 
-  const payload = {
-    type: 'user',
-    full_name: sanitizeInquiryText(data.name, FIELD_LIMITS.name),
-    email: sanitizeInquiryText(data.email, FIELD_LIMITS.email).toLowerCase(),
-    message: sanitizeInquiryText(data.message, FIELD_LIMITS.long),
-  };
-
   const phone = String(data.phone || '')
     .trim()
     .replace(/[^\d+]/g, '')
     .slice(0, FIELD_LIMITS.phone);
-  if (phone) {
-    payload.phone_number = phone;
-  }
+
+  const payload = {
+    type: 'user',
+    full_name: sanitizeInquiryText(data.name, FIELD_LIMITS.name),
+    email: sanitizeInquiryText(data.email, FIELD_LIMITS.email).toLowerCase(),
+    phone_number: phone,
+    message: sanitizeInquiryText(data.message, FIELD_LIMITS.long),
+  };
 
   const courseId = Number(data.course_id);
   if (Number.isFinite(courseId) && courseId > 0) {

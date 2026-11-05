@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Payment\CreateCheckoutSessionRequest;
 use App\Http\Requests\Payment\CreatePaymentIntentRequest;
 use App\Jobs\SendMetaCapiEvent;
+use App\Jobs\SyncGhlCheckoutStarted;
+use App\Jobs\SyncGhlPaymentSucceeded;
 use App\Models\Course;
 use App\Models\CourseSchedule;
 use App\Models\Order;
@@ -14,6 +16,7 @@ use App\Services\Checkout\CheckoutService;
 use App\Services\Checkout\StripeEnrollmentService;
 use App\Services\Schedules\ScheduleOccurrenceService;
 use App\Services\Student\EnrollmentService;
+use App\Support\GhlAttribution;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -251,6 +254,33 @@ class PaymentController extends Controller
                 ], static fn ($v) => $v !== null && $v !== ''),
             ]);
 
+            try {
+                $attr = GhlAttribution::fromRequest($request);
+                $courseTitle = $attr['lang'] === 'ar'
+                    ? ($course->title_ar ?: $course->title_en ?: $course->title)
+                    : ($course->title_en ?: $course->title_ar ?: $course->title);
+
+                SyncGhlCheckoutStarted::dispatch([
+                    'email' => $email,
+                    'name' => $name,
+                    'phone' => $phone,
+                    'course_id' => $course->id,
+                    'course_slug' => $course->slug,
+                    'course_title' => $courseTitle,
+                    'mode' => $mode,
+                    'amount' => round($unitAmount / 100, 2),
+                    'currency' => strtoupper((string) ($course->currency ?: 'USD')),
+                    'payment_intent_id' => (string) $intent->id,
+                    'user_id' => $authUser?->id,
+                    ...$attr,
+                ])->afterResponse();
+            } catch (Throwable $e) {
+                Log::warning('Failed to dispatch GoHighLevel checkout-started sync.', [
+                    'payment_intent_id' => $intent->id ?? null,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Payment intent created.',
@@ -355,6 +385,18 @@ class PaymentController extends Controller
 
                 $this->dispatchPurchaseCapiFromCheckoutSession($session, $order, $request);
 
+                try {
+                    SyncGhlPaymentSucceeded::dispatch([
+                        'order_id' => $order->id,
+                        'lang' => GhlAttribution::fromRequest($request)['lang'],
+                    ])->afterResponse();
+                } catch (Throwable $e) {
+                    Log::warning('Failed to dispatch GoHighLevel payment-succeeded sync.', [
+                        'order_id' => $order->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
+
                 return response()->json([
                     'success' => true,
                     'received' => true,
@@ -383,6 +425,18 @@ class PaymentController extends Controller
                 }
 
                 $this->dispatchPurchaseCapiFromPaymentIntent($intent, $order, $request);
+
+                try {
+                    SyncGhlPaymentSucceeded::dispatch([
+                        'order_id' => $order->id,
+                        'lang' => GhlAttribution::fromRequest($request)['lang'],
+                    ])->afterResponse();
+                } catch (Throwable $e) {
+                    Log::warning('Failed to dispatch GoHighLevel payment-succeeded sync.', [
+                        'order_id' => $order->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
 
                 return response()->json([
                     'success' => true,

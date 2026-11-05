@@ -49,7 +49,8 @@ export default function PrivacyContent({ lang = 'en' }) {
         <ul>
           <li>
             <strong>مزودو الخدمات:</strong> مع موردين موثوقين من أطراف ثالثة (مثل Vercel و Railway و
-            Stripe) الذين يؤدون خدمات نيابة عنا.
+            Stripe و GoHighLevel / LeadConnector) الذين يؤدون خدمات نيابة عنا. نستخدم GoHighLevel
+            (LeadConnector) كنظام إدارة علاقات العملاء لإدارة الاستفسارات والتسجيلات والتواصل.
           </li>
           <li>
             <strong>الالتزامات القانونية:</strong> إذا طُلب منا ذلك بموجب القانون أو استجابة لطلبات
@@ -126,7 +127,9 @@ export default function PrivacyContent({ lang = 'en' }) {
       <ul>
         <li>
           <strong>Service Providers:</strong> With trusted third-party vendors (like Vercel,
-          Railway, and Stripe) who perform services on our behalf.
+          Railway, Stripe, and GoHighLevel / LeadConnector) who perform services on our behalf. We
+          use GoHighLevel (LeadConnector) as our CRM to manage enquiries, enrollments and
+          communications.
         </li>
         <li>
           <strong>Legal Obligations:</strong> If required to do so by law or in response to valid

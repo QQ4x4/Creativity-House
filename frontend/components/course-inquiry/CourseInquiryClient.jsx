@@ -297,14 +297,7 @@ function CourseInquiryBody({ dictionary, lang }) {
                     render={({ field }) => (
                       <GlassPhoneInput
                         id="course-inquiry-phone"
-                        label={
-                          <>
-                            {labels.phone}{' '}
-                            <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
-                              ({labels.phoneOptional})
-                            </span>
-                          </>
-                        }
+                        label={labels.phone}
                         lang={lang}
                         variant="portal"
                         error={errors.phone?.message}

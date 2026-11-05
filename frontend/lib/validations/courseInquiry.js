@@ -8,14 +8,16 @@ const messages = {
     required: 'This field is required.',
     nameMin: 'Full name must be at least 2 characters.',
     email: 'Enter a valid email address.',
-    phone: 'Enter a valid international phone number.',
+    phone: 'Please enter a valid phone number with country code.',
+    phoneRequired: 'Please enter a valid phone number with country code.',
     messageMin: 'Please describe your question in at least 20 characters.',
   },
   ar: {
     required: 'هذا الحقل مطلوب.',
     nameMin: 'يجب أن يكون الاسم الكامل حرفين على الأقل.',
     email: 'أدخل بريدًا إلكترونيًا صالحًا.',
-    phone: 'أدخل رقم هاتف دولي صالحًا.',
+    phone: 'يرجى إدخال رقم هاتف صحيح مع رمز الدولة.',
+    phoneRequired: 'يرجى إدخال رقم هاتف صحيح مع رمز الدولة.',
     messageMin: 'يرجى وصف سؤالك في 20 حرفًا على الأقل.',
   },
 };
@@ -47,14 +49,13 @@ export function createCourseInquirySchema(lang = 'en') {
       .email(m.email)
       .transform((value) => sanitizeInquiryText(value, FIELD_LIMITS.email).toLowerCase()),
     phone: z
-      .string()
-      .optional()
-      .nullable()
-      .transform((value) => String(value ?? '').trim().slice(0, FIELD_LIMITS.phone))
-      .refine(
-        (value) => value === '' || (e164Regex.test(value) && isValidPhoneNumber(value)),
-        { message: m.phone }
-      ),
+      .string({ required_error: m.phoneRequired })
+      .trim()
+      .min(1, m.phoneRequired)
+      .max(FIELD_LIMITS.phone, maxMessage(FIELD_LIMITS.phone, lang))
+      .refine((value) => e164Regex.test(value) && isValidPhoneNumber(value), {
+        message: m.phone,
+      }),
     course_id: z.union([z.string(), z.number()]).optional().nullable(),
     message: z
       .string()

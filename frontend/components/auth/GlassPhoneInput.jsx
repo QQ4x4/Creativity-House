@@ -79,7 +79,8 @@ function CountryFlag({ code, labels, className = 'h-full w-full' }) {
 
 /**
  * Glass phone field with a custom country picker (no native OS select).
- * Default country is inferred from IP geolocation; falls back to `defaultCountry` (YE).
+ * First paint always uses `defaultCountry` (YE). Geolocated country is applied
+ * after mount only if the user has not picked a country or typed digits yet.
  */
 export default function GlassPhoneInput({
   id = 'phone_number',
@@ -99,7 +100,8 @@ export default function GlassPhoneInput({
   const countries = useMemo(() => getCountries(), []);
   const geoCountry = useDefaultPhoneCountry(defaultCountry);
 
-  const initial = splitValue(value ?? '', geoCountry || defaultCountry);
+  // Hydration-safe: server and first client render share this fixed default.
+  const initial = splitValue(value ?? '', defaultCountry);
   const [country, setCountry] = useState(initial.country || defaultCountry);
   const [national, setNational] = useState(initial.national);
   const [open, setOpen] = useState(false);
@@ -118,14 +120,15 @@ export default function GlassPhoneInput({
     setMounted(true);
   }, []);
 
-  // Apply geolocated default only while the field is still empty / untouched.
+  // Apply geolocated default only after mount, while the field is still empty / untouched.
   useEffect(() => {
-    if (!geoCountry) return;
+    if (!mounted) return;
+    if (!geoCountry || geoCountry === defaultCountry) return;
     if (userPickedCountryRef.current) return;
     if (value) return;
     if (hasNationalDigitsRef.current) return;
     setCountry(geoCountry);
-  }, [geoCountry, value]);
+  }, [mounted, geoCountry, value, defaultCountry]);
 
   useEffect(() => {
     const incoming = value ?? '';
@@ -133,11 +136,11 @@ export default function GlassPhoneInput({
       return;
     }
     lastEmittedRef.current = incoming;
-    const next = splitValue(incoming, geoCountry || defaultCountry);
-    setCountry(next.country || geoCountry || defaultCountry);
+    const next = splitValue(incoming, defaultCountry);
+    setCountry(next.country || defaultCountry);
     setNational(next.national);
     hasNationalDigitsRef.current = Boolean(String(next.national || '').replace(/\D/g, ''));
-  }, [value, defaultCountry, geoCountry]);
+  }, [value, defaultCountry]);
 
   useEffect(() => {
     if (!open) return undefined;

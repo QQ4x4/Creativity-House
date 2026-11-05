@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\CourseInquiryController;
 use App\Http\Controllers\Api\InquiryController;
 use App\Http\Controllers\Api\LessonResourceController;
 use App\Http\Controllers\Api\OrganizationInquiryController;
+use App\Http\Controllers\Api\GoHighLevelWebhookController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PublicCatalogController;
 use App\Http\Controllers\Api\PublicScheduleController;
@@ -129,6 +130,15 @@ Route::post('/v1/stripe/webhook', [PaymentController::class, 'webhook'])
     ->name('api.v1.stripe.webhook');
 Route::post('/v1/webhooks/stripe', [PaymentController::class, 'webhook'])
     ->name('api.v1.webhooks.stripe');
+
+/*
+|--------------------------------------------------------------------------
+| GoHighLevel inbound webhook (secret header, CSRF-exempt)
+|--------------------------------------------------------------------------
+*/
+Route::post('/webhooks/gohighlevel', GoHighLevelWebhookController::class)
+    ->middleware('throttle:60,1')
+    ->name('api.webhooks.gohighlevel');
 
 /*
 |--------------------------------------------------------------------------

@@ -39,12 +39,13 @@ function normalizeCountryCode(raw) {
 
 /**
  * Resolves a phone-input default country from IP geolocation.
- * Falls back to `fallback` (default YE) on failure / ad-block / timeout.
- * Result is cached in sessionStorage for the tab session.
+ * Always returns `fallback` on the first render (SSR + hydration), then updates
+ * after mount from session cache / geo. Falls back to YE on failure.
  */
 export function useDefaultPhoneCountry(fallback = FALLBACK_COUNTRY) {
   const safeFallback = normalizeCountryCode(fallback) || FALLBACK_COUNTRY;
-  const [country, setCountry] = useState(() => readCachedCountry() || safeFallback);
+  // Fixed default on first paint — never read cache/window here (hydration-safe).
+  const [country, setCountry] = useState(safeFallback);
 
   useEffect(() => {
     const cached = readCachedCountry();

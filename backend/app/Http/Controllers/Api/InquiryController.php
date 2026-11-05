@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Inquiry\StoreInquiryRequest;
 use App\Jobs\SendGoogleAdsConversion;
 use App\Jobs\SendMetaCapiEvent;
+use App\Jobs\SyncGhlInquiry;
 use App\Mail\AdminInquiryAlertMail;
+use App\Models\Course;
 use App\Models\Inquiry;
+use App\Support\GhlAttribution;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -90,6 +93,42 @@ class InquiryController extends Controller
             )->afterResponse();
         } catch (Throwable $e) {
             Log::warning('Failed to dispatch Google Ads conversion for inquiry.', [
+                'inquiry_id' => $inquiry->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            $courseSlug = null;
+            $courseTitle = $inquiry->target_course;
+            $courseId = $request->input('course_id');
+            if (is_numeric($courseId)) {
+                $course = Course::query()->find((int) $courseId);
+                if ($course) {
+                    $courseSlug = $course->slug;
+                    $attr = GhlAttribution::fromRequest($request);
+                    $courseTitle = $attr['lang'] === 'ar'
+                        ? ($course->title_ar ?: $course->title_en ?: $course->title)
+                        : ($course->title_en ?: $course->title_ar ?: $course->title);
+                }
+            }
+
+            SyncGhlInquiry::dispatch(array_filter([
+                'inquiry_id' => $inquiry->id,
+                'type' => $isOrganization ? 'organization' : 'user',
+                'email' => $inquiry->email,
+                'name' => $inquiry->full_name,
+                'phone' => $inquiry->phone_number,
+                'company_name' => $inquiry->company_name,
+                'course_slug' => $courseSlug,
+                'course_title' => $courseTitle,
+                'message' => $inquiry->message,
+                'page_url' => $request->headers->get('referer'),
+                'user_id' => $request->user()?->id,
+                ...GhlAttribution::fromRequest($request),
+            ], static fn ($v) => $v !== null))->afterResponse();
+        } catch (Throwable $e) {
+            Log::warning('Failed to dispatch GoHighLevel inquiry sync.', [
                 'inquiry_id' => $inquiry->id,
                 'message' => $e->getMessage(),
             ]);

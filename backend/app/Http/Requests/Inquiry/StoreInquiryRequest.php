@@ -96,7 +96,7 @@ class StoreInquiryRequest extends FormRequest
             'full_name' => ['required', 'string', 'max:'.config('field_limits.name'), 'regex:/^[\p{L}\s\'\-]+$/u'],
             'email' => ['required', 'string', 'email:filter', 'max:'.config('field_limits.email')],
             'phone_number' => [
-                $isOrganization ? 'required' : 'nullable',
+                'required',
                 'string',
                 'max:'.config('field_limits.phone'),
                 'regex:/^\+[1-9]\d{6,14}$/',
@@ -126,7 +126,9 @@ class StoreInquiryRequest extends FormRequest
     {
         return [
             'full_name.regex' => 'Full name may only contain letters, spaces, hyphens, and apostrophes.',
-            'phone_number.regex' => 'Phone number must be a valid international format (e.g. +60178918602).',
+            'phone_number.required' => 'Please enter a valid phone number with country code.',
+            'phone_number.regex' => 'Please enter a valid phone number with country code.',
+            'company_name.required' => 'Please enter your company name.',
             'course_id.exists' => 'The selected course is not available.',
             'message.min' => 'Please write at least 20 characters.',
         ];
