@@ -15,12 +15,12 @@ export async function generateMetadata({ params }) {
     en: {
       title: 'About Creativity House | PMI Authorized Training Partner',
       description:
-        'Creativity House is a PMI Authorized Training Partner delivering PMP® and PMI-RMP® training in Arabic and English for professionals across the MENA region.',
+        'Creativity House is a PMI Authorized Training Partner delivering PMP® and PMI-RMP® training with Dr. Talaat Al-Awadhi, a PMI Authorized Instructor, in Arabic and English across the MENA region.',
     },
     ar: {
       title: 'عن دار الإبداع | شريك تدريب معتمد من PMI',
       description:
-        'دار الإبداع شريك تدريب معتمد من PMI، تقدم دورات PMP® و PMI-RMP® باللغتين العربية والإنجليزية للمحترفين في منطقة الشرق الأوسط وشمال أفريقيا.',
+        'دار الإبداع شريك تدريب معتمد من PMI، تقدم دورات PMP® و PMI-RMP® مع د. طلعت العواضي، مدرب معتمد من PMI، باللغتين العربية والإنجليزية للمحترفين في منطقة الشرق الأوسط وشمال أفريقيا.',
     },
   };
 
@@ -60,9 +60,35 @@ export default async function AboutPage({ params }) {
   const dictionary = await getDictionary(lang);
   const faqLd = buildFaqPageJsonLd(dictionary.about_page?.faq);
 
+  const organizationLd = {
+    ...seoConfig.jsonLd,
+    award: 'PMI Authorized Training Partner (2026)',
+  };
+
+  const personLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: 'Talaat Al-Awadhi',
+    honorificPrefix: 'Dr.',
+    jobTitle: 'PMI Authorized Instructor',
+    hasCredential: [
+      'PhD in Technology Management',
+      'GAICC Certified Instructor',
+    ],
+    image: `${seoConfig.siteUrl}/images/DR.jpg`,
+    worksFor: {
+      '@type': 'Organization',
+      name: 'Creativity House',
+      url: seoConfig.siteUrl,
+    },
+    url: `${seoConfig.siteUrl}/${lang}/about`,
+  };
+
   return (
     <>
       <JsonLd data={faqLd} />
+      <JsonLd data={organizationLd} />
+      <JsonLd data={personLd} />
       <AboutPageClient dictionary={dictionary} lang={lang} />
     </>
   );

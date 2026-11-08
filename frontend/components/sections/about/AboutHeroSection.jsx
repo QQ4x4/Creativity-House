@@ -10,9 +10,11 @@ import {
   scaleUpHero,
   staggerAlt,
 } from '@/lib/motion';
+import PmiAtpBadge from './PmiAtpBadge';
 
 export default function AboutHeroSection({ dictionary, lang }) {
     const t = dictionary.about_page.hero;
+    const badgeAlt = dictionary.about_page.pmiBadgeAlt;
 
     const visionMission = [
         {
@@ -38,16 +40,14 @@ export default function AboutHeroSection({ dictionary, lang }) {
             className="relative pt-32 pb-24 bg-gradient-to-br from-slate-900 via-plum-950 to-slate-900 overflow-hidden"
             aria-labelledby="about-hero-heading"
         >
-            {/* Background orbs */}
             <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-plum-600/10 blur-3xl animate-pulse" />
                 <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-gold-500/10 blur-3xl animate-pulse delay-1000" />
             </div>
 
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Heading */}
                 <motion.div
-                    className={`text-center max-w-4xl mx-auto mb-20 ${motionGpu}`}
+                    className={`text-center max-w-4xl mx-auto mb-12 ${motionGpu}`}
                     variants={staggerAlt}
                     initial="hidden"
                     animate="visible"
@@ -67,12 +67,31 @@ export default function AboutHeroSection({ dictionary, lang }) {
                             {t.titleHighlight}
                         </span>
                     </motion.h1>
-                    <motion.p variants={fadeUpY40} className="text-lg sm:text-xl text-slate-300 leading-relaxed">
-                        {t.description}
-                    </motion.p>
                 </motion.div>
 
-                {/* Stats Row */}
+                {/* Description + ATP badge credential row */}
+                <motion.div
+                    className="mx-auto mb-20 grid max-w-5xl items-center gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-12"
+                    variants={staggerAlt}
+                    initial="hidden"
+                    animate="visible"
+                >
+                    <motion.div variants={fadeUpY40} className="order-2 text-center lg:order-1 lg:text-start">
+                        <p className="text-lg sm:text-xl text-slate-300 leading-relaxed">
+                            {t.description}
+                        </p>
+                        <p className="mt-5 text-sm sm:text-base leading-relaxed text-gold-300/95 border-s-0 lg:border-s-2 lg:border-gold-500/50 lg:ps-4">
+                            {t.atpLine}
+                        </p>
+                    </motion.div>
+                    <motion.div
+                        variants={fadeUpY40}
+                        className="order-1 flex justify-center lg:order-2 lg:justify-end"
+                    >
+                        <PmiAtpBadge alt={badgeAlt} size={128} priority />
+                    </motion.div>
+                </motion.div>
+
                 <motion.div
                     className="grid grid-cols-3 gap-6 max-w-2xl mx-auto mb-24"
                     variants={staggerAlt}
@@ -94,7 +113,6 @@ export default function AboutHeroSection({ dictionary, lang }) {
                     ))}
                 </motion.div>
 
-                {/* Vision / Mission Cards */}
                 <motion.div
                     className="grid md:grid-cols-2 gap-8"
                     variants={staggerAlt}

@@ -49,6 +49,7 @@ export const seoConfig = {
     ],
     description:
       'PMI Authorized Training Partner (ATP) delivering accredited PMP® and professional project management training — live, recorded, and exam simulator programs.',
+    award: 'PMI Authorized Training Partner (2026)',
     url: 'https://www.creativity-house.com',
     logo: 'https://www.creativity-house.com/logo.png',
     contactPoint: {

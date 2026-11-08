@@ -96,11 +96,13 @@
     "label": "العربية"
   },
   "about_page": {
+    "pmiBadgeAlt": "PMI Authorized Training Partner 2026 badge",
     "hero": {
       "badge": "About Us",
       "title1": "Developing Professionals.",
       "titleHighlight": "Strengthening Regional Organizations.",
       "description": "Creativity House is a leading accredited provider of corporate training and professional development. Specializing in project management, we transform PMBOK® methodologies into practical application. Our interactive learning approach empowers individuals to achieve career growth and helps businesses optimize performance.",
+      "atpLine": "Creativity House is an official PMI® Authorized Training Partner (ATP), delivering PMI-approved PMP® exam preparation led by PMI-authorized instructors.",
       "stats": [
         { "value": "10+", "label": "Years of Experience" },
         { "value": "17+", "label": "Countries Reached" },
@@ -124,7 +126,7 @@
         {
           "name": "Dr. Faten Al-Buaishi Al-Kilani",
           "role": "Lecturer, Faculty of Law — University of Tripoli, Libya",
-          "quote": "I acquired numerous and profound skills that significantly enhanced the way I deliver content. All thanks to Eng. Talaat Al-Awadhi."
+          "quote": "I acquired numerous and profound skills that significantly enhanced the way I deliver content. All thanks to Dr. Talaat Al-Awadhi."
         },
         {
           "name": "Eng. Rami Abu Bakr",
@@ -151,24 +153,29 @@
     "trainer": {
       "badge": "Project Management Expert",
       "title": "Meet",
-      "titleHighlight": "Eng. Awadhi",
-      "name": "Eng. Talaat Al-Awadhi",
+      "titleHighlight": "Dr. Talaat Al-Awadhi",
+      "name": "Dr. Talaat Al-Awadhi",
+      "imageAlt": "Dr. Talaat Al-Awadhi",
       "jobTitle": "International Trainer in Leadership, Management & Project Management",
+      "instructorCredential": "PMI® Authorized Instructor — Creativity House, PMI Authorized Training Partner",
+      "gaiccCredential": "GAICC Certified Instructor — AI Governance (ISO/IEC 42001)",
+      "gaiccLogoAlt": "GAICC logo",
       "bio_label": "Biography",
-      "bio": "An accredited trainer and consultant specializing in project management and corporate training. With extensive experience delivering interactive learning across the region, he focuses on translating PMI standards and the PMBOK® guide into practical application and career growth for thousands of professionals.",
+      "bio": "Dr. Talaat Al-Awadhi is a PMI® Authorized Instructor, a GAICC Certified Instructor in AI governance (ISO/IEC 42001), and the lead trainer at Creativity House, a PMI Authorized Training Partner. With 20+ years of experience in project management, leadership and corporate training, he has trained thousands of professionals across the Middle East and beyond — translating PMI standards and the PMBOK® Guide into practical results at work.",
       "credentials_label": "Academic Credentials",
       "credentials": [
-        "BSc Petroleum Engineering",
+        "PhD in Technology Management",
         "Master of Business Administration (MBA)",
-        "PhD Candidate — Technology Management"
+        "BSc Petroleum Engineering"
       ],
       "expertise_label": "Areas of Expertise",
-      "expertise": ["Project Management", "Leadership & Coaching", "Strategic Planning"],
-      "badges": ["20+ Years", "Certified Trainer", "International"]
+      "expertise": ["Project Management", "Leadership & Coaching", "Strategic Planning", "AI Governance"],
+      "badges": ["PMI® Authorized Instructor", "GAICC Certified Instructor", "PMP® Certified", "HRD Corp Accredited Trainer", "20+ Years"]
     },
     "atp": {
       "badge": "PMI Authorized Training Partner",
       "title": "What ATP status means for learners",
+      "caption": "Authorized Training Partner · 2026",
       "description": "As a PMI Authorized Training Partner, Creativity House delivers PMI-approved PMP® curriculum taught by qualified instructors. Completing our PMP preparation program provides the 35 contact hours of project management education required to apply for the PMP exam.",
       "points": [
         "PMI-approved content aligned with the current PMP Exam Content Outline",

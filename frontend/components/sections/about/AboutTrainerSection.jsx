@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Award, BookOpen, Briefcase, GraduationCap, Star } from 'lucide-react';
+import { Award, Briefcase, GraduationCap, ScrollText, Star } from 'lucide-react';
 import {
   fadeUpY35,
   motionGpu,
@@ -10,13 +11,18 @@ import {
   scaleUpSoft,
   staggerAlt,
 } from '@/lib/motion';
+import PmiAtpBadge from './PmiAtpBadge';
 
-// Icon map for credentials and expertise (positional — order matches JSON)
-const credentialIcons = [GraduationCap, GraduationCap, BookOpen];
-const expertiseIcons  = [Briefcase, Star, Award];
+const credentialIcons = [GraduationCap, GraduationCap, GraduationCap];
+const expertiseIcons = [Briefcase, Star, Award, ScrollText];
+const GAICC_MARK_SRC = '/images/gaicc-mark.png';
+const GAICC_MARK_INTRINSIC = { width: 512, height: 512 };
+/** Shared width so ATP badge + GAICC mark share the same left edge. */
+const CREDENTIAL_MARK_WIDTH = 74;
 
 export default function AboutTrainerSection({ dictionary, lang }) {
     const t = dictionary.about_page.trainer;
+    const badgeAlt = dictionary.about_page.pmiBadgeAlt;
 
     return (
         <section
@@ -24,7 +30,6 @@ export default function AboutTrainerSection({ dictionary, lang }) {
             aria-labelledby="trainer-heading"
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Section header */}
                 <motion.div
                     className="text-center mb-16"
                     variants={staggerAlt}
@@ -43,7 +48,6 @@ export default function AboutTrainerSection({ dictionary, lang }) {
                     </motion.h2>
                 </motion.div>
 
-                {/* Trainer Card */}
                 <motion.div
                     className={`relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50 ${motionGpu}`}
                     variants={fadeUpY35}
@@ -51,11 +55,9 @@ export default function AboutTrainerSection({ dictionary, lang }) {
                     whileInView="visible"
                     viewport={motionViewport}
                 >
-                    {/* Top accent gradient */}
                     <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-plum-700 via-plum-500 to-gold-500" />
 
                     <div className="grid lg:grid-cols-5 gap-0">
-                        {/* Left — Avatar / Identity */}
                         <div className="lg:col-span-2 bg-gradient-to-br from-plum-950 via-plum-900 to-slate-900 p-10 flex flex-col items-center justify-center text-center">
                             <motion.div
                                 whileHover={{ scale: 1.05, rotate: 2 }}
@@ -64,7 +66,7 @@ export default function AboutTrainerSection({ dictionary, lang }) {
                             >
                                 <img
                                     src="/images/DR.jpg"
-                                    alt={t.name}
+                                    alt={t.imageAlt || t.name}
                                     width={176}
                                     height={176}
                                     className="h-full w-full scale-[1.02] object-cover"
@@ -77,19 +79,51 @@ export default function AboutTrainerSection({ dictionary, lang }) {
                                 {t.jobTitle}
                             </p>
 
-                            {/* Badges from dictionary */}
-                            <div className="flex flex-wrap justify-center gap-2 mt-6">
+                            {/* Credential lines: PMI ATP + GAICC */}
+                            <div className="mt-5 flex w-full max-w-sm flex-col gap-3">
+                                <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:gap-3 sm:text-start">
+                                    <div
+                                        className="flex shrink-0 items-center justify-center"
+                                        style={{ width: CREDENTIAL_MARK_WIDTH }}
+                                    >
+                                        <PmiAtpBadge alt={badgeAlt} size={60} className="shrink-0" />
+                                    </div>
+                                    <p className="text-xs leading-relaxed text-white/80 font-medium">
+                                        {t.instructorCredential}
+                                    </p>
+                                </div>
+                                <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:gap-3 sm:text-start">
+                                    <div
+                                        className="flex shrink-0 items-center justify-center"
+                                        style={{ width: CREDENTIAL_MARK_WIDTH }}
+                                    >
+                                        <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#603153]/5 ring-1 ring-[#603153]/20 dark:bg-white/10 dark:ring-white/20">
+                                            <Image
+                                                src={GAICC_MARK_SRC}
+                                                alt={t.gaiccLogoAlt}
+                                                width={GAICC_MARK_INTRINSIC.width}
+                                                height={GAICC_MARK_INTRINSIC.height}
+                                                className="h-11 w-11 object-contain"
+                                                sizes="44px"
+                                            />
+                                        </span>
+                                    </div>
+                                    <p className="text-xs leading-relaxed text-white/80 font-medium">
+                                        {t.gaiccCredential}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="mt-6 flex flex-wrap justify-center gap-2">
                                 {t.badges.map((badge) => (
-                                    <span key={badge} className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white/70 text-xs font-medium">
+                                    <span key={badge} className="max-w-full px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white/80 text-[11px] sm:text-xs font-medium leading-snug">
                                         {badge}
                                     </span>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Right — Bio + Credentials */}
                         <div className="lg:col-span-3 p-10 flex flex-col justify-center gap-8">
-                            {/* Bio */}
                             <div>
                                 <h4 className="text-xs font-semibold tracking-widest uppercase text-plum-600 dark:text-plum-400 mb-3">
                                     {t.bio_label}
@@ -99,7 +133,6 @@ export default function AboutTrainerSection({ dictionary, lang }) {
                                 </p>
                             </div>
 
-                            {/* Credentials */}
                             <motion.div
                                 variants={staggerAlt}
                                 initial="hidden"
@@ -124,7 +157,6 @@ export default function AboutTrainerSection({ dictionary, lang }) {
                                 </div>
                             </motion.div>
 
-                            {/* Expertise Tags */}
                             <div>
                                 <h4 className="text-xs font-semibold tracking-widest uppercase text-plum-600 dark:text-plum-400 mb-4">
                                     {t.expertise_label}
