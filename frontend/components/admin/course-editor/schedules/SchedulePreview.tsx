@@ -7,8 +7,12 @@ import type { AdminOccurrenceDto } from '@/lib/admin/types';
 import {
   ADMIN_PREVIEW_EXAMPLE_ZONES,
   formatOccurrencePrimary,
+  formatScheduleCadenceDisplay,
+  formatScheduleDateRange,
   formatTimezonePlaceName,
+  normalizeOccurrenceForTime,
 } from '@/lib/catalog/scheduleTime';
+import { useVisitorTimeZone } from '@/hooks/useVisitorTimeZone';
 import { cn } from '@/lib/utils';
 
 interface SchedulePreviewProps {
@@ -48,11 +52,32 @@ export function SchedulePreview({
   const first = occurrences[0];
   const hasResults = occurrences.length > 0;
   const [photoFailed, setPhotoFailed] = useState(false);
+  const { mounted, timeZone: visitorZone } = useVisitorTimeZone();
   const zone = scheduleTimezone || first?.timezone || 'UTC';
+  const normalizedFirst = first ? normalizeOccurrenceForTime(first as object) : null;
   const schedulePrimary = first
     ? formatOccurrencePrimary(
         { startAt: first.start_at, endAt: first.end_at },
         zone,
+        locale
+      )
+    : '';
+  const cadence = normalizedFirst
+    ? formatScheduleCadenceDisplay(normalizedFirst, {
+        visitorZone,
+        mounted,
+        lang: locale,
+        labels: {
+          everyWeekday: locale === 'ar' ? 'كل {day}' : 'Every {day}',
+          makkahTime: locale === 'ar' ? 'بتوقيت مكة المكرمة' : 'Makkah, GMT+3',
+          makkahTimeLabel: locale === 'ar' ? 'بتوقيت مكة المكرمة' : 'Makkah time',
+        },
+      })
+    : null;
+  const previewDateRange = normalizedFirst
+    ? formatScheduleDateRange(
+        normalizedFirst,
+        mounted ? visitorZone : zone,
         locale
       )
     : '';
@@ -178,11 +203,24 @@ export function SchedulePreview({
                     {locale === 'ar' ? `الدفعة ${first.batch_number}` : `Batch ${first.batch_number}`}
                   </div>
                 ) : null}
-                <div className="mt-1 text-base font-bold text-gray-900 dark:text-white">
-                  {schedulePrimary ||
-                    `${first.local_start_date}${
-                      first.duration_days > 1 ? ` – ${first.local_end_date}` : ''
-                    }`}
+                <div className="mt-1 min-h-[2.75rem] space-y-0.5">
+                  <div className="break-words text-base font-bold text-gray-900 dark:text-white">
+                    {previewDateRange ||
+                      schedulePrimary ||
+                      `${first.local_start_date}${
+                        first.duration_days > 1 ? ` – ${first.local_end_date}` : ''
+                      }`}
+                  </div>
+                  {cadence?.primary ? (
+                    <div className="break-words text-sm text-gray-700 dark:text-gray-200">
+                      {cadence.primary}
+                    </div>
+                  ) : null}
+                  {cadence?.secondary ? (
+                    <div className="break-words text-xs text-gray-500 dark:text-gray-400">
+                      {cadence.secondary}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">
                   {first.format}

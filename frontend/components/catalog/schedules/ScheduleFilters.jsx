@@ -90,8 +90,10 @@ export default function ScheduleFilters({
     filters.month;
 
   return (
-    <div className="space-y-3">
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+    <div className="w-full min-w-0 max-w-full space-y-3">
+      {/* Horizontal chip scroller — contained; must not widen the page */}
+      <div className="w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain pb-1 [-webkit-overflow-scrolling:touch]">
+        <div className="flex w-max max-w-none gap-2">
         <Toggle
           pressed={filters.thisMonth}
           onClick={() => set({ thisMonth: !filters.thisMonth, nextMonth: false, month: '' })}
@@ -194,6 +196,7 @@ export default function ScheduleFilters({
             {labels.clearFilters || 'Clear filters'}
           </button>
         ) : null}
+        </div>
       </div>
     </div>
   );

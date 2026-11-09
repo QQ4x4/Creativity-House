@@ -476,6 +476,8 @@
       "phase": "Phase",
       "everyWeekday": "Every {day}",
       "makkahTime": "Makkah, GMT+3",
+      "makkahTimeLabel": "Makkah time",
+      "yourTime": "your time",
       "yourLocalTime": "Your local time ({place}): {when}",
       "onlineClassroom": "Online classroom",
       "requestPrivate": "Request a private or corporate batch",

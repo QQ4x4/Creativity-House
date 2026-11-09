@@ -508,6 +508,8 @@
       "phase": "المرحلة",
       "everyWeekday": "كل {day}",
       "makkahTime": "بتوقيت مكة المكرمة",
+      "makkahTimeLabel": "بتوقيت مكة المكرمة",
+      "yourTime": "بتوقيتك",
       "yourLocalTime": "بتوقيتك المحلي ({place}): {when}",
       "onlineClassroom": "فصل عبر الإنترنت",
       "requestPrivate": "اطلب دفعة خاصة أو للشركات",

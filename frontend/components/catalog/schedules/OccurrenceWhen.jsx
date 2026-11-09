@@ -1,24 +1,23 @@
 'use client';
 
-import {
-  formatOccurrenceDateRange,
-  formatOccurrenceTimeParts,
-} from '@/lib/catalog/scheduleTime';
+import { formatOccurrenceWhenDisplay } from '@/lib/catalog/scheduleTime';
 import { useVisitorTimeZone } from '@/hooks/useVisitorTimeZone';
 import { cn } from '@/lib/utils';
 
 /**
- * Hydration-safe date + time block in the visitor's browser timezone.
- * Line 1: date range. Line 2: time range · GMT offset (nowrap parts).
+ * Hydration-safe date + time block.
+ * SSR / pre-mount: schedule's own zone. After mount: visitor zone (+ schedule secondary).
  */
 export default function OccurrenceWhen({
   occurrence,
   lang = 'en',
+  labels = {},
   /** Optional external mount/zone (share one hook with filters). */
   mounted: mountedProp,
   timeZone: timeZoneProp,
-  dateClassName = 'text-base font-bold text-gray-900 dark:text-white sm:text-lg',
-  timeClassName = 'text-sm text-gray-600 dark:text-gray-300',
+  dateClassName = 'break-words text-base font-bold text-gray-900 dark:text-white sm:text-lg',
+  timeClassName = 'break-words text-sm text-gray-600 dark:text-gray-300',
+  secondaryClassName = 'break-words text-xs text-gray-500 dark:text-gray-400',
   as: DateTag = 'h3',
   className = '',
 }) {
@@ -26,32 +25,20 @@ export default function OccurrenceWhen({
   const mounted = mountedProp ?? local.mounted;
   const timeZone = timeZoneProp ?? local.timeZone;
 
-  if (!mounted) {
-    return (
-      <div className={cn('space-y-1.5', className)} aria-hidden>
-        <div className="h-5 max-w-[16rem] animate-pulse rounded bg-gray-200/80 dark:bg-white/10" />
-        <div className="h-4 max-w-[12rem] animate-pulse rounded bg-gray-100/80 dark:bg-white/5" />
-      </div>
-    );
-  }
-
-  const dateLine = formatOccurrenceDateRange(occurrence, timeZone, lang);
-  const { start, end, offset } = formatOccurrenceTimeParts(occurrence, timeZone, lang);
+  const display = formatOccurrenceWhenDisplay(occurrence, {
+    visitorZone: timeZone,
+    mounted,
+    lang,
+    labels,
+  });
 
   return (
-    <div className={cn('min-w-0 space-y-0.5', className)}>
-      <DateTag className={dateClassName}>{dateLine}</DateTag>
-      <p className={timeClassName}>
-        <span className="whitespace-nowrap">{start}</span>
-        <span aria-hidden> – </span>
-        <span className="whitespace-nowrap">{end}</span>
-        {offset ? (
-          <>
-            <span aria-hidden> · </span>
-            <span className="whitespace-nowrap">{offset}</span>
-          </>
-        ) : null}
-      </p>
+    <div className={cn('min-h-[2.75rem] min-w-0 space-y-0.5', className)}>
+      <DateTag className={dateClassName}>{display.dateLine}</DateTag>
+      {display.timeLine ? <p className={timeClassName}>{display.timeLine}</p> : null}
+      {display.secondary ? (
+        <p className={secondaryClassName}>{display.secondary}</p>
+      ) : null}
     </div>
   );
 }

@@ -89,7 +89,7 @@ export default function CourseSchedules({
   }
 
   return (
-    <div id="schedules" className="mt-6 scroll-mt-28 space-y-4">
+    <div id="schedules" className="mt-6 w-full min-w-0 max-w-full scroll-mt-28 space-y-4">
       <div>
         <h3 className="text-lg font-bold text-gray-900 dark:text-white">
           {labels.heading || labels.explore || 'Schedules'}

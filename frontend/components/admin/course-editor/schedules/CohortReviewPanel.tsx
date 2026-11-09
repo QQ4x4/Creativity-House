@@ -5,6 +5,13 @@ import { AlertTriangle } from 'lucide-react';
 
 import type { AdminOccurrenceDto } from '@/lib/admin/types';
 import { summarizeCohortSessions, type ScheduleFormValues } from '@/lib/admin/scheduleSchema';
+import {
+  formatScheduleCadenceDisplay,
+  formatScheduleDateRange,
+  formatSessionDisplay,
+  normalizeOccurrenceForTime,
+} from '@/lib/catalog/scheduleTime';
+import { useVisitorTimeZone } from '@/hooks/useVisitorTimeZone';
 import { cn } from '@/lib/utils';
 
 interface CohortReviewPanelProps {
@@ -40,6 +47,36 @@ export function CohortReviewPanel({
   const sessions = values.sessions ?? [];
   const phases = values.phases ?? [];
   const summary = summarizeCohortSessions(sessions, phases);
+  const { mounted, timeZone: visitorZone } = useVisitorTimeZone();
+  const scheduleZone = values.timezone || first?.timezone || 'UTC';
+  const occurrenceForTime =
+    normalizeOccurrenceForTime(first as object | null | undefined) ||
+    normalizeOccurrenceForTime({
+      timezone: scheduleZone,
+      start_time: values.start_time,
+      end_time: values.end_time,
+      sessions: sessions.map((s) => ({
+        date: s.date,
+        start_time: s.start_time,
+        end_time: s.end_time,
+      })),
+    });
+  const displayZone = mounted ? visitorZone : scheduleZone;
+  const dateRange = occurrenceForTime
+    ? formatScheduleDateRange(occurrenceForTime, displayZone, locale)
+    : '';
+  const cadence = occurrenceForTime
+    ? formatScheduleCadenceDisplay(occurrenceForTime, {
+        visitorZone,
+        mounted,
+        lang: locale,
+        labels: {
+          everyWeekday: locale === 'ar' ? 'كل {day}' : 'Every {day}',
+          makkahTime: locale === 'ar' ? 'بتوقيت مكة المكرمة' : 'Makkah, GMT+3',
+          makkahTimeLabel: locale === 'ar' ? 'بتوقيت مكة المكرمة' : 'Makkah time',
+        },
+      })
+    : null;
 
   const grouped = useMemo(() => {
     if (phases.length === 0) return [{ name: null as string | null, rows: sessions }];
@@ -133,7 +170,21 @@ export function CohortReviewPanel({
               </span>
             ) : null}
           </div>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">{summary}</p>
+          <p className="break-words text-sm font-semibold text-gray-900 dark:text-white">
+            {dateRange || summary}
+          </p>
+          <div className="min-h-[2.75rem] space-y-0.5">
+            {cadence?.primary ? (
+              <p className="break-words text-sm text-gray-700 dark:text-gray-200">{cadence.primary}</p>
+            ) : (
+              <p className="break-words text-sm text-gray-700 dark:text-gray-200">{summary}</p>
+            )}
+            {cadence?.secondary ? (
+              <p className="break-words text-xs text-gray-500 dark:text-gray-400">
+                {cadence.secondary}
+              </p>
+            ) : null}
+          </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {values.format === 'online'
               ? 'Live online'
@@ -215,24 +266,36 @@ export function CohortReviewPanel({
                     </h4>
                   ) : null}
                   <ul className="divide-y divide-gray-100 rounded-xl border border-gray-100 dark:divide-white/10 dark:border-white/10">
-                    {group.rows.map((row, ri) => (
+                    {group.rows.map((row, ri) => {
+                      const converted = formatSessionDisplay(
+                        {
+                          date: row.date,
+                          startTime: row.start_time,
+                          endTime: row.end_time,
+                        },
+                        scheduleZone,
+                        displayZone,
+                        locale
+                      );
+                      return (
                       <li
                         key={`${row.date}-${ri}`}
-                        className="grid gap-1 px-3 py-2 text-xs sm:grid-cols-[2rem_1fr_auto]"
+                        className="grid min-w-0 gap-1 px-3 py-2 text-xs sm:grid-cols-[2rem_1fr_auto]"
                       >
                         <span className="font-semibold text-plum-700 dark:text-gold-300">
                           #{sessions.indexOf(row) + 1}
                         </span>
-                        <span>
+                        <span className="min-w-0 break-words">
                           {(locale === 'ar' ? row.title_ar || row.title_en : row.title_en || row.title_ar) ||
                             '—'}
-                          <span className="ms-2 text-gray-500">{row.date}</span>
+                          <span className="ms-2 text-gray-500">{converted.dateLabel}</span>
                         </span>
-                        <span className="text-gray-500">
-                          {row.start_time}–{row.end_time}
+                        <span className="break-words text-gray-500">
+                          {converted.timeLabel}
                         </span>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 </div>
               ))}

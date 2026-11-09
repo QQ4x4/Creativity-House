@@ -10,6 +10,23 @@ export function dateLocale(lang = 'en') {
   return lang === 'ar' ? 'ar-u-nu-latn' : 'en';
 }
 
+/** @type {Map<string, Intl.DateTimeFormat>} */
+const formatterCache = new Map();
+
+/**
+ * @param {string} locale
+ * @param {Intl.DateTimeFormatOptions} options
+ */
+export function getCachedDateTimeFormat(locale, options) {
+  const key = `${locale}|${JSON.stringify(options)}`;
+  let fmt = formatterCache.get(key);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(locale, options);
+    formatterCache.set(key, fmt);
+  }
+  return fmt;
+}
+
 /**
  * @returns {string|null}
  */
@@ -157,7 +174,7 @@ export function formatInZone(iso, timeZone, lang, options) {
   const date = iso instanceof Date ? iso : new Date(iso);
   if (!Number.isFinite(date.getTime())) return '';
   try {
-    return new Intl.DateTimeFormat(dateLocale(lang), {
+    return getCachedDateTimeFormat(dateLocale(lang), {
       timeZone: timeZone || 'UTC',
       ...options,
     }).format(date);
@@ -309,3 +326,409 @@ export const ADMIN_PREVIEW_EXAMPLE_ZONES = [
   'Europe/London',
   'America/New_York',
 ];
+
+/**
+ * @param {string|null|undefined} a
+ * @param {string|null|undefined} b
+ */
+export function sameTimeZone(a, b) {
+  return Boolean(a) && Boolean(b) && String(a) === String(b);
+}
+
+/**
+ * Convert a wall-clock date+time in `timeZone` to a UTC Date (DST-safe).
+ * @param {string} ymd YYYY-MM-DD
+ * @param {string} hm HH:mm or HH:mm:ss
+ * @param {string} timeZone
+ * @returns {Date|null}
+ */
+export function wallTimeToUtcDate(ymd, hm, timeZone) {
+  if (!ymd || !hm) return null;
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd).slice(0, 10));
+  const timeMatch = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(String(hm).trim());
+  if (!dateMatch || !timeMatch) return null;
+
+  const year = Number(dateMatch[1]);
+  const month = Number(dateMatch[2]);
+  const day = Number(dateMatch[3]);
+  const hour = Number(timeMatch[1]);
+  const minute = Number(timeMatch[2]);
+  const second = Number(timeMatch[3] || 0);
+  const zone = timeZone || 'UTC';
+
+  // Iterate: treat desired wall time as UTC, then correct by the zone offset.
+  let utcMs = Date.UTC(year, month - 1, day, hour, minute, second);
+  for (let i = 0; i < 3; i += 1) {
+    const parts = getCachedDateTimeFormat('en-CA', {
+      timeZone: zone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date(utcMs));
+
+    const read = (type) => Number(parts.find((p) => p.type === type)?.value || 0);
+    const asUtc = Date.UTC(
+      read('year'),
+      read('month') - 1,
+      read('day'),
+      read('hour'),
+      read('minute'),
+      read('second')
+    );
+    const desired = Date.UTC(year, month - 1, day, hour, minute, second);
+    utcMs += desired - asUtc;
+  }
+
+  const result = new Date(utcMs);
+  return Number.isFinite(result.getTime()) ? result : null;
+}
+
+/**
+ * @param {{ date?: string, startTime?: string, endTime?: string }} session
+ * @param {string} scheduleZone
+ * @returns {{ start: Date|null, end: Date|null }}
+ */
+export function sessionRangeToUtc(session, scheduleZone) {
+  const start = wallTimeToUtcDate(
+    session?.date || '',
+    session?.startTime || '00:00',
+    scheduleZone
+  );
+  const end = wallTimeToUtcDate(
+    session?.date || '',
+    session?.endTime || session?.startTime || '00:00',
+    scheduleZone
+  );
+  return { start, end };
+}
+
+/**
+ * @param {string|Date} iso
+ * @param {string} timeZone
+ * @param {string} [lang]
+ */
+export function formatWeekdayLong(iso, timeZone, lang = 'en') {
+  return formatInZone(iso, timeZone, lang, { weekday: 'long' });
+}
+
+/**
+ * @param {string|Date} iso
+ * @param {string} timeZone
+ * @param {string} [lang]
+ */
+export function formatWeekdayShort(iso, timeZone, lang = 'en') {
+  return formatInZone(iso, timeZone, lang, { weekday: 'short' });
+}
+
+/**
+ * @param {string|Date} iso
+ * @param {string} timeZone
+ * @param {string} [lang]
+ */
+export function formatClockInZone(iso, timeZone, lang = 'en') {
+  return formatInZone(iso, timeZone, lang, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+/**
+ * Calendar date like "Nov 12, 2026" / Arabic equivalent.
+ * @param {string|Date} iso
+ * @param {string} timeZone
+ * @param {string} [lang]
+ */
+export function formatCalendarDateInZone(iso, timeZone, lang = 'en') {
+  return formatInZone(iso, timeZone, lang, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+/**
+ * Inclusive date range for a cohort/separate occurrence in `timeZone`.
+ * @param {Record<string, unknown>} occurrence
+ * @param {string} timeZone
+ * @param {string} [lang]
+ */
+export function formatScheduleDateRange(occurrence, timeZone, lang = 'en') {
+  const zone = timeZone || occurrence?.timezone || 'UTC';
+  const sessions = Array.isArray(occurrence?.sessions) ? occurrence.sessions : [];
+  const scheduleZone = occurrence?.timezone || zone;
+
+  let startIso = occurrence?.startAt || null;
+  let endIso = occurrence?.endAt || null;
+
+  if (sessions.length > 0) {
+    const first = sessionRangeToUtc(sessions[0], scheduleZone);
+    const last = sessionRangeToUtc(sessions[sessions.length - 1], scheduleZone);
+    if (first.start) startIso = first.start.toISOString();
+    if (last.end) endIso = last.end.toISOString();
+  }
+
+  if (!startIso) return '';
+  const startLabel = formatCalendarDateInZone(startIso, zone, lang);
+  if (!endIso) return startLabel;
+  const startYmd = ymdInZone(startIso, zone);
+  const endYmd = ymdInZone(endIso, zone);
+  if (startYmd && endYmd && startYmd !== endYmd) {
+    return `${startLabel} – ${formatCalendarDateInZone(endIso, zone, lang)}`;
+  }
+  return startLabel;
+}
+
+/**
+ * Friendly schedule-zone label (Makkah for Asia/Riyadh).
+ * @param {string} timeZone
+ * @param {string} [lang]
+ * @param {Record<string, string>} [labels]
+ */
+export function formatScheduleZoneLabel(timeZone, lang = 'en', labels = {}) {
+  if (timeZone === 'Asia/Riyadh') {
+    return (
+      labels.makkahTimeLabel ||
+      labels.makkahTime ||
+      (lang === 'ar' ? 'بتوقيت مكة المكرمة' : 'Makkah time')
+    );
+  }
+  return formatTimezonePlaceName(timeZone, lang);
+}
+
+/**
+ * @param {Record<string, unknown>} occurrence
+ * @param {string} displayZone
+ * @param {string} [lang]
+ * @param {Record<string, string>} [labels]
+ */
+export function formatCadenceLine(occurrence, displayZone, lang = 'en', labels = {}) {
+  const scheduleZone = occurrence?.timezone || 'UTC';
+  const zone = displayZone || scheduleZone;
+  const sessions = Array.isArray(occurrence?.sessions) ? occurrence.sessions : [];
+
+  /** @type {Date[]} */
+  const starts = [];
+  if (sessions.length > 0) {
+    sessions.forEach((session) => {
+      const { start } = sessionRangeToUtc(session, scheduleZone);
+      if (start) starts.push(start);
+    });
+  } else if (occurrence?.startAt) {
+    starts.push(new Date(occurrence.startAt));
+  }
+
+  if (starts.length === 0) return '';
+
+  const weekdayNames = [
+    ...new Set(starts.map((d) => formatWeekdayLong(d, zone, lang)).filter(Boolean)),
+  ];
+  const every =
+    weekdayNames.length === 1
+      ? (labels.everyWeekday || (lang === 'ar' ? 'كل {day}' : 'Every {day}')).replace(
+          '{day}',
+          weekdayNames[0]
+        )
+      : weekdayNames.join(lang === 'ar' ? '، ' : ', ');
+
+  const firstStart = starts[0];
+  const firstEnd =
+    sessions.length > 0
+      ? sessionRangeToUtc(sessions[0], scheduleZone).end || firstStart
+      : occurrence?.endAt
+        ? new Date(occurrence.endAt)
+        : firstStart;
+
+  const startClock = formatClockInZone(firstStart, zone, lang);
+  const endClock = formatClockInZone(firstEnd, zone, lang);
+  const offset = formatGmtOffset(firstStart, zone, lang);
+
+  const isVisitor = !sameTimeZone(zone, scheduleZone);
+  let zoneParen;
+  if (isVisitor) {
+    zoneParen = lang === 'ar' ? `(بتوقيتك، ${offset})` : `(your time, ${offset})`;
+  } else if (zone === 'Asia/Riyadh') {
+    zoneParen =
+      lang === 'ar'
+        ? `(${labels.makkahTime || 'بتوقيت مكة المكرمة'})`
+        : `(${labels.makkahTime || 'Makkah, GMT+3'})`;
+  } else {
+    zoneParen = `(${formatScheduleZoneLabel(zone, lang, labels)}, ${offset})`;
+  }
+
+  return `${every} · ${startClock} – ${endClock} ${zoneParen}`;
+}
+
+/**
+ * Secondary line: short weekday + clocks in the schedule's own zone.
+ * @param {Record<string, unknown>} occurrence
+ * @param {string} [lang]
+ * @param {Record<string, string>} [labels]
+ */
+export function formatScheduleZoneSecondaryLine(occurrence, lang = 'en', labels = {}) {
+  const scheduleZone = occurrence?.timezone || 'UTC';
+  const sessions = Array.isArray(occurrence?.sessions) ? occurrence.sessions : [];
+  let start = occurrence?.startAt ? new Date(occurrence.startAt) : null;
+  let end = null;
+
+  if (sessions.length > 0) {
+    const range = sessionRangeToUtc(sessions[0], scheduleZone);
+    start = range.start;
+    end = range.end;
+  } else if (occurrence?.endAt) {
+    end = new Date(occurrence.endAt);
+  }
+
+  if (!start || !Number.isFinite(start.getTime())) return '';
+
+  const weekday = formatWeekdayShort(start, scheduleZone, lang);
+  const startClock = formatClockInZone(start, scheduleZone, lang);
+  const endClock = formatClockInZone(end || start, scheduleZone, lang);
+  const offset = formatGmtOffset(start, scheduleZone, lang);
+  const place = formatScheduleZoneLabel(scheduleZone, lang, labels);
+
+  if (lang === 'ar') {
+    if (scheduleZone === 'Asia/Riyadh') {
+      return `${weekday} ${startClock} – ${endClock} ${labels.makkahTime || 'بتوقيت مكة المكرمة'}`;
+    }
+    return `${weekday} ${startClock} – ${endClock} ${place} (${offset})`;
+  }
+
+  if (scheduleZone === 'Asia/Riyadh') {
+    return `${weekday} ${startClock} – ${endClock} ${labels.makkahTimeLabel || 'Makkah time'} (${offset || 'GMT+3'})`;
+  }
+  return `${weekday} ${startClock} – ${endClock} ${place} (${offset})`;
+}
+
+/**
+ * Accept public (camelCase) or admin API (snake_case) occurrence shapes.
+ * @param {object|null|undefined} raw
+ */
+export function normalizeOccurrenceForTime(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  /** @type {Record<string, any>} */
+  const o = raw;
+  const sessionsIn = Array.isArray(o.sessions) ? o.sessions : [];
+  return {
+    timezone: String(o.timezone || 'UTC'),
+    startAt: o.startAt || o.start_at || null,
+    endAt: o.endAt || o.end_at || null,
+    startTime: o.startTime || o.start_time || null,
+    endTime: o.endTime || o.end_time || null,
+    localStartDate: o.localStartDate || o.local_start_date || null,
+    localEndDate: o.localEndDate || o.local_end_date || null,
+    sessions: sessionsIn.map((session) => ({
+      date: String(session?.date || '').slice(0, 10),
+      startTime: String(session?.startTime || session?.start_time || '').slice(0, 5),
+      endTime: String(session?.endTime || session?.end_time || '').slice(0, 5),
+      title: session?.title ?? session?.title_en ?? session?.title_ar ?? null,
+      position: session?.position ?? null,
+      phaseIndex: session?.phaseIndex ?? session?.phase_index ?? null,
+    })),
+  };
+}
+
+/**
+ * Primary + optional secondary cadence lines (hydration-safe).
+ * Before mount / when zones match → one line in schedule zone.
+ * @param {Record<string, unknown>} occurrence
+ * @param {{ visitorZone?: string|null, mounted?: boolean, lang?: string, labels?: Record<string, string> }} opts
+ * @returns {{ primary: string, secondary: string|null, sameZone: boolean }}
+ */
+export function formatScheduleCadenceDisplay(occurrence, opts = {}) {
+  const normalized = normalizeOccurrenceForTime(occurrence) || occurrence;
+  const lang = opts.lang || 'en';
+  const labels = opts.labels || {};
+  const scheduleZone = normalized?.timezone || 'UTC';
+  const mounted = Boolean(opts.mounted);
+  const visitorZone = opts.visitorZone || scheduleZone;
+  const sameZone = !mounted || sameTimeZone(visitorZone, scheduleZone);
+
+  if (sameZone) {
+    return {
+      primary: formatCadenceLine(normalized, scheduleZone, lang, labels),
+      secondary: null,
+      sameZone: true,
+    };
+  }
+
+  return {
+    primary: formatCadenceLine(normalized, visitorZone, lang, labels),
+    secondary: formatScheduleZoneSecondaryLine(normalized, lang, labels),
+    sameZone: false,
+  };
+}
+
+/**
+ * Format one session row in a display zone.
+ * @param {{ date?: string, startTime?: string, endTime?: string, title?: string|null }} session
+ * @param {string} scheduleZone
+ * @param {string} displayZone
+ * @param {string} [lang]
+ */
+export function formatSessionDisplay(session, scheduleZone, displayZone, lang = 'en') {
+  const { start, end } = sessionRangeToUtc(session, scheduleZone);
+  if (!start) {
+    return {
+      dateLabel: session?.date || '',
+      timeLabel: `${session?.startTime || ''} – ${session?.endTime || ''}`.trim(),
+      weekday: '',
+    };
+  }
+  const zone = displayZone || scheduleZone;
+  return {
+    dateLabel: formatInZone(start, zone, lang, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }),
+    timeLabel: `${formatClockInZone(start, zone, lang)} – ${formatClockInZone(end || start, zone, lang)}`,
+    weekday: formatWeekdayShort(start, zone, lang),
+  };
+}
+
+/**
+ * Date + time block for separate cards / sticky bar (two lines when zones differ).
+ * @param {Record<string, unknown>} occurrence
+ * @param {{ visitorZone?: string|null, mounted?: boolean, lang?: string, labels?: Record<string, string> }} opts
+ */
+export function formatOccurrenceWhenDisplay(occurrence, opts = {}) {
+  const normalized = normalizeOccurrenceForTime(occurrence) || occurrence;
+  const lang = opts.lang || 'en';
+  const labels = opts.labels || {};
+  const scheduleZone = normalized?.timezone || 'UTC';
+  const mounted = Boolean(opts.mounted);
+  const visitorZone = opts.visitorZone || scheduleZone;
+  const sameZone = !mounted || sameTimeZone(visitorZone, scheduleZone);
+  const zone = sameZone ? scheduleZone : visitorZone;
+
+  const dateLine =
+    formatScheduleDateRange(normalized, zone, lang) ||
+    formatOccurrenceDateRange(normalized, zone, lang);
+  const { start, end, offset } = formatOccurrenceTimeParts(normalized, zone, lang);
+  const timeLine = [start && end ? `${start} – ${end}` : start, offset]
+    .filter(Boolean)
+    .join(' · ');
+
+  let secondary = null;
+  if (!sameZone) {
+    const schedDate = formatScheduleDateRange(normalized, scheduleZone, lang);
+    const schedParts = formatOccurrenceTimeParts(normalized, scheduleZone, lang);
+    const schedTime = [
+      schedParts.start && schedParts.end
+        ? `${schedParts.start} – ${schedParts.end}`
+        : schedParts.start,
+      schedParts.offset,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    const place = formatScheduleZoneLabel(scheduleZone, lang, labels);
+    secondary = [schedDate, schedTime, place].filter(Boolean).join(' · ');
+  }
+
+  return { dateLine, timeLine, secondary, sameZone, zone };
+}

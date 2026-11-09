@@ -385,7 +385,7 @@ export default function CourseDetailClient({
 
   return (
     <PublicShell dictionary={dictionary} lang={lang}>
-      <div className="mx-auto max-w-7xl px-4 pb-28 pt-28 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl min-w-0 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] pt-28 sm:px-6 lg:px-8 lg:pb-28">
         {isLoading || !course ? (
           <div className="h-[70vh] animate-pulse rounded-3xl bg-gray-200 dark:bg-[#181124]/60" />
         ) : (
@@ -399,7 +399,7 @@ export default function CourseDetailClient({
             </nav>
 
             <header className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px]">
-              <div>
+              <div className="min-w-0 max-w-full">
                 {modeBadge ? (
                   <span className="inline-flex rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-plum-800 dark:border-gold-400/30 dark:bg-gold-400/10 dark:text-gold-200">
                     {modeBadge}
@@ -470,37 +470,37 @@ export default function CourseDetailClient({
             </header>
 
             <div className="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="space-y-6">
-                <section className="rounded-3xl border border-gray-200 bg-white p-6 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90">
+              <div className="min-w-0 max-w-full space-y-6">
+                <section className="max-w-full overflow-hidden rounded-3xl border border-gray-200 bg-white p-4 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90 sm:p-6">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{labels.about}</h2>
-                  <p className="mt-3 leading-relaxed text-gray-600 dark:text-gray-300">{course.description}</p>
+                  <p className="mt-3 break-words leading-relaxed text-gray-600 dark:text-gray-300">{course.description}</p>
                 </section>
 
-                <section className="rounded-3xl border border-gray-200 bg-white p-6 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90">
+                <section className="max-w-full overflow-hidden rounded-3xl border border-gray-200 bg-white p-4 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90 sm:p-6">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{labels.audience}</h2>
                   <ul className="mt-4 space-y-2">
                     {(course.targetAudience || []).map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-gray-600 dark:text-gray-300">
+                      <li key={item} className="flex min-w-0 items-start gap-2 text-gray-600 dark:text-gray-300">
                         <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-gold-400" aria-hidden />
-                        {item}
+                        <span className="min-w-0 break-words">{item}</span>
                       </li>
                     ))}
                   </ul>
                 </section>
 
-                <section className="rounded-3xl border border-gray-200 bg-white p-6 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90">
+                <section className="max-w-full overflow-hidden rounded-3xl border border-gray-200 bg-white p-4 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90 sm:p-6">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{labels.outcomes}</h2>
                   <ul className="mt-4 grid gap-3 sm:grid-cols-2">
                     {(course.learningOutcomes || []).map((item) => (
-                      <li key={item} className="flex items-start gap-2 rounded-2xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 dark:border-white/5 dark:bg-white/[0.03] dark:text-gray-200">
+                      <li key={item} className="flex min-w-0 items-start gap-2 rounded-2xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 dark:border-white/5 dark:bg-white/[0.03] dark:text-gray-200">
                         <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" aria-hidden />
-                        {item}
+                        <span className="min-w-0 break-words">{item}</span>
                       </li>
                     ))}
                   </ul>
                 </section>
 
-                <section className="rounded-3xl border border-gray-200 bg-white p-6 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90">
+                <section className="max-w-full overflow-hidden rounded-3xl border border-gray-200 bg-white p-4 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90 sm:p-6">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{labels.curriculum}</h2>
                   <div className="mt-4 space-y-2">
                     {(course.curriculum || []).map((mod, index) => {
@@ -522,8 +522,8 @@ export default function CourseDetailClient({
                               className={`${headerClass} cursor-pointer transition-colors duration-300 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-plum-400/50 dark:hover:bg-white/5 dark:focus-visible:ring-amber-400/50`}
                               aria-expanded={open}
                             >
-                              <span>
-                                <span className="block font-semibold">{mod.title}</span>
+                              <span className="min-w-0">
+                                <span className="block break-words font-semibold">{mod.title}</span>
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
                                   {mod.duration}
                                 </span>
@@ -535,8 +535,8 @@ export default function CourseDetailClient({
                             </button>
                           ) : (
                             <div className={headerClass}>
-                              <span>
-                                <span className="block font-semibold">{mod.title}</span>
+                              <span className="min-w-0">
+                                <span className="block break-words font-semibold">{mod.title}</span>
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
                                   {mod.duration}
                                 </span>
@@ -546,9 +546,9 @@ export default function CourseDetailClient({
                           {hasSubs && open ? (
                             <ul className="space-y-1 border-t border-gray-200 px-4 py-3 text-sm text-gray-600 dark:border-white/10 dark:text-gray-300">
                               {subModules.map((sub) => (
-                                <li key={sub.title} className="flex items-center gap-2">
+                                <li key={sub.title} className="flex min-w-0 items-center gap-2">
                                   <Layers className="h-3.5 w-3.5 shrink-0 text-gold-400" aria-hidden />
-                                  {sub.title}
+                                  <span className="min-w-0 break-words">{sub.title}</span>
                                 </li>
                               ))}
                             </ul>
@@ -559,7 +559,7 @@ export default function CourseDetailClient({
                   </div>
                 </section>
 
-                <section className="rounded-3xl border border-gray-200 bg-white p-6 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90">
+                <section className="max-w-full overflow-hidden rounded-3xl border border-gray-200 bg-white p-4 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90 sm:p-6">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{labels.schedule}</h2>
                   {course.schedule ? (
                     <p className="mt-3 leading-relaxed text-gray-600 dark:text-gray-300">
@@ -577,7 +577,7 @@ export default function CourseDetailClient({
                   />
                 </section>
 
-                <section className="rounded-3xl border border-gray-200 bg-white p-6 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90">
+                <section className="max-w-full overflow-hidden rounded-3xl border border-gray-200 bg-white p-4 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#181124]/90 sm:p-6">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{labels.instructor}</h2>
                   <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
                     <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full bg-transparent">
@@ -589,8 +589,8 @@ export default function CourseDetailClient({
                         className="h-full w-full scale-[1.02] object-cover"
                       />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">{course.instructor.name}</h3>
+                    <div className="min-w-0 max-w-full">
+                      <h3 className="break-words text-lg font-bold text-gray-900 dark:text-white">{course.instructor.name}</h3>
                       <p className="text-sm text-plum-700 dark:text-gold-300">{course.instructor.title}</p>
                       <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                         {course.instructor.trained} {labels.trained} · {course.instructor.countries} {labels.countries}
@@ -614,14 +614,14 @@ export default function CourseDetailClient({
               <div className="hidden lg:block" aria-hidden />
             </div>
 
-            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 p-3 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#120a1c]/95 lg:hidden">
-              <div className="flex items-center justify-between gap-3">
+            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-3 pt-3 backdrop-blur-md dark:border-purple-500/20 dark:bg-[#120a1c]/95 lg:hidden pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
+              <div className="mx-auto flex w-full max-w-7xl min-w-0 items-center justify-between gap-3">
                 {isEnrolled ? (
-                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  <p className="min-w-0 break-words text-sm font-semibold text-emerald-700 dark:text-emerald-300">
                     {labels.alreadyEnrolled || 'You own this course'}
                   </p>
                 ) : (
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1 overflow-hidden">
                     <p className="text-lg font-extrabold text-plum-700 dark:text-gold-300">
                       $
                       {(
@@ -638,7 +638,7 @@ export default function CourseDetailClient({
                     />
                   </div>
                 )}
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <Link
                     href={`/${lang}/course-inquiry?course=${encodeURIComponent(course.slug)}`}
                     aria-label={labels.haveQuestions}

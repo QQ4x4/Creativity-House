@@ -73,9 +73,9 @@ export default function ScheduleCard({
   const showTrainerPhoto = Boolean(occurrence.trainer?.photo) && !photoFailed;
 
   return (
-    <article className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white p-4 shadow-sm dark:border-purple-500/20 dark:bg-[#181124]/90 sm:p-5">
+    <article className="relative max-w-full overflow-hidden rounded-3xl border border-gray-200 bg-white p-4 shadow-sm dark:border-purple-500/20 dark:bg-[#181124]/90 sm:p-5">
       {occurrence.showCountdown ? (
-        <div className="absolute end-3 top-3 z-10">
+        <div className="absolute end-3 top-3 z-10 max-w-[45%]">
           <ScheduleCountdown
             startAt={occurrence.startAt}
             now={now}
@@ -85,7 +85,7 @@ export default function ScheduleCard({
         </div>
       ) : null}
 
-      <div className="grid gap-4 pe-24 md:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,0.9fr)] md:items-center md:pe-28">
+      <div className="grid min-w-0 gap-4 pe-16 sm:pe-24 md:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,0.9fr)] md:items-center md:pe-28">
         <div className="min-w-0 space-y-2">
           {occurrence.batchNumber != null ? (
             <span className="inline-flex rounded-full border border-plum-200 bg-plum-50 px-2.5 py-0.5 text-[11px] font-semibold text-plum-800 dark:border-plum-400/30 dark:bg-plum-500/15 dark:text-plum-100">
@@ -95,6 +95,7 @@ export default function ScheduleCard({
           <OccurrenceWhen
             occurrence={occurrence}
             lang={lang}
+            labels={labels}
             mounted={timeMounted}
             timeZone={visitorTimeZone}
           />

@@ -71,8 +71,10 @@ export default function FeaturedScheduleCard({
             <OccurrenceWhen
               occurrence={occurrence}
               lang={lang}
-              dateClassName="text-sm font-bold text-gray-900 dark:text-white"
-              timeClassName="text-[11px] text-gray-600 dark:text-gray-300"
+              labels={labels}
+              dateClassName="break-words text-sm font-bold text-gray-900 dark:text-white"
+              timeClassName="break-words text-[11px] text-gray-600 dark:text-gray-300"
+              secondaryClassName="break-words text-[10px] text-gray-500 dark:text-gray-400"
               as="p"
             />
           </div>
@@ -111,7 +113,7 @@ export function MobileNextBatchLine({ occurrence, lang, labels }) {
   if (!occurrence) return null;
 
   return (
-    <div className="min-w-0">
+    <div className="min-w-0 max-w-full overflow-hidden">
       <p className="truncate text-[11px] font-semibold text-gray-500 dark:text-gray-400">
         {occurrence.batchNumber != null
           ? (labels?.batchNumber || 'Batch {n}').replace('{n}', String(occurrence.batchNumber))
@@ -120,8 +122,10 @@ export function MobileNextBatchLine({ occurrence, lang, labels }) {
       <OccurrenceWhen
         occurrence={occurrence}
         lang={lang}
+        labels={labels}
         dateClassName="truncate text-[11px] font-medium text-gray-700 dark:text-gray-200"
         timeClassName="truncate text-[10px] text-gray-500 dark:text-gray-400"
+        secondaryClassName="truncate text-[10px] text-gray-400 dark:text-gray-500"
         as="p"
       />
     </div>
