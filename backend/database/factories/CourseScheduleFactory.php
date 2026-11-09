@@ -23,6 +23,7 @@ class CourseScheduleFactory extends Factory
     {
         return [
             'course_id' => Course::factory(),
+            'type' => CourseSchedule::TYPE_SEPARATE,
             'delivery_mode' => null,
             'format' => 'online',
             'timezone' => 'Asia/Kuala_Lumpur',

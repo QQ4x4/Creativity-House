@@ -67,6 +67,40 @@ export function localizeOccurrence(raw, lang = 'en') {
     },
     note: ar ? raw.note_ar || raw.note_en || null : raw.note_en || raw.note_ar || null,
     isException: Boolean(raw.is_exception ?? raw.isException),
+    type: String(raw.type || 'separate'),
+    sessions: Array.isArray(raw.sessions)
+      ? raw.sessions.map((session) => ({
+          position: Number(session.position ?? 0),
+          date: String(session.date || '').slice(0, 10),
+          startTime: String(session.start_time ?? session.startTime ?? '').slice(0, 5),
+          endTime: String(session.end_time ?? session.endTime ?? '').slice(0, 5),
+          title: ar
+            ? session.title_ar || session.title_en || null
+            : session.title_en || session.title_ar || null,
+          titleEn: session.title_en || null,
+          titleAr: session.title_ar || null,
+          phaseIndex:
+            session.phase_index != null || session.phaseIndex != null
+              ? Number(session.phase_index ?? session.phaseIndex)
+              : null,
+        }))
+      : [],
+    phases: Array.isArray(raw.phases)
+      ? raw.phases.map((phase) => ({
+          name: ar
+            ? phase?.name_ar || phase?.name_en || null
+            : phase?.name_en || phase?.name_ar || null,
+          nameEn: phase?.name_en || null,
+          nameAr: phase?.name_ar || null,
+        }))
+      : [],
+    sessionCount: Number(raw.session_count ?? raw.sessionCount ?? (raw.sessions?.length || 0)),
+    phaseCount: Number(raw.phase_count ?? raw.phaseCount ?? (raw.phases?.length || 0)),
+    enrollmentClosesAt: raw.enrollment_closes_at
+      ? String(raw.enrollment_closes_at).slice(0, 10)
+      : raw.enrollmentClosesAt
+        ? String(raw.enrollmentClosesAt).slice(0, 10)
+        : null,
   };
 }
 

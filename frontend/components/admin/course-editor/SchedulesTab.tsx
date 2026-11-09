@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import {
   deleteAdminOccurrence,
@@ -68,6 +70,10 @@ interface SchedulesTabProps {
 
 function summarizeRule(schedule: AdminCourseScheduleDto): string {
   const time = `${schedule.start_time}–${schedule.end_time}`;
+  if (schedule.type === 'cohort') {
+    const count = schedule.session_count ?? schedule.sessions?.length ?? 0;
+    return `One batch · ${count} session${count === 1 ? '' : 's'} · ${time}`;
+  }
   const days =
     schedule.duration_days > 1 ? `${schedule.duration_days}-day batch` : '1-day batch';
 
@@ -103,6 +109,25 @@ function summarizeRule(schedule: AdminCourseScheduleDto): string {
   }
 }
 
+function lifecycleBadge(status: AdminCourseScheduleDto['lifecycle_status']): {
+  label: string;
+  variant: 'success' | 'secondary' | 'warning' | 'destructive' | 'default';
+} {
+  switch (status) {
+    case 'enrollment_closed':
+      return { label: 'Enrollment closed', variant: 'warning' };
+    case 'in_progress':
+      return { label: 'In progress', variant: 'default' };
+    case 'completed':
+      return { label: 'Completed', variant: 'secondary' };
+    case 'inactive':
+      return { label: 'Inactive', variant: 'secondary' };
+    case 'open':
+    default:
+      return { label: 'Open', variant: 'success' };
+  }
+}
+
 export function SchedulesTab({
   courseId,
   currency,
@@ -117,6 +142,9 @@ export function SchedulesTab({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AdminCourseScheduleDto | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminCourseScheduleDto | null>(null);
+  const [duplicateTarget, setDuplicateTarget] = useState<AdminCourseScheduleDto | null>(null);
+  const [weeksShift, setWeeksShift] = useState(1);
+  const [duplicating, setDuplicating] = useState(false);
   const [occurrenceEdit, setOccurrenceEdit] = useState<AdminOccurrenceDto | null>(null);
 
   const load = useCallback(async () => {
@@ -219,13 +247,33 @@ export function SchedulesTab({
     }
   };
 
-  const onDuplicate = async (schedule: AdminCourseScheduleDto) => {
+  const onDuplicate = (schedule: AdminCourseScheduleDto) => {
+    setDuplicateTarget(schedule);
+    setWeeksShift(schedule.type === 'cohort' ? 1 : 0);
+  };
+
+  const confirmDuplicate = async () => {
+    if (!duplicateTarget || !courseId) return;
+    setDuplicating(true);
     try {
-      await duplicateAdminSchedule(courseId!, schedule.id);
-      toast.success('Schedule duplicated as inactive.');
+      const copy = await duplicateAdminSchedule(courseId, duplicateTarget.id, {
+        weeks_shift: duplicateTarget.type === 'cohort' ? weeksShift : 0,
+      });
+      toast.success(
+        duplicateTarget.type === 'cohort'
+          ? `Duplicated as Batch ${copy.batch_number ?? '—'}. Review and save.`
+          : 'Schedule duplicated as inactive.'
+      );
+      setDuplicateTarget(null);
       await load();
+      if (copy.type === 'cohort') {
+        setEditing(copy);
+        setDialogOpen(true);
+      }
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : 'Could not duplicate.');
+    } finally {
+      setDuplicating(false);
     }
   };
 
@@ -329,15 +377,20 @@ export function SchedulesTab({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={schedule.is_active ? 'success' : 'secondary'}>
-                      {schedule.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                    {schedule.is_featured ? <Badge variant="warning">Featured</Badge> : null}
-                    {schedule.delivery_mode ? (
-                      <Badge>{schedule.delivery_mode}</Badge>
+                    {(() => {
+                      const life = lifecycleBadge(schedule.lifecycle_status);
+                      return <Badge variant={life.variant}>{life.label}</Badge>;
+                    })()}
+                    {!schedule.is_active ? <Badge variant="secondary">Inactive</Badge> : null}
+                    {schedule.type === 'cohort' ? (
+                      <Badge variant="secondary">
+                        {(schedule.session_count ?? schedule.sessions?.length ?? 0)} sessions
+                      </Badge>
                     ) : (
-                      <Badge variant="secondary">All modes</Badge>
+                      <Badge variant="secondary">Separate batches</Badge>
                     )}
+                    {schedule.is_featured ? <Badge variant="warning">Featured</Badge> : null}
+                    {schedule.format ? <Badge>{schedule.format}</Badge> : null}
                     {schedule.price != null ? (
                       <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                         {currency} {schedule.price}
@@ -601,6 +654,55 @@ export function SchedulesTab({
           <AlertDialogFooter>
             <AlertDialogCancel>Keep</AlertDialogCancel>
             <AlertDialogAction onClick={() => void onConfirmDelete()}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(duplicateTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDuplicateTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Duplicate batch?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {duplicateTarget?.type === 'cohort'
+                ? `Creates the next batch number and can shift all sessions forward by a number of weeks. Opens in the editor for review.`
+                : 'Creates an inactive copy of this schedule rule.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {duplicateTarget?.type === 'cohort' ? (
+            <div className="space-y-2 py-2">
+              <Label htmlFor="weeks-shift">Shift sessions by weeks</Label>
+              <Input
+                id="weeks-shift"
+                type="number"
+                min={0}
+                max={104}
+                className="min-h-11"
+                value={weeksShift}
+                onChange={(e) => setWeeksShift(Math.max(0, Number(e.target.value) || 0))}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Example: Batch {duplicateTarget.batch_number ?? '—'} → next free number, dates +
+                {weeksShift} week{weeksShift === 1 ? '' : 's'}.
+              </p>
+            </div>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={duplicating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={duplicating}
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmDuplicate();
+              }}
+            >
+              {duplicating ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+              Duplicate
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

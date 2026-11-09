@@ -62,7 +62,7 @@ class PublicCatalogController extends Controller
             'modules.subModules.lessons',
             'modules.lessons',
             'pricingTiers',
-            'schedules' => fn ($query) => $query->where('is_active', true)->with('exceptions'),
+            'schedules' => fn ($query) => $query->where('is_active', true)->with(['exceptions', 'sessions']),
         ]);
 
         $isEnrolled = false;

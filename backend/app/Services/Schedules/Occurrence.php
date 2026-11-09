@@ -71,6 +71,12 @@ final class Occurrence
         public readonly ?string $noteEn,
         public readonly ?string $noteAr,
         public readonly bool $isException,
+        public readonly string $type = 'separate',
+        /** @var list<array<string, mixed>> */
+        public readonly array $sessions = [],
+        /** @var list<array{name_en: ?string, name_ar: ?string}> */
+        public readonly array $phases = [],
+        public readonly ?string $enrollmentClosesAt = null,
     ) {}
 
     public function isBookable(): bool
@@ -128,6 +134,12 @@ final class Occurrence
             'note_en' => $this->noteEn,
             'note_ar' => $this->noteAr,
             'is_exception' => $this->isException,
+            'type' => $this->type,
+            'sessions' => $this->sessions,
+            'phases' => $this->phases,
+            'session_count' => count($this->sessions),
+            'phase_count' => count($this->phases),
+            'enrollment_closes_at' => $this->enrollmentClosesAt,
         ];
     }
 

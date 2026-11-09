@@ -10,18 +10,30 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * A recurring (or one-off) batch rule for a course. Individual dates are never
- * stored — ScheduleOccurrenceService expands them on read, because the app has
- * no cron to materialise them.
+ * A recurring (or one-off) batch rule for a course.
+ *
+ * Type "separate" (default): ScheduleOccurrenceService expands dates on read
+ * into one public card per date. Type "cohort": stored sessions form one batch.
  *
  * @property int $id
  * @property int $course_id
+ * @property string $type
  * @property string $recurrence_type
  * @property string $timezone
  */
 class CourseSchedule extends Model
 {
     use HasFactory, SoftDeletes;
+
+    public const TYPE_SEPARATE = 'separate';
+
+    public const TYPE_COHORT = 'cohort';
+
+    /** @var list<string> */
+    public const TYPES = [
+        self::TYPE_SEPARATE,
+        self::TYPE_COHORT,
+    ];
 
     public const RECURRENCE_ONCE = 'once';
 
@@ -56,12 +68,14 @@ class CourseSchedule extends Model
 
     protected $fillable = [
         'course_id',
+        'type',
         'delivery_mode',
         'title_en',
         'title_ar',
         'batch_label_en',
         'batch_label_ar',
         'batch_number',
+        'phases',
         'time_slot',
         'format',
         'location_en',
@@ -88,6 +102,7 @@ class CourseSchedule extends Model
         'seats_total',
         'show_seats_left',
         'enrollment_closes_hours',
+        'enrollment_closes_at',
         'cta_type',
         'trainer_name_en',
         'trainer_name_ar',
@@ -110,6 +125,7 @@ class CourseSchedule extends Model
         return [
             'course_id' => 'integer',
             'batch_number' => 'integer',
+            'phases' => 'array',
             'duration_days' => 'integer',
             'starts_on' => 'date',
             'custom_dates' => 'array',
@@ -124,6 +140,7 @@ class CourseSchedule extends Model
             'seats_total' => 'integer',
             'show_seats_left' => 'boolean',
             'enrollment_closes_hours' => 'integer',
+            'enrollment_closes_at' => 'date',
             'show_countdown' => 'boolean',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
@@ -147,6 +164,19 @@ class CourseSchedule extends Model
     public function exceptions(): HasMany
     {
         return $this->hasMany(CourseScheduleException::class)->orderBy('occurrence_date');
+    }
+
+    /**
+     * @return HasMany<CourseScheduleSession, $this>
+     */
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(CourseScheduleSession::class)->orderBy('position')->orderBy('date');
+    }
+
+    public function isCohort(): bool
+    {
+        return ($this->type ?: self::TYPE_SEPARATE) === self::TYPE_COHORT;
     }
 
     /* ─── Scopes ────────────────────────────────────────────────────────── */

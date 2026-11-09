@@ -588,6 +588,558 @@ class CourseScheduleApiTest extends TestCase
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>
      */
+    /* ─── Cohort (one batch, multiple sessions) ─────────────────────────── */
+
+    public function test_admin_can_create_a_cohort_schedule_with_sessions(): void
+    {
+        $course = Course::factory()->create(['is_published' => true, 'is_public' => true]);
+
+        $payload = $this->payload([
+            'type' => 'cohort',
+            'batch_number' => 21,
+            'timezone' => 'Asia/Riyadh',
+            'start_time' => '19:30',
+            'end_time' => '22:00',
+            'time_slot' => 'evening',
+            'recurrence_type' => 'custom_dates',
+            'starts_on' => '2030-02-05',
+            'custom_dates' => ['2030-02-05', '2030-02-12', '2030-02-19'],
+            'weekdays' => [],
+            'ends_type' => 'after_count',
+            'max_occurrences' => 3,
+            'phases' => [
+                ['name_en' => 'Learn & Practice', 'name_ar' => 'المشاهدة والتعلم'],
+                ['name_en' => 'Mentoring', 'name_ar' => 'الإشراف'],
+            ],
+            'enrollment_closes_at' => '2030-02-12',
+            'notes_en' => 'Extra support if needed',
+            'notes_ar' => 'دعم إضافي عند الحاجة',
+            'sessions' => [
+                [
+                    'date' => '2030-02-05',
+                    'start_time' => '19:30',
+                    'end_time' => '22:00',
+                    'title_en' => 'Basics',
+                    'title_ar' => 'الأساسيات',
+                    'phase_index' => 0,
+                ],
+                [
+                    'date' => '2030-02-12',
+                    'start_time' => '19:30',
+                    'end_time' => '22:00',
+                    'title_en' => 'Key concepts',
+                    'title_ar' => 'المفاهيم',
+                    'phase_index' => 0,
+                ],
+                [
+                    'date' => '2030-02-19',
+                    'start_time' => '19:30',
+                    'end_time' => '22:00',
+                    'title_en' => 'Exam readiness',
+                    'title_ar' => 'الجاهزية',
+                    'phase_index' => 1,
+                ],
+            ],
+        ]);
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules", $payload);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.type', 'cohort')
+            ->assertJsonPath('data.batch_number', 21)
+            ->assertJsonPath('data.enrollment_closes_at', '2030-02-12')
+            ->assertJsonCount(3, 'data.sessions')
+            ->assertJsonCount(2, 'data.phases');
+
+        $scheduleId = (int) $response->json('data.id');
+        $this->assertDatabaseCount('course_schedule_sessions', 3);
+        $this->assertTrue(
+            \App\Models\CourseScheduleSession::query()
+                ->where('course_schedule_id', $scheduleId)
+                ->whereDate('date', '2030-02-05')
+                ->where('title_en', 'Basics')
+                ->exists()
+        );
+
+        $public = $this->getJson("/api/courses/{$course->slug}");
+        $public->assertOk()
+            ->assertJsonPath('data.schedules.0.type', 'cohort')
+            ->assertJsonPath('data.schedules.0.batch_number', 21)
+            ->assertJsonPath('data.schedules.0.occurrence_date', '2030-02-05')
+            ->assertJsonPath('data.schedules.0.local_end_date', '2030-02-19')
+            ->assertJsonCount(3, 'data.schedules.0.sessions');
+    }
+
+    public function test_cohort_with_default_instructor_falls_back_to_course_instructor(): void
+    {
+        $course = Course::factory()->create([
+            'is_published' => true,
+            'is_public' => true,
+            'instructor_name' => 'Dr. Talaat Al-Awadhi',
+            'instructor_name_ar' => 'د. طلعت العواضي',
+            'instructor_title_en' => 'PMI® Authorized Instructor',
+            'instructor_title_ar' => 'مدرب معتمد من PMI®',
+            'instructor_photo' => 'uploads/dr-talaat.jpg',
+        ]);
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 30,
+                'recurrence_type' => 'custom_dates',
+                'starts_on' => '2030-05-01',
+                'custom_dates' => ['2030-05-01', '2030-05-08'],
+                'weekdays' => [],
+                'ends_type' => 'after_count',
+                'max_occurrences' => 2,
+                'trainer_name_en' => null,
+                'trainer_name_ar' => null,
+                'trainer_title_en' => null,
+                'trainer_title_ar' => null,
+                'trainer_photo' => null,
+                'sessions' => [
+                    [
+                        'date' => '2030-05-01',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                    ],
+                    [
+                        'date' => '2030-05-08',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                    ],
+                ],
+            ]))
+            ->assertCreated();
+
+        $this->assertDatabaseHas('course_schedules', [
+            'id' => (int) $response->json('data.id'),
+            'trainer_name_en' => null,
+            'trainer_photo' => null,
+        ]);
+
+        $this->getJson("/api/courses/{$course->slug}")
+            ->assertOk()
+            ->assertJsonPath('data.schedules.0.trainer.name_en', 'Dr. Talaat Al-Awadhi')
+            ->assertJsonPath('data.schedules.0.trainer.title_en', 'PMI® Authorized Instructor');
+    }
+
+    public function test_cohort_with_custom_instructor_and_photo_is_persisted(): void
+    {
+        $course = Course::factory()->create([
+            'is_published' => true,
+            'is_public' => true,
+            'instructor_name' => 'Course Default',
+        ]);
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 31,
+                'recurrence_type' => 'custom_dates',
+                'starts_on' => '2030-06-01',
+                'custom_dates' => ['2030-06-01'],
+                'weekdays' => [],
+                'ends_type' => 'after_count',
+                'max_occurrences' => 1,
+                'trainer_name_en' => 'Guest Trainer',
+                'trainer_name_ar' => 'مدرب ضيف',
+                'trainer_title_en' => 'Guest Instructor',
+                'trainer_title_ar' => 'مدرب ضيف',
+                'trainer_photo' => 'uploads/guest-trainer.png',
+                'sessions' => [
+                    [
+                        'date' => '2030-06-01',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                    ],
+                ],
+            ]))
+            ->assertCreated()
+            ->assertJsonPath('data.trainer_name_en', 'Guest Trainer')
+            ->assertJsonPath('data.trainer_name_ar', 'مدرب ضيف')
+            ->assertJsonPath('data.trainer_title_en', 'Guest Instructor')
+            ->assertJsonPath('data.trainer_title_ar', 'مدرب ضيف');
+
+        $photo = $response->json('data.trainer_photo');
+        $this->assertIsString($photo);
+        $this->assertMatchesRegularExpression('#^https?://#', (string) $photo);
+
+        $this->getJson("/api/courses/{$course->slug}")
+            ->assertOk()
+            ->assertJsonPath('data.schedules.0.trainer.name_en', 'Guest Trainer')
+            ->assertJsonPath('data.schedules.0.trainer.title_en', 'Guest Instructor');
+    }
+
+    public function test_editing_cohort_preserves_existing_trainer_fields(): void
+    {
+        $course = Course::factory()->create(['is_published' => true, 'is_public' => true]);
+
+        $create = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 32,
+                'recurrence_type' => 'custom_dates',
+                'starts_on' => '2030-07-01',
+                'custom_dates' => ['2030-07-01', '2030-07-08'],
+                'weekdays' => [],
+                'ends_type' => 'after_count',
+                'max_occurrences' => 2,
+                'trainer_name_en' => 'Legacy Trainer',
+                'trainer_name_ar' => 'مدرب قديم',
+                'trainer_title_en' => 'Senior Coach',
+                'trainer_title_ar' => 'مدرب أول',
+                'trainer_photo' => 'uploads/legacy-trainer.jpg',
+                'sessions' => [
+                    [
+                        'date' => '2030-07-01',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                        'title_en' => 'Session 1',
+                    ],
+                    [
+                        'date' => '2030-07-08',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                        'title_en' => 'Session 2',
+                    ],
+                ],
+            ]))
+            ->assertCreated();
+
+        $id = (int) $create->json('data.id');
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson("/api/v1/admin/courses/{$course->id}/schedules/{$id}", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 32,
+                'recurrence_type' => 'custom_dates',
+                'starts_on' => '2030-07-01',
+                'custom_dates' => ['2030-07-01', '2030-07-08'],
+                'weekdays' => [],
+                'ends_type' => 'after_count',
+                'max_occurrences' => 2,
+                'notes_en' => 'Updated notes only',
+                'trainer_name_en' => 'Legacy Trainer',
+                'trainer_name_ar' => 'مدرب قديم',
+                'trainer_title_en' => 'Senior Coach',
+                'trainer_title_ar' => 'مدرب أول',
+                'trainer_photo' => 'uploads/legacy-trainer.jpg',
+                'sessions' => [
+                    [
+                        'date' => '2030-07-01',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                        'title_en' => 'Session 1',
+                    ],
+                    [
+                        'date' => '2030-07-08',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                        'title_en' => 'Session 2 updated',
+                    ],
+                ],
+            ]))
+            ->assertOk()
+            ->assertJsonPath('data.trainer_name_en', 'Legacy Trainer')
+            ->assertJsonPath('data.trainer_name_ar', 'مدرب قديم')
+            ->assertJsonPath('data.trainer_title_en', 'Senior Coach')
+            ->assertJsonPath('data.notes_en', 'Updated notes only');
+
+        $this->assertDatabaseHas('course_schedules', [
+            'id' => $id,
+            'trainer_name_en' => 'Legacy Trainer',
+            'trainer_title_en' => 'Senior Coach',
+            'trainer_photo' => 'uploads/legacy-trainer.jpg',
+        ]);
+    }
+
+    public function test_cohort_schedule_requires_sessions_and_unique_dates(): void
+    {
+        $course = Course::factory()->create();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 40,
+                'sessions' => [],
+            ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('sessions');
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 41,
+                'recurrence_type' => 'custom_dates',
+                'custom_dates' => ['2030-02-05'],
+                'weekdays' => [],
+                'sessions' => [
+                    [
+                        'date' => '2030-02-05',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                    ],
+                    [
+                        'date' => '2030-02-05',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                    ],
+                ],
+            ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('sessions.1.date');
+    }
+
+    public function test_cohort_session_end_must_be_after_start(): void
+    {
+        $course = Course::factory()->create();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 42,
+                'recurrence_type' => 'custom_dates',
+                'custom_dates' => ['2030-02-05'],
+                'weekdays' => [],
+                'sessions' => [
+                    [
+                        'date' => '2030-02-05',
+                        'start_time' => '22:00',
+                        'end_time' => '19:30',
+                    ],
+                ],
+            ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('sessions.0.end_time');
+    }
+
+    public function test_updating_cohort_replaces_sessions_and_separate_stays_unchanged(): void
+    {
+        $course = Course::factory()->create();
+
+        $create = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 7,
+                'recurrence_type' => 'custom_dates',
+                'custom_dates' => ['2030-03-01', '2030-03-08'],
+                'weekdays' => [],
+                'sessions' => [
+                    [
+                        'date' => '2030-03-01',
+                        'start_time' => '09:00',
+                        'end_time' => '12:00',
+                        'title_en' => 'A',
+                    ],
+                    [
+                        'date' => '2030-03-08',
+                        'start_time' => '09:00',
+                        'end_time' => '12:00',
+                        'title_en' => 'B',
+                    ],
+                ],
+            ]));
+        $create->assertCreated();
+        $scheduleId = (int) $create->json('data.id');
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson("/api/v1/admin/courses/{$course->id}/schedules/{$scheduleId}", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 7,
+                'recurrence_type' => 'custom_dates',
+                'custom_dates' => ['2030-03-01'],
+                'weekdays' => [],
+                'sessions' => [
+                    [
+                        'date' => '2030-03-01',
+                        'start_time' => '10:00',
+                        'end_time' => '13:00',
+                        'title_en' => 'Only',
+                    ],
+                ],
+            ]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data.sessions')
+            ->assertJsonPath('data.sessions.0.title_en', 'Only');
+
+        $this->assertDatabaseCount('course_schedule_sessions', 1);
+
+        // Separate (default) schedules still expand to multiple batches.
+        $separate = CourseSchedule::factory()->create([
+            'course_id' => $course->id,
+            'type' => 'separate',
+            'recurrence_type' => 'weekly',
+            'starts_on' => '2030-01-07',
+            'weekdays' => [1],
+            'repeat_interval' => 1,
+            'ends_type' => 'after_count',
+            'max_occurrences' => 2,
+            'batch_number' => 1,
+            'is_active' => true,
+        ]);
+
+        $preview = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules/{$separate->id}/occurrences", [
+                'limit' => 10,
+                'include_past' => true,
+            ]);
+
+        // The occurrences endpoint is GET — use that path.
+        $list = $this->actingAs($this->admin, 'sanctum')
+            ->getJson("/api/v1/admin/courses/{$course->id}/schedules/{$separate->id}/occurrences?limit=10&include_past=1");
+
+        $list->assertOk();
+        $this->assertGreaterThanOrEqual(2, count($list->json('data')));
+        $this->assertSame('separate', $list->json('data.0.type') ?? 'separate');
+    }
+
+    public function test_cohort_does_not_require_max_occurrences(): void
+    {
+        $course = Course::factory()->create();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 30,
+                'recurrence_type' => 'custom_dates',
+                'custom_dates' => ['2030-02-05', '2030-02-12'],
+                'weekdays' => [],
+                'ends_type' => 'after_count',
+                'max_occurrences' => null,
+                'sessions' => [
+                    [
+                        'date' => '2030-02-05',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                    ],
+                    [
+                        'date' => '2030-02-12',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                    ],
+                ],
+            ]))
+            ->assertCreated()
+            ->assertJsonPath('data.type', 'cohort')
+            ->assertJsonCount(2, 'data.sessions');
+    }
+
+    public function test_batch_number_must_be_unique_per_course(): void
+    {
+        $course = Course::factory()->create();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 21,
+                'recurrence_type' => 'custom_dates',
+                'custom_dates' => ['2030-02-05'],
+                'weekdays' => [],
+                'sessions' => [
+                    [
+                        'date' => '2030-02-05',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                    ],
+                ],
+            ]))
+            ->assertCreated();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 21,
+                'recurrence_type' => 'custom_dates',
+                'custom_dates' => ['2030-03-05'],
+                'weekdays' => [],
+                'sessions' => [
+                    [
+                        'date' => '2030-03-05',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                    ],
+                ],
+            ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('batch_number');
+    }
+
+    public function test_duplicating_a_cohort_shifts_sessions_and_bumps_batch_number(): void
+    {
+        $course = Course::factory()->create();
+
+        $create = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 21,
+                'recurrence_type' => 'custom_dates',
+                'custom_dates' => ['2030-02-05', '2030-02-12'],
+                'weekdays' => [],
+                'sessions' => [
+                    [
+                        'date' => '2030-02-05',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                        'title_en' => 'A',
+                    ],
+                    [
+                        'date' => '2030-02-12',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                        'title_en' => 'B',
+                    ],
+                ],
+            ]));
+        $create->assertCreated();
+        $id = (int) $create->json('data.id');
+
+        $dup = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules/{$id}/duplicate?weeks_shift=1");
+
+        $dup->assertCreated()
+            ->assertJsonPath('data.batch_number', 22)
+            ->assertJsonPath('data.is_active', false)
+            ->assertJsonPath('data.sessions.0.date', '2030-02-12')
+            ->assertJsonPath('data.sessions.1.date', '2030-02-19');
+    }
+
+    public function test_cohort_preview_returns_one_batch_card(): void
+    {
+        $course = Course::factory()->create();
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/v1/admin/courses/{$course->id}/schedules/preview", $this->payload([
+                'type' => 'cohort',
+                'batch_number' => 21,
+                'recurrence_type' => 'custom_dates',
+                'custom_dates' => ['2030-02-05', '2030-02-12'],
+                'weekdays' => [],
+                'sessions' => [
+                    [
+                        'date' => '2030-02-05',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                        'title_en' => 'One',
+                    ],
+                    [
+                        'date' => '2030-02-12',
+                        'start_time' => '19:30',
+                        'end_time' => '22:00',
+                        'title_en' => 'Two',
+                    ],
+                ],
+                'limit' => 12,
+            ]));
+
+        $response->assertOk()->assertJsonCount(1, 'data');
+        $this->assertSame('cohort', $response->json('data.0.type'));
+        $this->assertSame(21, $response->json('data.0.batch_number'));
+        $this->assertCount(2, $response->json('data.0.sessions'));
+        $this->assertDatabaseCount('course_schedules', 0);
+    }
+
     private function payload(array $overrides = []): array
     {
         return array_merge([

@@ -6,6 +6,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Course;
 use App\Models\CourseSchedule;
 use App\Models\CourseScheduleException;
+use App\Models\CourseScheduleSession;
 use App\Models\Order;
 use App\Services\Checkout\CheckoutService;
 use App\Support\PublicMediaUrl;
@@ -62,11 +63,30 @@ class ScheduleOccurrenceService
             $toUtc = $horizon;
         }
 
+        $seatCounts ??= $this->seatCounts([$schedule->id]);
+
+        if ($schedule->isCohort()) {
+            $occurrence = $this->buildCohortOccurrence($schedule, $course, $timezone, $seatCounts);
+
+            if ($occurrence === null) {
+                return collect();
+            }
+
+            if (! $includeCancelled && $occurrence->isCancelled()) {
+                return collect();
+            }
+
+            if ($occurrence->endAt->lessThan($fromUtc) || $occurrence->startAt->greaterThan($toUtc)) {
+                return collect();
+            }
+
+            return collect([$occurrence]);
+        }
+
         $toLocal = $toUtc->setTimezone($timezone)->endOfDay();
 
         $dates = $this->expandDates($schedule, $timezone, $toLocal);
         $exceptions = $this->exceptionsFor($schedule);
-        $seatCounts ??= $this->seatCounts([$schedule->id]);
 
         $out = [];
 
@@ -215,6 +235,22 @@ class ScheduleOccurrenceService
         }
 
         $timezone = $this->safeTimezone($schedule->timezone);
+
+        if ($schedule->isCohort()) {
+            $occurrence = $this->buildCohortOccurrence(
+                $schedule,
+                $course,
+                $timezone,
+                $this->seatCounts([$schedule->id]),
+            );
+
+            if ($occurrence === null) {
+                return null;
+            }
+
+            // Checkout keys a cohort by its first-session (batch start) date.
+            return $occurrence->occurrenceDate === $normalized ? $occurrence : null;
+        }
 
         // The requested date must be produced by the rule itself. Expansion
         // stops at that date, and the 200-occurrence slice bounds the cost.
@@ -460,6 +496,180 @@ class ScheduleOccurrenceService
 
     /* ─── Occurrence assembly ───────────────────────────────────────────── */
 
+    /**
+     * One public card for a cohort schedule: start = first session, end = last.
+     */
+    private function buildCohortOccurrence(
+        CourseSchedule $schedule,
+        Course $course,
+        string $timezone,
+        array $seatCounts,
+    ): ?Occurrence {
+        $sessions = $this->orderedSessions($schedule);
+
+        if ($sessions === []) {
+            return null;
+        }
+
+        /** @var CourseScheduleSession $first */
+        $first = $sessions[0];
+        /** @var CourseScheduleSession $last */
+        $last = $sessions[count($sessions) - 1];
+
+        $firstDate = $first->date instanceof \DateTimeInterface
+            ? $first->date->format('Y-m-d')
+            : substr((string) $first->date, 0, 10);
+        $lastDate = $last->date instanceof \DateTimeInterface
+            ? $last->date->format('Y-m-d')
+            : substr((string) $last->date, 0, 10);
+
+        $startTime = $first->normalizedStartTime();
+        $endTime = $last->normalizedEndTime();
+
+        $startLocal = CarbonImmutable::parse("{$firstDate} {$startTime}", $timezone);
+        $endLocal = CarbonImmutable::parse("{$lastDate} {$endTime}", $timezone);
+
+        if ($endLocal->lessThan($startLocal)) {
+            $endLocal = $endLocal->addDay();
+        }
+
+        $startAt = $startLocal->utc();
+        $endAt = $endLocal->utc();
+
+        $durationDays = max(
+            1,
+            (int) CarbonImmutable::parse($firstDate, $timezone)
+                ->diffInDays(CarbonImmutable::parse($lastDate, $timezone)) + 1
+        );
+
+        $mode = $schedule->delivery_mode
+            ?: $this->checkoutPricing->resolveMode($course, null);
+
+        $price = $this->resolvePrice($schedule, null, $course, $mode);
+        $originalPrice = $schedule->original_price !== null ? (float) $schedule->original_price : null;
+        $discountPercent = ($originalPrice !== null && $originalPrice > $price && $originalPrice > 0)
+            ? (int) round((1 - ($price / $originalPrice)) * 100)
+            : null;
+
+        $seatsTotal = $schedule->seats_total !== null ? (int) $schedule->seats_total : null;
+        $seatsTaken = (int) ($seatCounts["{$schedule->id}|{$firstDate}"] ?? 0);
+        $seatsLeft = $seatsTotal !== null ? max(0, $seatsTotal - $seatsTaken) : null;
+
+        $status = $this->resolveStatus($schedule, null, $startAt, $endAt, $seatsTotal, $seatsLeft);
+
+        $phases = $this->normalizePhases($schedule->phases);
+        $sessionPayloads = array_map(
+            static fn (CourseScheduleSession $session): array => $session->toPayload(),
+            $sessions
+        );
+
+        $enrollmentClosesAt = null;
+        if (filled($schedule->enrollment_closes_at)) {
+            $enrollmentClosesAt = $schedule->enrollment_closes_at instanceof \DateTimeInterface
+                ? $schedule->enrollment_closes_at->format('Y-m-d')
+                : substr((string) $schedule->enrollment_closes_at, 0, 10);
+        }
+
+        return new Occurrence(
+            scheduleId: (int) ($schedule->id ?: 0),
+            occurrenceDate: $firstDate,
+            startAt: $startAt,
+            endAt: $endAt,
+            timezone: $timezone,
+            utcOffsetLabel: $this->offsetLabel($startLocal),
+            localStartDate: $firstDate,
+            localEndDate: $lastDate,
+            startTime: substr($startTime, 0, 5),
+            endTime: substr($endTime, 0, 5),
+            durationDays: $durationDays,
+            timeSlot: $schedule->resolveTimeSlot(),
+            format: (string) ($schedule->format ?: 'online'),
+            locationEn: $schedule->location_en,
+            locationAr: $schedule->location_ar,
+            batchNumber: $schedule->batch_number !== null ? (int) $schedule->batch_number : null,
+            batchNumberOverride: null,
+            titleEn: $schedule->title_en,
+            titleAr: $schedule->title_ar,
+            deliveryMode: $schedule->delivery_mode,
+            price: $price,
+            originalPrice: $originalPrice,
+            currency: strtoupper((string) ($course->currency ?: 'USD')),
+            discountPercent: $discountPercent,
+            promoTextEn: $schedule->promo_text_en,
+            promoTextAr: $schedule->promo_text_ar,
+            seatsTotal: $seatsTotal,
+            seatsLeft: $seatsLeft,
+            seatsTaken: $seatsTaken,
+            showSeatsLeft: (bool) $schedule->show_seats_left,
+            status: $status,
+            ctaType: (string) ($schedule->cta_type ?: 'enroll'),
+            showCountdown: (bool) $schedule->show_countdown,
+            isFeatured: (bool) $schedule->is_featured,
+            trainer: [
+                'name_en' => $schedule->trainer_name_en ?: $course->instructor_name,
+                'name_ar' => $schedule->trainer_name_ar ?: $course->instructor_name_ar,
+                'title_en' => $schedule->trainer_title_en ?: $course->instructor_title_en,
+                'title_ar' => $schedule->trainer_title_ar ?: $course->instructor_title_ar,
+                'photo' => PublicMediaUrl::resolve($schedule->trainer_photo ?: $course->instructor_photo),
+            ],
+            trainerOverride: null,
+            noteEn: $schedule->notes_en,
+            noteAr: $schedule->notes_ar,
+            isException: false,
+            type: CourseSchedule::TYPE_COHORT,
+            sessions: $sessionPayloads,
+            phases: $phases,
+            enrollmentClosesAt: $enrollmentClosesAt,
+        );
+    }
+
+    /**
+     * @return list<CourseScheduleSession>
+     */
+    private function orderedSessions(CourseSchedule $schedule): array
+    {
+        $sessions = $schedule->relationLoaded('sessions')
+            ? $schedule->sessions
+            : ($schedule->exists ? $schedule->sessions()->get() : collect());
+
+        return $sessions
+            ->sortBy([
+                ['position', 'asc'],
+                ['date', 'asc'],
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  mixed  $phases
+     * @return list<array{name_en: ?string, name_ar: ?string}>
+     */
+    private function normalizePhases(mixed $phases): array
+    {
+        if (! is_array($phases)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($phases as $phase) {
+            if (! is_array($phase)) {
+                continue;
+            }
+            $nameEn = isset($phase['name_en']) ? trim((string) $phase['name_en']) : '';
+            $nameAr = isset($phase['name_ar']) ? trim((string) $phase['name_ar']) : '';
+            if ($nameEn === '' && $nameAr === '') {
+                continue;
+            }
+            $out[] = [
+                'name_en' => $nameEn !== '' ? $nameEn : null,
+                'name_ar' => $nameAr !== '' ? $nameAr : null,
+            ];
+        }
+
+        return $out;
+    }
+
     private function buildOccurrence(
         CourseSchedule $schedule,
         Course $course,
@@ -625,6 +835,17 @@ class ScheduleOccurrenceService
 
         if ($seatsLeft !== null && $seatsLeft <= 0) {
             return Occurrence::STATUS_SOLD_OUT;
+        }
+
+        if (filled($schedule->enrollment_closes_at)) {
+            $closesDate = $schedule->enrollment_closes_at instanceof \DateTimeInterface
+                ? $schedule->enrollment_closes_at->format('Y-m-d')
+                : substr((string) $schedule->enrollment_closes_at, 0, 10);
+            $timezone = $this->safeTimezone($schedule->timezone);
+            $closesAt = CarbonImmutable::parse($closesDate, $timezone)->endOfDay()->utc();
+            if ($now->greaterThan($closesAt)) {
+                return Occurrence::STATUS_CLOSED;
+            }
         }
 
         $closesHours = max(0, (int) $schedule->enrollment_closes_hours);

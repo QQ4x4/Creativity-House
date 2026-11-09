@@ -348,10 +348,15 @@ export async function deleteAdminSchedule(
 
 export async function duplicateAdminSchedule(
   courseId: number | string,
-  scheduleId: number | string
+  scheduleId: number | string,
+  options: { weeks_shift?: number } = {}
 ): Promise<AdminCourseScheduleDto> {
+  const query =
+    options.weeks_shift != null && options.weeks_shift > 0
+      ? `?weeks_shift=${encodeURIComponent(String(options.weeks_shift))}`
+      : '';
   return unwrap<AdminCourseScheduleDto>(
-    await apiPost(ADMIN_ENDPOINTS.scheduleDuplicate(courseId, scheduleId), {})
+    await apiPost(`${ADMIN_ENDPOINTS.scheduleDuplicate(courseId, scheduleId)}${query}`, {})
   );
 }
 

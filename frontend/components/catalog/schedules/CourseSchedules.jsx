@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useNow } from '@/hooks/useNow';
 import { useVisitorTimeZone } from '@/hooks/useVisitorTimeZone';
 import { formatResultsCount } from '@/lib/catalog/schedules';
+import CohortScheduleCard from './CohortScheduleCard';
 import ScheduleCard from './ScheduleCard';
 import ScheduleFilters, { applyScheduleFilters } from './ScheduleFilters';
 
@@ -91,7 +92,7 @@ export default function CourseSchedules({
     <div id="schedules" className="mt-6 scroll-mt-28 space-y-4">
       <div>
         <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-          {labels.explore || 'Explore our schedules'}
+          {labels.heading || labels.explore || 'Schedules'}
         </h3>
       </div>
 
@@ -135,20 +136,34 @@ export default function CourseSchedules({
           </p>
 
           <div className="space-y-3">
-            {filtered.slice(0, visible).map((occurrence) => (
-              <ScheduleCard
-                key={`${occurrence.scheduleId}-${occurrence.occurrenceDate}`}
-                occurrence={occurrence}
-                course={course}
-                lang={lang}
-                mode={mode}
-                labels={labels}
-                now={now}
-                isEnrolled={isEnrolled}
-                timeMounted={mounted}
-                visitorTimeZone={timeZone}
-              />
-            ))}
+            {filtered.slice(0, visible).map((occurrence) =>
+              occurrence.type === 'cohort' ? (
+                <CohortScheduleCard
+                  key={`${occurrence.scheduleId}-${occurrence.occurrenceDate}`}
+                  occurrence={occurrence}
+                  course={course}
+                  lang={lang}
+                  mode={mode}
+                  labels={labels}
+                  isEnrolled={isEnrolled}
+                  timeMounted={mounted}
+                  visitorTimeZone={timeZone}
+                />
+              ) : (
+                <ScheduleCard
+                  key={`${occurrence.scheduleId}-${occurrence.occurrenceDate}`}
+                  occurrence={occurrence}
+                  course={course}
+                  lang={lang}
+                  mode={mode}
+                  labels={labels}
+                  now={now}
+                  isEnrolled={isEnrolled}
+                  timeMounted={mounted}
+                  visitorTimeZone={timeZone}
+                />
+              )
+            )}
           </div>
 
           {visible < filtered.length ? (

@@ -459,6 +459,7 @@
     "curriculum": "محاور الدورة",
     "schedule": "طريقة ومدة التدريب",
     "schedules": {
+      "heading": "المواعيد",
       "explore": "استكشف مواعيدنا",
       "thisMonth": "هذا الشهر",
       "nextMonth": "الشهر القادم",
@@ -471,6 +472,11 @@
       "format": "الصيغة",
       "formats": {
         "online": "عن بُعد",
+        "in_person": "حضوري",
+        "hybrid": "هجين"
+      },
+      "deliveryFormats": {
+        "online": "بث مباشر عبر الإنترنت",
         "in_person": "حضوري",
         "hybrid": "هجين"
       },
@@ -490,11 +496,20 @@
       "enrollmentClosed": "التسجيل مغلق",
       "onlySeatsLeft": "تبقّى {n} مقاعد فقط",
       "seatsLeft": "{n} مقاعد متبقية",
+      "fillingFast": "المقاعد تُستكمل بسرعة",
       "enrollNow": "سجّل الآن",
       "requestSeat": "اطلب مقعدًا",
       "nextBatch": "الدفعة القادمة",
       "viewAllSchedules": "عرض كل المواعيد",
+      "viewSchedules": "عرض المواعيد",
+      "viewAllSessions": "عرض كل الجلسات",
       "batchNumber": "الدفعة {n}",
+      "sessionsAndPhases": "{sessions} جلسات · {phases} مراحل",
+      "phase": "المرحلة",
+      "everyWeekday": "كل {day}",
+      "makkahTime": "بتوقيت مكة المكرمة",
+      "yourLocalTime": "بتوقيتك المحلي ({place}): {when}",
+      "onlineClassroom": "فصل عبر الإنترنت",
       "requestPrivate": "اطلب دفعة خاصة أو للشركات",
       "availableForMode": "المواعيد متاحة لـ {mode}",
       "switchToMode": "التبديل إلى {mode}",
@@ -502,6 +517,7 @@
       "batchUnavailable": "هذا الموعد لم يعد متاحًا. يرجى اختيار موعد آخر.",
       "backToSchedules": "اختر موعدًا آخر"
     },
+    "viewSchedules": "عرض المواعيد",
     "instructor": "المدرب",
     "trained": "محترف مدرَّب",
     "countries": "دولة",

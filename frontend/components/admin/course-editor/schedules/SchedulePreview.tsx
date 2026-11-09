@@ -118,6 +118,18 @@ export function SchedulePreview({
           </p>
         ) : null}
 
+        {hasResults && first?.type === 'cohort' ? (
+          <p className="rounded-xl border border-plum-200 bg-plum-50 px-3 py-2 text-xs font-medium text-plum-900 dark:border-plum-400/30 dark:bg-plum-500/10 dark:text-plum-100">
+            One batch
+            {first.batch_number != null ? ` #${first.batch_number}` : ''}
+            {' · '}
+            {first.session_count ?? first.sessions?.length ?? 0} sessions
+            {(first.phase_count ?? first.phases?.length ?? 0) > 0
+              ? ` · ${first.phase_count ?? first.phases?.length} phases`
+              : ''}
+          </p>
+        ) : null}
+
         {hasResults ? (
           <div className={cn(loading && 'opacity-60')}>
             <ol className="space-y-1.5 text-sm">

@@ -192,6 +192,21 @@ export interface BunnyVideoListResult {
 }
 
 /** One generated batch from ScheduleOccurrenceService (admin shape). */
+export interface AdminScheduleSessionDto {
+  position: number;
+  date: string;
+  start_time: string;
+  end_time: string;
+  title_en: string | null;
+  title_ar: string | null;
+  phase_index: number | null;
+}
+
+export interface AdminSchedulePhaseDto {
+  name_en: string | null;
+  name_ar: string | null;
+}
+
 export interface AdminOccurrenceDto {
   schedule_id: number;
   occurrence_date: string;
@@ -209,6 +224,12 @@ export interface AdminOccurrenceDto {
   location_en: string | null;
   location_ar: string | null;
   batch_number: number | null;
+  type?: 'separate' | 'cohort';
+  sessions?: AdminScheduleSessionDto[];
+  phases?: AdminSchedulePhaseDto[];
+  session_count?: number;
+  phase_count?: number;
+  enrollment_closes_at?: string | null;
   /** Present on admin payloads when this date has an explicit override. */
   batch_number_override?: number | null;
   title_en: string | null;
@@ -279,10 +300,13 @@ export interface CourseInstructorPreview {
 export interface AdminCourseScheduleDto {
   id: number;
   course_id: number;
+  type?: 'separate' | 'cohort';
   delivery_mode: DeliveryMode | null;
   title_en: string | null;
   title_ar: string | null;
   batch_number: number | null;
+  phases?: AdminSchedulePhaseDto[];
+  sessions?: AdminScheduleSessionDto[];
   time_slot: string | null;
   resolved_time_slot?: string;
   format: 'online' | 'in_person' | 'hybrid';
@@ -310,6 +334,7 @@ export interface AdminCourseScheduleDto {
   seats_total: number | null;
   show_seats_left: boolean;
   enrollment_closes_hours: number;
+  enrollment_closes_at?: string | null;
   cta_type: 'enroll' | 'inquiry';
   trainer_name_en: string | null;
   trainer_name_ar: string | null;
@@ -325,6 +350,13 @@ export interface AdminCourseScheduleDto {
   exceptions?: AdminScheduleExceptionDto[];
   next_occurrences?: AdminOccurrenceDto[];
   seats_sold?: number;
+  session_count?: number | null;
+  lifecycle_status?:
+    | 'open'
+    | 'enrollment_closed'
+    | 'in_progress'
+    | 'completed'
+    | 'inactive';
 }
 
 export type InquiryType = 'user' | 'organization';

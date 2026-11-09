@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Course;
 use App\Models\CourseSchedule;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
@@ -32,6 +33,7 @@ class SaveCourseScheduleRequest extends FormRequest
             'seats_total',
             'max_occurrences',
             'batch_number',
+            'enrollment_closes_at',
             'trainer_name_en',
             'trainer_name_ar',
             'trainer_title_en',
@@ -41,6 +43,10 @@ class SaveCourseScheduleRequest extends FormRequest
             if ($this->input($key) === '') {
                 $this->merge([$key => null]);
             }
+        }
+
+        if ($this->input('type') === '' || $this->input('type') === null) {
+            $this->merge(['type' => CourseSchedule::TYPE_SEPARATE]);
         }
     }
 
@@ -53,14 +59,26 @@ class SaveCourseScheduleRequest extends FormRequest
         $long = config('field_limits.long');
         $url = config('field_limits.url');
 
+        $isCohort = $this->input('type') === CourseSchedule::TYPE_COHORT;
+
         return [
+            'type' => ['nullable', Rule::in(CourseSchedule::TYPES)],
+
             // null = available for every delivery mode of the course.
             'delivery_mode' => ['nullable', 'string', Rule::in(['live', 'recorded', 'simulator'])],
 
             'title_en' => ['nullable', 'string', 'max:'.$medium],
             'title_ar' => ['nullable', 'string', 'max:'.$medium],
             // Legacy label columns remain in the DB but are no longer accepted.
-            'batch_number' => ['nullable', 'integer', 'min:1'],
+            'batch_number' => [
+                Rule::requiredIf(fn (): bool => $isCohort),
+                'nullable',
+                'integer',
+                'min:1',
+            ],
+            'phases' => ['nullable', 'array', 'max:20'],
+            'phases.*.name_en' => ['nullable', 'string', 'max:'.$medium],
+            'phases.*.name_ar' => ['nullable', 'string', 'max:'.$medium],
 
             'time_slot' => ['nullable', Rule::in(CourseSchedule::TIME_SLOTS)],
             'format' => ['required', Rule::in(CourseSchedule::FORMATS)],
@@ -70,20 +88,27 @@ class SaveCourseScheduleRequest extends FormRequest
             'timezone' => ['required', 'string', 'timezone:all'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
-            'duration_days' => ['required', 'integer', 'between:1,365'],
+            'duration_days' => [
+                Rule::requiredIf(fn (): bool => ! $isCohort),
+                'nullable',
+                'integer',
+                'between:1,365',
+            ],
 
             'recurrence_type' => ['required', Rule::in(CourseSchedule::RECURRENCE_TYPES)],
             'starts_on' => ['required', 'date_format:Y-m-d'],
 
             'custom_dates' => [
-                Rule::requiredIf(fn (): bool => $this->input('recurrence_type') === CourseSchedule::RECURRENCE_CUSTOM_DATES),
+                Rule::requiredIf(fn (): bool => ! $isCohort
+                    && $this->input('recurrence_type') === CourseSchedule::RECURRENCE_CUSTOM_DATES),
                 'nullable', 'array', 'max:120',
             ],
             'custom_dates.*' => ['date_format:Y-m-d'],
             'repeat_custom_monthly' => ['boolean'],
 
             'weekdays' => [
-                Rule::requiredIf(fn (): bool => $this->input('recurrence_type') === CourseSchedule::RECURRENCE_WEEKLY),
+                Rule::requiredIf(fn (): bool => ! $isCohort
+                    && $this->input('recurrence_type') === CourseSchedule::RECURRENCE_WEEKLY),
                 'nullable', 'array', 'max:7',
             ],
             'weekdays.*' => ['integer', 'between:0,6'],
@@ -91,21 +116,38 @@ class SaveCourseScheduleRequest extends FormRequest
             'repeat_interval' => ['nullable', 'integer', 'between:1,12'],
 
             'month_days' => [
-                Rule::requiredIf(fn (): bool => $this->input('recurrence_type') === CourseSchedule::RECURRENCE_MONTHLY_DAYS),
+                Rule::requiredIf(fn (): bool => ! $isCohort
+                    && $this->input('recurrence_type') === CourseSchedule::RECURRENCE_MONTHLY_DAYS),
                 'nullable', 'array', 'max:31',
             ],
             'month_days.*' => ['integer', 'between:1,31'],
             'missing_day_policy' => ['nullable', Rule::in(CourseSchedule::MISSING_DAY_POLICIES)],
 
-            'ends_type' => ['required', Rule::in(CourseSchedule::ENDS_TYPES)],
+            'ends_type' => [
+                Rule::requiredIf(fn (): bool => ! $isCohort),
+                'nullable',
+                Rule::in(CourseSchedule::ENDS_TYPES),
+            ],
             'ends_on' => [
-                Rule::requiredIf(fn (): bool => $this->input('ends_type') === 'on_date'),
+                Rule::requiredIf(fn (): bool => ! $isCohort && $this->input('ends_type') === 'on_date'),
                 'nullable', 'date_format:Y-m-d', 'after_or_equal:starts_on',
             ],
             'max_occurrences' => [
-                Rule::requiredIf(fn (): bool => $this->input('ends_type') === 'after_count'),
+                Rule::requiredIf(fn (): bool => ! $isCohort && $this->input('ends_type') === 'after_count'),
                 'nullable', 'integer', 'between:1,200',
             ],
+
+            'sessions' => [
+                Rule::requiredIf(fn (): bool => $isCohort),
+                'nullable', 'array', 'min:1', 'max:120',
+            ],
+            'sessions.*.date' => ['required_with:sessions', 'date_format:Y-m-d'],
+            'sessions.*.start_time' => ['required_with:sessions', 'date_format:H:i'],
+            'sessions.*.end_time' => ['required_with:sessions', 'date_format:H:i'],
+            'sessions.*.title_en' => ['nullable', 'string', 'max:'.$medium],
+            'sessions.*.title_ar' => ['nullable', 'string', 'max:'.$medium],
+            'sessions.*.phase_index' => ['nullable', 'integer', 'min:0', 'max:19'],
+            'sessions.*.position' => ['nullable', 'integer', 'min:1', 'max:120'],
 
             'price' => ['nullable', 'numeric', 'between:0,99999999.99'],
             'original_price' => ['nullable', 'numeric', 'between:0,99999999.99', 'gte:price'],
@@ -115,6 +157,7 @@ class SaveCourseScheduleRequest extends FormRequest
             'seats_total' => ['nullable', 'integer', 'between:1,100000'],
             'show_seats_left' => ['boolean'],
             'enrollment_closes_hours' => ['nullable', 'integer', 'between:0,8760'],
+            'enrollment_closes_at' => ['nullable', 'date_format:Y-m-d'],
 
             'cta_type' => ['nullable', Rule::in(CourseSchedule::CTA_TYPES)],
 
@@ -142,6 +185,9 @@ class SaveCourseScheduleRequest extends FormRequest
             'weekdays.required' => 'Select at least one weekday for a weekly schedule.',
             'month_days.required' => 'Select at least one day of the month.',
             'custom_dates.required' => 'Select at least one date.',
+            'sessions.required' => 'Add at least one session for a multi-session batch.',
+            'sessions.min' => 'Add at least one session for a multi-session batch.',
+            'batch_number.required' => 'Set the batch number shown to students.',
             'max_occurrences.required' => 'Set how many batches to generate.',
             'ends_on.required' => 'Set the date the schedule stops repeating.',
             'original_price.gte' => 'The original price must be greater than or equal to the price.',
@@ -171,6 +217,7 @@ class SaveCourseScheduleRequest extends FormRequest
             $today = $now->startOfDay();
             $startsOnRaw = (string) $this->input('starts_on');
             $startsOn = CarbonImmutable::parse($startsOnRaw, $timezone)->startOfDay();
+            $isCohort = $this->input('type') === CourseSchedule::TYPE_COHORT;
 
             /** @var CourseSchedule|null $existing */
             $existing = $this->route('schedule');
@@ -188,14 +235,14 @@ class SaveCourseScheduleRequest extends FormRequest
                 && $existingStartsOn !== null
                 && $existingStartsOn->equalTo($startsOn);
 
-            if (! $startsOnUnchanged && $startsOn->lt($today)) {
+            if (! $isCohort && ! $startsOnUnchanged && $startsOn->lt($today)) {
                 $validator->errors()->add(
                     'starts_on',
                     'The start date cannot be in the past (schedule timezone).'
                 );
             }
 
-            if ($this->input('recurrence_type') === CourseSchedule::RECURRENCE_CUSTOM_DATES) {
+            if (! $isCohort && $this->input('recurrence_type') === CourseSchedule::RECURRENCE_CUSTOM_DATES) {
                 $existingCustom = [];
                 if ($isUpdate && is_array($existing->custom_dates)) {
                     foreach ($existing->custom_dates as $existingDate) {
@@ -216,7 +263,13 @@ class SaveCourseScheduleRequest extends FormRequest
                 }
             }
 
-            if ($this->input('ends_type') === 'on_date' && filled($this->input('ends_on'))) {
+            if ($isCohort) {
+                $this->validateCohortSessions($validator);
+            }
+
+            $this->validateUniqueBatchNumber($validator, $existing);
+
+            if (! $isCohort && $this->input('ends_type') === 'on_date' && filled($this->input('ends_on'))) {
                 $endsOn = CarbonImmutable::parse((string) $this->input('ends_on'), $timezone)->startOfDay();
                 if ($endsOn->lt($startsOn)) {
                     $validator->errors()->add(
@@ -230,7 +283,7 @@ class SaveCourseScheduleRequest extends FormRequest
             // clock start has already passed — only when the start instant is
             // new or changed. An existing batch that already started must stay
             // editable (trainer photo, flags, notes, etc.).
-            if ($startsOn->equalTo($today) && filled($this->input('start_time'))) {
+            if (! $isCohort && $startsOn->equalTo($today) && filled($this->input('start_time'))) {
                 $submittedTime = substr((string) $this->input('start_time'), 0, 5);
                 $existingTime = $isUpdate
                     ? substr((string) $existing->normalizedStartTime(), 0, 5)
@@ -259,14 +312,94 @@ class SaveCourseScheduleRequest extends FormRequest
         });
     }
 
+    private function validateCohortSessions(Validator $validator): void
+    {
+        $sessions = (array) $this->input('sessions', []);
+        if ($sessions === []) {
+            return;
+        }
+
+        $seenDates = [];
+        foreach ($sessions as $index => $session) {
+            if (! is_array($session)) {
+                continue;
+            }
+
+            $date = substr((string) ($session['date'] ?? ''), 0, 10);
+            $start = substr((string) ($session['start_time'] ?? ''), 0, 5);
+            $end = substr((string) ($session['end_time'] ?? ''), 0, 5);
+
+            if ($date !== '' && isset($seenDates[$date])) {
+                $validator->errors()->add(
+                    "sessions.{$index}.date",
+                    'Each session must have a unique date.'
+                );
+            }
+            if ($date !== '') {
+                $seenDates[$date] = true;
+            }
+
+            if ($start !== '' && $end !== '' && $end <= $start) {
+                $validator->errors()->add(
+                    "sessions.{$index}.end_time",
+                    'Session end time must be after start time.'
+                );
+            }
+        }
+    }
+
+    private function validateUniqueBatchNumber(Validator $validator, ?CourseSchedule $existing): void
+    {
+        // Fixed batch numbers must be unique for cohort schedules. Separate rules
+        // use batch_number as a series start and may share the same base.
+        if ($this->input('type') !== CourseSchedule::TYPE_COHORT) {
+            return;
+        }
+
+        $batchNumber = $this->input('batch_number');
+        if ($batchNumber === null || $batchNumber === '') {
+            return;
+        }
+
+        /** @var Course|null $course */
+        $course = $this->route('course');
+        if (! $course instanceof Course) {
+            return;
+        }
+
+        $query = CourseSchedule::query()
+            ->where('course_id', $course->id)
+            ->where('type', CourseSchedule::TYPE_COHORT)
+            ->where('batch_number', (int) $batchNumber);
+
+        if ($existing instanceof CourseSchedule) {
+            $query->where('id', '!=', $existing->id);
+        }
+
+        if ($query->exists()) {
+            $validator->errors()->add(
+                'batch_number',
+                'Batch number '.(int) $batchNumber.' is already used by another schedule of this course.'
+            );
+        }
+    }
+
     /**
-     * Normalised attributes ready for a mass assign.
+     * Normalised attributes ready for a mass assign (sessions are synced separately).
      *
      * @return array<string, mixed>
      */
     public function scheduleAttributes(): array
     {
         $data = $this->validated();
+        unset($data['sessions']);
+
+        $scheduleType = $data['type'] ?? CourseSchedule::TYPE_SEPARATE;
+        if (! in_array($scheduleType, CourseSchedule::TYPES, true)) {
+            $scheduleType = CourseSchedule::TYPE_SEPARATE;
+        }
+        $data['type'] = $scheduleType;
+
         $type = $data['recurrence_type'];
 
         // Clear the fields the chosen recurrence type does not use, so a rule
@@ -310,12 +443,119 @@ class SaveCourseScheduleRequest extends FormRequest
         $data['cta_type'] ??= 'enroll';
         $data['enrollment_closes_hours'] ??= 0;
         $data['sort_order'] ??= 0;
+        $data['duration_days'] = max(1, (int) ($data['duration_days'] ?? 1));
+        $data['ends_type'] = $data['ends_type'] ?? 'never';
+        $data['phases'] = $this->normalizePhasesInput($data['phases'] ?? null);
+
+        if ($scheduleType !== CourseSchedule::TYPE_COHORT) {
+            $data['enrollment_closes_at'] = null;
+            $data['phases'] = null;
+        } else {
+            // Batch window = first → last session; recurrence fields still kept for admin UX.
+            $sessionRows = $this->sessionAttributes();
+            if ($sessionRows !== []) {
+                $first = $sessionRows[0];
+                $last = $sessionRows[count($sessionRows) - 1];
+                $data['starts_on'] = $first['date'];
+                $data['start_time'] = $first['start_time'];
+                $data['end_time'] = $last['end_time'];
+                $data['duration_days'] = max(
+                    1,
+                    (int) CarbonImmutable::parse($first['date'])->diffInDays(CarbonImmutable::parse($last['date'])) + 1
+                );
+                // Persist the dates so the Specific-dates calendar reopens correctly.
+                $data['recurrence_type'] = CourseSchedule::RECURRENCE_CUSTOM_DATES;
+                $data['custom_dates'] = array_values(array_map(
+                    static fn (array $row): string => $row['date'],
+                    $sessionRows
+                ));
+                $data['repeat_custom_monthly'] = false;
+                $data['ends_type'] = 'after_count';
+                $data['max_occurrences'] = count($sessionRows);
+                $data['ends_on'] = null;
+            }
+        }
 
         foreach (['repeat_custom_monthly', 'show_seats_left', 'show_countdown', 'is_featured', 'is_active'] as $flag) {
             $data[$flag] = (bool) ($data[$flag] ?? ($flag === 'is_active' || $flag === 'show_countdown'));
         }
 
         return $data;
+    }
+
+    /**
+     * Normalised session rows for a cohort schedule (empty for separate).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function sessionAttributes(): array
+    {
+        if (($this->input('type') ?: CourseSchedule::TYPE_SEPARATE) !== CourseSchedule::TYPE_COHORT) {
+            return [];
+        }
+
+        $sessions = (array) ($this->validated()['sessions'] ?? []);
+        $normalized = [];
+
+        foreach ($sessions as $session) {
+            if (! is_array($session)) {
+                continue;
+            }
+
+            $date = substr((string) ($session['date'] ?? ''), 0, 10);
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) !== 1) {
+                continue;
+            }
+
+            $normalized[] = [
+                'date' => $date,
+                'start_time' => $this->normalizeWallTime((string) ($session['start_time'] ?? '00:00')),
+                'end_time' => $this->normalizeWallTime((string) ($session['end_time'] ?? '00:00')),
+                'title_en' => filled($session['title_en'] ?? null) ? (string) $session['title_en'] : null,
+                'title_ar' => filled($session['title_ar'] ?? null) ? (string) $session['title_ar'] : null,
+                'phase_index' => isset($session['phase_index']) && $session['phase_index'] !== '' && $session['phase_index'] !== null
+                    ? (int) $session['phase_index']
+                    : null,
+            ];
+        }
+
+        usort($normalized, static fn (array $a, array $b): int => strcmp($a['date'], $b['date']));
+
+        foreach ($normalized as $index => &$row) {
+            $row['position'] = $index + 1;
+        }
+        unset($row);
+
+        return array_values($normalized);
+    }
+
+    /**
+     * @param  mixed  $phases
+     * @return list<array{name_en: ?string, name_ar: ?string}>|null
+     */
+    private function normalizePhasesInput(mixed $phases): ?array
+    {
+        if (! is_array($phases)) {
+            return null;
+        }
+
+        $out = [];
+        foreach ($phases as $phase) {
+            if (! is_array($phase)) {
+                continue;
+            }
+            $nameEn = isset($phase['name_en']) ? trim((string) $phase['name_en']) : '';
+            $nameAr = isset($phase['name_ar']) ? trim((string) $phase['name_ar']) : '';
+            if ($nameEn === '' && $nameAr === '') {
+                continue;
+            }
+            $out[] = [
+                'name_en' => $nameEn !== '' ? $nameEn : null,
+                'name_ar' => $nameAr !== '' ? $nameAr : null,
+            ];
+        }
+
+        return $out === [] ? null : $out;
     }
 
     /**

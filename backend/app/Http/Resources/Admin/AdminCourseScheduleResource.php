@@ -25,11 +25,13 @@ class AdminCourseScheduleResource extends JsonResource
         return [
             'id' => $this->id,
             'course_id' => (int) $this->course_id,
+            'type' => $this->type ?: 'separate',
             'delivery_mode' => $this->delivery_mode,
 
             'title_en' => $this->title_en,
             'title_ar' => $this->title_ar,
             'batch_number' => $this->batch_number !== null ? (int) $this->batch_number : null,
+            'phases' => is_array($this->phases) ? array_values($this->phases) : [],
 
             'time_slot' => $this->time_slot,
             'resolved_time_slot' => $this->resolveTimeSlot(),
@@ -64,6 +66,7 @@ class AdminCourseScheduleResource extends JsonResource
             'seats_total' => $this->seats_total !== null ? (int) $this->seats_total : null,
             'show_seats_left' => (bool) $this->show_seats_left,
             'enrollment_closes_hours' => (int) $this->enrollment_closes_hours,
+            'enrollment_closes_at' => $this->formatDate($this->enrollment_closes_at),
 
             'cta_type' => $this->cta_type ?: 'enroll',
 
@@ -82,6 +85,11 @@ class AdminCourseScheduleResource extends JsonResource
 
             'exceptions' => AdminScheduleExceptionResource::collection(
                 $this->whenLoaded('exceptions', fn () => $this->exceptions, collect())
+            ),
+            'sessions' => $this->whenLoaded(
+                'sessions',
+                fn () => $this->sessions->map(fn ($session) => $session->toPayload())->values()->all(),
+                []
             ),
         ];
     }

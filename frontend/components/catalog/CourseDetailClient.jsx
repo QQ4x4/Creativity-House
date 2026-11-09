@@ -73,7 +73,7 @@ function formatCount(value) {
   return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-function BuyNowButton({ labels, isCheckingOut, onBuyNow, className }) {
+function BuyNowButton({ labels, isCheckingOut, onBuyNow, className, label }) {
   return (
     <button
       type="button"
@@ -88,7 +88,7 @@ function BuyNowButton({ labels, isCheckingOut, onBuyNow, className }) {
           <span>{labels.startingCheckout || labels.processing}</span>
         </>
       ) : (
-        labels.buyNow
+        label || labels.buyNow
       )}
     </button>
   );
@@ -113,6 +113,8 @@ function PricingCard({
   isEnrolled = false,
   featuredOccurrence = null,
   now = null,
+  hasActiveSchedules = false,
+  onViewSchedules,
 }) {
   const tiers = course.pricingTiers || [];
   const activeTier = tiers.find((t) => t.mode === mode) || null;
@@ -184,9 +186,16 @@ function PricingCard({
           <BuyNowButton
             labels={labels}
             isCheckingOut={isCheckingOut}
-            onBuyNow={onBuyNow}
+            onBuyNow={hasActiveSchedules ? onViewSchedules : onBuyNow}
+            label={
+              hasActiveSchedules
+                ? labels.viewSchedules || labels.schedules?.viewSchedules || 'View schedules'
+                : undefined
+            }
             className={`mt-5 inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 text-sm font-semibold text-white shadow-[0_0_24px_rgba(168,85,247,0.35)] transition-all duration-300 hover:from-plum-600 hover:to-plum-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 disabled:cursor-wait disabled:opacity-80 ${
-              isCheckingOut ? 'animate-pulse shadow-[0_0_28px_rgba(212,175,55,0.45)]' : ''
+              isCheckingOut && !hasActiveSchedules
+                ? 'animate-pulse shadow-[0_0_28px_rgba(212,175,55,0.45)]'
+                : ''
             }`}
           />
 
@@ -321,6 +330,20 @@ export default function CourseDetailClient({
     );
   }, [course, isCheckingOut, lang, mode, router]);
 
+  const hasActiveSchedules = useMemo(
+    () =>
+      (course?.schedules || []).some(
+        (o) => o?.status !== 'ended' && o?.status !== 'cancelled'
+      ),
+    [course?.schedules]
+  );
+
+  const handleViewSchedules = useCallback(() => {
+    const el = document.getElementById('schedules');
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   const availableModes = useMemo(
     () => MODE_ORDER.filter((key) => course?.availableModes?.includes(key)),
     [course]
@@ -440,6 +463,8 @@ export default function CourseDetailClient({
                   isEnrolled={isEnrolled}
                   featuredOccurrence={featuredOccurrence}
                   now={scheduleNow}
+                  hasActiveSchedules={hasActiveSchedules}
+                  onViewSchedules={handleViewSchedules}
                 />
               </div>
             </header>
@@ -631,9 +656,16 @@ export default function CourseDetailClient({
                     <BuyNowButton
                       labels={labels}
                       isCheckingOut={isCheckingOut}
-                      onBuyNow={handleBuyNow}
+                      onBuyNow={hasActiveSchedules ? handleViewSchedules : handleBuyNow}
+                      label={
+                        hasActiveSchedules
+                          ? labels.viewSchedules ||
+                            labels.schedules?.viewSchedules ||
+                            'View schedules'
+                          : undefined
+                      }
                       className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-80 ${
-                        isCheckingOut ? 'animate-pulse' : ''
+                        isCheckingOut && !hasActiveSchedules ? 'animate-pulse' : ''
                       }`}
                     />
                   )}
