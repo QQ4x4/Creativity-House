@@ -308,7 +308,125 @@ class CourseScheduleApiTest extends TestCase
             'phone' => '+60123456789',
             'schedule_id' => $schedule->id,
             'occurrence_date' => '2030-06-10',
-        ])->assertStatus(422)->assertJsonPath('schedule_unavailable', true);
+        ])
+            ->assertStatus(422)
+            ->assertJsonPath('schedule_unavailable', true)
+            ->assertJsonPath('schedule_status', 'sold_out')
+            ->assertJsonPath(
+                'message',
+                'This batch is sold out. Please choose another one or contact us.'
+            );
+    }
+
+    public function test_admin_sold_out_then_reopen_controls_checkout_and_public_status(): void
+    {
+        $course = Course::factory()->create(['price' => 1200]);
+        $schedule = CourseSchedule::factory()->create([
+            'course_id' => $course->id,
+            'starts_on' => '2030-06-10',
+            'seats_total' => 8,
+        ]);
+
+        $existing = Order::factory()->create([
+            'user_id' => User::factory(),
+            'course_id' => $course->id,
+            'course_schedule_id' => $schedule->id,
+            'schedule_occurrence_date' => '2030-06-10',
+        ]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson(
+                "/api/v1/admin/courses/{$course->id}/schedules/{$schedule->id}/occurrences/2030-06-10",
+                ['status' => 'sold_out']
+            )
+            ->assertOk()
+            ->assertJsonPath('data.status', 'sold_out');
+
+        $this->getJson("/api/courses/{$course->slug}")
+            ->assertOk()
+            ->assertJsonPath('data.schedules.0.status', 'sold_out')
+            ->assertJsonPath('data.schedules.0.is_bookable', false);
+
+        $this->getJson("/api/courses/{$course->id}/schedules/{$schedule->id}/occurrences/2030-06-10")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'sold_out')
+            ->assertJsonPath('data.is_bookable', false);
+
+        $this->withHeader('Accept-Language', 'ar')
+            ->postJson('/api/v1/checkout/create-payment-intent', [
+                'course_id' => $course->id,
+                'email' => 'buyer@example.com',
+                'name' => 'Test Buyer',
+                'phone' => '+60123456789',
+                'schedule_id' => $schedule->id,
+                'occurrence_date' => '2030-06-10',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('schedule_unavailable', true)
+            ->assertJsonPath('schedule_status', 'sold_out')
+            ->assertJsonPath(
+                'message',
+                'هذه الدفعة مكتملة العدد. يرجى اختيار دفعة أخرى أو التواصل معنا.'
+            );
+
+        $this->assertTrue(
+            Order::query()
+                ->whereKey($existing->id)
+                ->where('course_schedule_id', $schedule->id)
+                ->whereDate('schedule_occurrence_date', '2030-06-10')
+                ->exists()
+        );
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->deleteJson(
+                "/api/v1/admin/courses/{$course->id}/schedules/{$schedule->id}/occurrences/2030-06-10"
+            )
+            ->assertNoContent();
+
+        $this->getJson("/api/courses/{$course->slug}")
+            ->assertOk()
+            ->assertJsonPath('data.schedules.0.status', 'open')
+            ->assertJsonPath('data.schedules.0.is_bookable', true);
+
+        config(['services.stripe.secret' => 'sk_test_sold_out_reopen']);
+
+        $httpClient = \Mockery::mock(\Stripe\HttpClient\ClientInterface::class);
+        $httpClient->shouldReceive('request')
+            ->once()
+            ->andReturn([
+                json_encode([
+                    'id' => 'pi_test_reopen_1',
+                    'object' => 'payment_intent',
+                    'amount' => 120000,
+                    'currency' => 'usd',
+                    'client_secret' => 'pi_test_reopen_1_secret',
+                    'status' => 'requires_payment_method',
+                ]),
+                200,
+                [],
+            ]);
+
+        \Stripe\ApiRequestor::setHttpClient($httpClient);
+
+        try {
+            $this->postJson('/api/v1/checkout/create-payment-intent', [
+                'course_id' => $course->id,
+                'email' => 'newbuyer@example.com',
+                'name' => 'New Buyer',
+                'phone' => '+60123456780',
+                'schedule_id' => $schedule->id,
+                'occurrence_date' => '2030-06-10',
+            ])
+                ->assertOk()
+                ->assertJsonPath('success', true);
+        } finally {
+            \Stripe\ApiRequestor::setHttpClient(null);
+        }
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $existing->id,
+            'course_schedule_id' => $schedule->id,
+        ]);
     }
 
     public function test_occurrence_date_requires_a_schedule_id(): void

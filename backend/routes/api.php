@@ -10,6 +10,9 @@ use App\Http\Controllers\Api\Admin\LessonController as AdminLessonController;
 use App\Http\Controllers\Api\Admin\LessonResourceUploadController;
 use App\Http\Controllers\Api\Admin\ModuleController as AdminModuleController;
 use App\Http\Controllers\Api\Admin\ScheduleOccurrenceController as AdminScheduleOccurrenceController;
+use App\Http\Controllers\Api\Admin\SuccessStoriesPageController as AdminSuccessStoriesPageController;
+use App\Http\Controllers\Api\Admin\TestimonialController as AdminTestimonialController;
+use App\Http\Controllers\Api\SuccessStoriesController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\ClaimAccountController;
 use App\Http\Controllers\Api\Auth\GoogleAuthController;
@@ -92,6 +95,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 */
 Route::get('/courses', [PublicCatalogController::class, 'index']);
 Route::get('/courses/{course}', [PublicCatalogController::class, 'show']);
+
+Route::get('/v1/success-stories', SuccessStoriesController::class)
+    ->name('api.v1.success-stories');
 
 // Re-validate a batch that arrived via a checkout deep link. Not scope-bound —
 // PublicScheduleController checks the schedule really belongs to the course.
@@ -277,6 +283,27 @@ Route::middleware(['auth:sanctum', 'admin'])
         Route::post('/lesson-resources/upload', [LessonResourceUploadController::class, 'store'])
             ->name('lesson-resources.upload');
         Route::post('/upload-image', ImageUploadController::class)->name('upload-image');
+
+        // ─── Success Stories / Testimonials ────────────────────────────────
+        Route::get('/success-stories/page', [AdminSuccessStoriesPageController::class, 'show'])
+            ->name('success-stories.page.show');
+        Route::match(['put', 'patch'], '/success-stories/page', [AdminSuccessStoriesPageController::class, 'update'])
+            ->name('success-stories.page.update');
+
+        Route::get('/testimonials', [AdminTestimonialController::class, 'index'])->name('testimonials.index');
+        Route::post('/testimonials', [AdminTestimonialController::class, 'store'])->name('testimonials.store');
+        Route::patch('/testimonials/reorder', [AdminTestimonialController::class, 'reorder'])
+            ->name('testimonials.reorder');
+        Route::get('/testimonials/{testimonial}', [AdminTestimonialController::class, 'show'])
+            ->name('testimonials.show');
+        Route::match(['put', 'patch'], '/testimonials/{testimonial}', [AdminTestimonialController::class, 'update'])
+            ->name('testimonials.update');
+        Route::delete('/testimonials/{testimonial}', [AdminTestimonialController::class, 'destroy'])
+            ->name('testimonials.destroy');
+        Route::patch('/testimonials/{testimonial}/feature', [AdminTestimonialController::class, 'feature'])
+            ->name('testimonials.feature');
+        Route::patch('/testimonials/{testimonial}/publish', [AdminTestimonialController::class, 'publish'])
+            ->name('testimonials.publish');
 
         Route::get('/courses', [AdminCourseController::class, 'index'])->name('courses.index');
         Route::post('/courses', [AdminCourseController::class, 'store'])->name('courses.store');

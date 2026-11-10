@@ -357,6 +357,10 @@ export default function CourseDetailClient({
     () => pickFeaturedOccurrence(course?.schedules || [], mode),
     [course?.schedules, mode]
   );
+  const featuredSoldOut = featuredOccurrence?.status === 'sold_out';
+  const contactNextBatchHref = course?.slug
+    ? `/${lang}/course-inquiry?course=${encodeURIComponent(course.slug)}`
+    : `/${lang}/course-inquiry`;
   const scheduleNow = useNow({
     urgent: Boolean(
       featuredOccurrence?.startAt &&
@@ -640,7 +644,7 @@ export default function CourseDetailClient({
                 )}
                 <div className="flex shrink-0 items-center gap-2">
                   <Link
-                    href={`/${lang}/course-inquiry?course=${encodeURIComponent(course.slug)}`}
+                    href={contactNextBatchHref}
                     aria-label={labels.haveQuestions}
                     className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-xl border border-gray-300/80 bg-white/50 text-gray-700 backdrop-blur-md transition-all duration-300 hover:border-plum-400/50 hover:text-plum-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 dark:border-white/15 dark:bg-white/5 dark:text-gray-200 dark:hover:border-gold-400/40 dark:hover:text-gold-200"
                   >
@@ -652,6 +656,22 @@ export default function CourseDetailClient({
                       href={learnHref}
                       className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-plum-700 to-plum-500 px-5 text-sm font-semibold text-white"
                     />
+                  ) : featuredSoldOut ? (
+                    <div className="flex max-w-[11rem] flex-col items-end gap-0.5">
+                      <button
+                        type="button"
+                        disabled
+                        className="inline-flex min-h-[44px] cursor-not-allowed items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-800 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-100"
+                      >
+                        {labels.schedules?.soldOut || 'Sold out'}
+                      </button>
+                      <Link
+                        href={contactNextBatchHref}
+                        className="text-[10px] font-semibold text-plum-700 underline-offset-2 hover:underline dark:text-gold-300"
+                      >
+                        {labels.schedules?.contactNextBatch || 'Contact us for the next batch'}
+                      </Link>
+                    </div>
                   ) : (
                     <BuyNowButton
                       labels={labels}

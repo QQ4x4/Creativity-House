@@ -200,10 +200,21 @@ class PaymentController extends Controller
                     );
 
                 if ($occurrence === null || ! $occurrence->isBookable()) {
+                    $locale = strtolower(substr((string) $request->header('Accept-Language', 'en'), 0, 2));
+                    $isAr = $locale === 'ar';
+                    $soldOut = $occurrence?->status === \App\Services\Schedules\Occurrence::STATUS_SOLD_OUT;
+
                     return response()->json([
                         'success' => false,
-                        'message' => 'That start date is no longer available. Please choose another one.',
+                        'message' => $soldOut
+                            ? ($isAr
+                                ? 'هذه الدفعة مكتملة العدد. يرجى اختيار دفعة أخرى أو التواصل معنا.'
+                                : 'This batch is sold out. Please choose another one or contact us.')
+                            : ($isAr
+                                ? 'هذا الموعد لم يعد متاحًا. يرجى اختيار موعد آخر.'
+                                : 'That start date is no longer available. Please choose another one.'),
                         'schedule_unavailable' => true,
+                        'schedule_status' => $occurrence?->status,
                     ], 422);
                 }
 

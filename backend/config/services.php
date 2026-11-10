@@ -82,6 +82,12 @@ return [
         'library_id' => env('BUNNY_STREAM_LIBRARY_ID', '739576'),
         'api_key' => env('BUNNY_STREAM_API_KEY'),
         'base_url' => env('BUNNY_STREAM_BASE_URL', 'https://video.bunnycdn.com'),
+        // Optional overrides when the video list omits pull-zone / CDN host.
+        'pull_zone_id' => env('BUNNY_STREAM_PULL_ZONE_ID'),
+        'cdn_hostname' => env('BUNNY_STREAM_CDN_HOSTNAME'),
+        // When the library has Token Authentication enabled, set this so public
+        // Success Stories embeds can be signed server-side for logged-out viewers.
+        'token_auth_key' => env('BUNNY_STREAM_TOKEN_AUTH_KEY'),
     ],
 
     /*

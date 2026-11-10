@@ -204,6 +204,33 @@ class ScheduleOccurrenceServiceTest extends TestCase
         $this->assertFalse($occurrence?->isBookable());
     }
 
+    public function test_manual_sold_out_exception_is_not_bookable_but_still_listed(): void
+    {
+        $schedule = $this->schedule([
+            'starts_on' => '2030-06-10',
+            'seats_total' => 10,
+        ]);
+
+        CourseScheduleException::query()->create([
+            'course_schedule_id' => $schedule->id,
+            'occurrence_date' => '2030-06-10',
+            'status' => CourseScheduleException::STATUS_SOLD_OUT,
+        ]);
+
+        $occurrence = $this->service->findOccurrence($schedule, '2030-06-10');
+        $upcoming = $this->service->upcomingForCourse($schedule->course);
+
+        $this->assertSame(Occurrence::STATUS_SOLD_OUT, $occurrence?->status);
+        $this->assertFalse($occurrence?->isBookable());
+        $this->assertTrue(
+            collect($upcoming)->contains(
+                fn ($row) => $row->scheduleId === $schedule->id
+                    && $row->occurrenceDate === '2030-06-10'
+                    && $row->status === Occurrence::STATUS_SOLD_OUT
+            )
+        );
+    }
+
     public function test_enrollment_cutoff_closes_the_batch(): void
     {
         $startsOn = CarbonImmutable::now('Asia/Kuala_Lumpur')->addDay();

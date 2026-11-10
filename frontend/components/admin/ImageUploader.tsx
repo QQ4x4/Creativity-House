@@ -21,6 +21,8 @@ interface ImageUploaderProps {
   value?: string | null;
   /** Called with the permanent public URL after a successful upload. */
   onUploaded: (url: string) => void;
+  /** Optional: also receive storage path (for DB fields that store disk paths). */
+  onUploadedMeta?: (meta: { url: string; path: string }) => void;
   /** Optional: clear the stored URL (Remove photo). */
   onCleared?: () => void;
   /** Optional short label shown above the dropzone. */
@@ -38,6 +40,7 @@ interface ImageUploaderProps {
 export function ImageUploader({
   value,
   onUploaded,
+  onUploadedMeta,
   onCleared,
   label = 'Upload image',
   variant = 'cover',
@@ -64,6 +67,7 @@ export function ImageUploader({
         }
         setPreviewFailed(false);
         onUploaded(result.url);
+        onUploadedMeta?.({ url: result.url, path: result.path });
         toast.success('Image uploaded.');
       } catch (error) {
         const message =
@@ -77,7 +81,7 @@ export function ImageUploader({
         setUploading(false);
       }
     },
-    [disabled, onUploaded, uploading]
+    [disabled, onUploaded, onUploadedMeta, uploading]
   );
 
   const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({

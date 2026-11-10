@@ -114,6 +114,8 @@ function lifecycleBadge(status: AdminCourseScheduleDto['lifecycle_status']): {
   variant: 'success' | 'secondary' | 'warning' | 'destructive' | 'default';
 } {
   switch (status) {
+    case 'sold_out':
+      return { label: 'Sold out', variant: 'destructive' };
     case 'enrollment_closed':
       return { label: 'Enrollment closed', variant: 'warning' };
     case 'in_progress':
@@ -125,6 +127,27 @@ function lifecycleBadge(status: AdminCourseScheduleDto['lifecycle_status']): {
     case 'open':
     default:
       return { label: 'Open', variant: 'success' };
+  }
+}
+
+function occurrenceStatusLabel(status: string): string {
+  switch (status) {
+    case 'sold_out':
+      return 'Sold out';
+    case 'few_seats':
+      return 'Few seats';
+    case 'cancelled':
+      return 'Cancelled';
+    case 'closed':
+      return 'Closed';
+    case 'started':
+      return 'Started';
+    case 'ended':
+      return 'Ended';
+    case 'open':
+      return 'Open';
+    default:
+      return status;
   }
 }
 
@@ -146,6 +169,9 @@ export function SchedulesTab({
   const [weeksShift, setWeeksShift] = useState(1);
   const [duplicating, setDuplicating] = useState(false);
   const [occurrenceEdit, setOccurrenceEdit] = useState<AdminOccurrenceDto | null>(null);
+  const [soldOutTarget, setSoldOutTarget] = useState<AdminOccurrenceDto | null>(null);
+  const [reopenTarget, setReopenTarget] = useState<AdminOccurrenceDto | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!courseId) return;
@@ -301,6 +327,54 @@ export function SchedulesTab({
       await load();
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : 'Could not update date.');
+    }
+  };
+
+  const confirmSoldOut = async () => {
+    if (!soldOutTarget || !courseId) return;
+    setStatusBusy(true);
+    try {
+      await upsertAdminOccurrence(
+        courseId,
+        soldOutTarget.schedule_id,
+        soldOutTarget.occurrence_date,
+        { status: 'sold_out' }
+      );
+      toast.success('Batch marked sold out. It stays visible on the site.');
+      setSoldOutTarget(null);
+      await load();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : 'Could not mark sold out.');
+    } finally {
+      setStatusBusy(false);
+    }
+  };
+
+  const confirmReopen = async () => {
+    if (!reopenTarget || !courseId) return;
+    setStatusBusy(true);
+    try {
+      // Drop the sold_out override so the date falls back to rule defaults (open).
+      await deleteAdminOccurrence(
+        courseId,
+        reopenTarget.schedule_id,
+        reopenTarget.occurrence_date
+      );
+      const refreshed = await fetchAdminScheduleOccurrences(courseId, reopenTarget.schedule_id, {
+        limit: 40,
+      });
+      const row = refreshed.find((o) => o.occurrence_date === reopenTarget.occurrence_date);
+      if (row?.status === 'sold_out') {
+        toast.message('Still sold out — all seats are taken. Increase seats total to reopen.');
+      } else {
+        toast.success('Batch reopened for enrollment.');
+      }
+      setReopenTarget(null);
+      await load();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : 'Could not reopen batch.');
+    } finally {
+      setStatusBusy(false);
     }
   };
 
@@ -558,7 +632,7 @@ export function SchedulesTab({
                             occ.status === 'closed' && 'bg-gray-100 text-gray-600'
                           )}
                         >
-                          {occ.status}
+                          {occurrenceStatusLabel(occ.status)}
                         </span>
                       </td>
                       <td className="px-3 py-2">
@@ -582,14 +656,25 @@ export function SchedulesTab({
                             >
                               Cancel
                             </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => void quickStatus(occ, 'sold_out')}
-                            >
-                              Sold out
-                            </Button>
+                            {occ.status === 'sold_out' ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setReopenTarget(occ)}
+                              >
+                                Reopen
+                              </Button>
+                            ) : (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setSoldOutTarget(occ)}
+                              >
+                                Sold out
+                              </Button>
+                            )}
                             {occ.is_exception ? (
                               <Button
                                 type="button"
@@ -654,6 +739,64 @@ export function SchedulesTab({
           <AlertDialogFooter>
             <AlertDialogCancel>Keep</AlertDialogCancel>
             <AlertDialogAction onClick={() => void onConfirmDelete()}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(soldOutTarget)}
+        onOpenChange={(open) => {
+          if (!open) setSoldOutTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark this batch as sold out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Stop new enrollments for this batch? It stays visible on the site.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={statusBusy}>Keep open</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={statusBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmSoldOut();
+              }}
+            >
+              {statusBusy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+              Sold out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(reopenTarget)}
+        onOpenChange={(open) => {
+          if (!open) setReopenTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reopen this batch?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Allow new enrollments again for this batch/date.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={statusBusy}>Keep sold out</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={statusBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmReopen();
+              }}
+            >
+              {statusBusy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+              Reopen
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -44,6 +44,14 @@ interface BunnyVideoPickerProps {
   selectedGuid: string;
   onSelect: (video: BunnyVideo) => void;
   disabled?: boolean;
+  /** Hide the default outline trigger (use with controlled `open`). */
+  hideTrigger?: boolean;
+  /** Controlled open state — when omitted, the picker manages its own dialog. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Optional dialog copy (Curriculum keeps the default lesson wording). */
+  title?: string;
+  description?: string;
 }
 
 /**
@@ -54,8 +62,22 @@ interface BunnyVideoPickerProps {
  * scrolling is confined to the grid via `overscroll-contain` so the outer
  * lesson modal does not steal the wheel events.
  */
-export function BunnyVideoPicker({ selectedGuid, onSelect, disabled }: BunnyVideoPickerProps) {
-  const [open, setOpen] = useState(false);
+export function BunnyVideoPicker({
+  selectedGuid,
+  onSelect,
+  disabled,
+  hideTrigger = false,
+  open: openProp,
+  onOpenChange,
+  title = 'Bunny media library',
+  description = 'Pick a video to fill the lesson title and duration. Use collection tabs to browse.',
+}: BunnyVideoPickerProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = openProp ?? uncontrolledOpen;
+  const setOpen = (next: boolean) => {
+    onOpenChange?.(next);
+    if (openProp === undefined) setUncontrolledOpen(next);
+  };
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState(ALL_TAB);
   const [videos, setVideos] = useState<BunnyVideo[]>([]);
@@ -152,29 +174,29 @@ export function BunnyVideoPicker({ selectedGuid, onSelect, disabled }: BunnyVide
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        disabled={disabled}
-        className="w-full justify-between font-normal"
-        onClick={() => setOpen(true)}
-      >
-        <span className="flex min-w-0 items-center gap-2">
-          <Video className="h-4 w-4 shrink-0 text-plum-500 dark:text-gold-400" aria-hidden />
-          <span className={cn('truncate', !selectedGuid && 'text-gray-400')}>{triggerLabel}</span>
-        </span>
-        <FolderOpen className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
-      </Button>
+      {hideTrigger ? null : (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={disabled}
+          className="w-full justify-between font-normal"
+          onClick={() => setOpen(true)}
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <Video className="h-4 w-4 shrink-0 text-plum-500 dark:text-gold-400" aria-hidden />
+            <span className={cn('truncate', !selectedGuid && 'text-gray-400')}>{triggerLabel}</span>
+          </span>
+          <FolderOpen className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         {/* overflow-hidden: scroll lives only on the grid below, not the shell. */}
         <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
           <div className="shrink-0 space-y-4 border-b border-gray-200 px-6 pb-4 pt-6 dark:border-white/10">
             <DialogHeader>
-              <DialogTitle>Bunny media library</DialogTitle>
-              <DialogDescription>
-                Pick a video to fill the lesson title and duration. Use collection tabs to browse.
-              </DialogDescription>
+              <DialogTitle>{title}</DialogTitle>
+              <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
 
             <div className="relative">
@@ -277,12 +299,26 @@ export function BunnyVideoPicker({ selectedGuid, onSelect, disabled }: BunnyVide
                             alt=""
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                             loading="lazy"
+                            onError={(event) => {
+                              const img = event.currentTarget;
+                              img.style.display = 'none';
+                              const fallback = img.nextElementSibling;
+                              if (fallback instanceof HTMLElement) {
+                                fallback.classList.remove('hidden');
+                                fallback.classList.add('flex');
+                              }
+                            }}
                           />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <Video className="h-8 w-8 text-gray-400" aria-hidden />
-                          </div>
-                        )}
+                        ) : null}
+                        <div
+                          className={
+                            video.thumbnail_url
+                              ? 'hidden h-full w-full items-center justify-center'
+                              : 'flex h-full w-full items-center justify-center'
+                          }
+                        >
+                          <Video className="h-8 w-8 text-gray-400" aria-hidden />
+                        </div>
 
                         <span className="absolute bottom-2 end-2 inline-flex items-center gap-1 rounded-md bg-black/75 px-1.5 py-0.5 text-[11px] font-medium text-white">
                           <Clock className="h-3 w-3" aria-hidden />

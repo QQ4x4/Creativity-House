@@ -35,4 +35,11 @@ export const ADMIN_ENDPOINTS = {
     scheduleId: number | string,
     date: string
   ) => `/v1/admin/courses/${courseId}/schedules/${scheduleId}/occurrences/${date}`,
+
+  testimonials: '/v1/admin/testimonials',
+  testimonial: (id: number | string) => `/v1/admin/testimonials/${id}`,
+  testimonialsReorder: '/v1/admin/testimonials/reorder',
+  testimonialFeature: (id: number | string) => `/v1/admin/testimonials/${id}/feature`,
+  testimonialPublish: (id: number | string) => `/v1/admin/testimonials/${id}/publish`,
+  successStoriesPage: '/v1/admin/success-stories/page',
 } as const;

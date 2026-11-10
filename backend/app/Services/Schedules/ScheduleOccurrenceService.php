@@ -542,20 +542,25 @@ class ScheduleOccurrenceService
                 ->diffInDays(CarbonImmutable::parse($lastDate, $timezone)) + 1
         );
 
+        $exception = $this->exceptionsFor($schedule)[$firstDate] ?? null;
+
         $mode = $schedule->delivery_mode
             ?: $this->checkoutPricing->resolveMode($course, null);
 
-        $price = $this->resolvePrice($schedule, null, $course, $mode);
-        $originalPrice = $schedule->original_price !== null ? (float) $schedule->original_price : null;
+        $price = $this->resolvePrice($schedule, $exception, $course, $mode);
+        $originalPrice = $exception?->original_price !== null
+            ? (float) $exception->original_price
+            : ($schedule->original_price !== null ? (float) $schedule->original_price : null);
         $discountPercent = ($originalPrice !== null && $originalPrice > $price && $originalPrice > 0)
             ? (int) round((1 - ($price / $originalPrice)) * 100)
             : null;
 
-        $seatsTotal = $schedule->seats_total !== null ? (int) $schedule->seats_total : null;
+        $seatsTotal = $exception?->seats_total ?? $schedule->seats_total;
+        $seatsTotal = $seatsTotal !== null ? (int) $seatsTotal : null;
         $seatsTaken = (int) ($seatCounts["{$schedule->id}|{$firstDate}"] ?? 0);
         $seatsLeft = $seatsTotal !== null ? max(0, $seatsTotal - $seatsTaken) : null;
 
-        $status = $this->resolveStatus($schedule, null, $startAt, $endAt, $seatsTotal, $seatsLeft);
+        $status = $this->resolveStatus($schedule, $exception, $startAt, $endAt, $seatsTotal, $seatsLeft);
 
         $phases = $this->normalizePhases($schedule->phases);
         $sessionPayloads = array_map(
@@ -569,6 +574,10 @@ class ScheduleOccurrenceService
                 ? $schedule->enrollment_closes_at->format('Y-m-d')
                 : substr((string) $schedule->enrollment_closes_at, 0, 10);
         }
+
+        $batchNumberOverride = $exception?->batch_number !== null
+            ? (int) $exception->batch_number
+            : null;
 
         return new Occurrence(
             scheduleId: (int) ($schedule->id ?: 0),
@@ -586,8 +595,8 @@ class ScheduleOccurrenceService
             format: (string) ($schedule->format ?: 'online'),
             locationEn: $schedule->location_en,
             locationAr: $schedule->location_ar,
-            batchNumber: $schedule->batch_number !== null ? (int) $schedule->batch_number : null,
-            batchNumberOverride: null,
+            batchNumber: $batchNumberOverride ?? ($schedule->batch_number !== null ? (int) $schedule->batch_number : null),
+            batchNumberOverride: $batchNumberOverride,
             titleEn: $schedule->title_en,
             titleAr: $schedule->title_ar,
             deliveryMode: $schedule->delivery_mode,
@@ -606,16 +615,24 @@ class ScheduleOccurrenceService
             showCountdown: (bool) $schedule->show_countdown,
             isFeatured: (bool) $schedule->is_featured,
             trainer: [
-                'name_en' => $schedule->trainer_name_en ?: $course->instructor_name,
-                'name_ar' => $schedule->trainer_name_ar ?: $course->instructor_name_ar,
+                'name_en' => $exception?->trainer_name_en ?: ($schedule->trainer_name_en ?: $course->instructor_name),
+                'name_ar' => $exception?->trainer_name_ar ?: ($schedule->trainer_name_ar ?: $course->instructor_name_ar),
                 'title_en' => $schedule->trainer_title_en ?: $course->instructor_title_en,
                 'title_ar' => $schedule->trainer_title_ar ?: $course->instructor_title_ar,
-                'photo' => PublicMediaUrl::resolve($schedule->trainer_photo ?: $course->instructor_photo),
+                'photo' => PublicMediaUrl::resolve(
+                    $exception?->trainer_photo ?: ($schedule->trainer_photo ?: $course->instructor_photo)
+                ),
             ],
-            trainerOverride: null,
-            noteEn: $schedule->notes_en,
-            noteAr: $schedule->notes_ar,
-            isException: false,
+            trainerOverride: $exception !== null
+                ? [
+                    'name_en' => $exception->trainer_name_en,
+                    'name_ar' => $exception->trainer_name_ar,
+                    'photo' => PublicMediaUrl::resolve($exception->trainer_photo),
+                ]
+                : null,
+            noteEn: $exception?->note_en ?: $schedule->notes_en,
+            noteAr: $exception?->note_ar ?: $schedule->notes_ar,
+            isException: $exception !== null,
             type: CourseSchedule::TYPE_COHORT,
             sessions: $sessionPayloads,
             phases: $phases,

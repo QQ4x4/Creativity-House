@@ -51,18 +51,22 @@ export default function ScheduleCard({
 }) {
   const statusMsg = statusMessage(occurrence, labels);
   const effectiveMode = occurrence.deliveryMode || mode || 'live';
+  const isSoldOut = occurrence.status === 'sold_out';
 
   const enrollHref = `/${lang}/checkout?course=${encodeURIComponent(course.slug)}&mode=${encodeURIComponent(effectiveMode)}&schedule=${occurrence.scheduleId}&date=${occurrence.occurrenceDate}`;
   const inquiryHref = `/${lang}/course-inquiry?course=${encodeURIComponent(course.slug)}&schedule=${occurrence.scheduleId}&date=${occurrence.occurrenceDate}`;
+  const contactHref = `/${lang}/course-inquiry?course=${encodeURIComponent(course.slug)}`;
 
   const ctaDisabled = isEnrolled || !occurrence.isBookable;
   const ctaLabel = isEnrolled
     ? labels.alreadyEnrolled || 'You own this course'
-    : occurrence.ctaType === 'inquiry'
-      ? labels.requestSeat || 'Request a seat'
-      : !occurrence.isBookable
-        ? statusMsg || labels.soldOut || 'Unavailable'
-        : labels.enrollNow || 'Enroll now';
+    : isSoldOut
+      ? labels.soldOut || 'Sold out'
+      : occurrence.ctaType === 'inquiry'
+        ? labels.requestSeat || 'Request a seat'
+        : !occurrence.isBookable
+          ? statusMsg || labels.soldOut || 'Unavailable'
+          : labels.enrollNow || 'Enroll now';
 
   const trainerInitials = (occurrence.trainer?.name || '?')
     .split(/\s+/)
@@ -87,11 +91,18 @@ export default function ScheduleCard({
 
       <div className="grid min-w-0 gap-4 pe-16 sm:pe-24 md:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,0.9fr)] md:items-center md:pe-28">
         <div className="min-w-0 space-y-2">
-          {occurrence.batchNumber != null ? (
-            <span className="inline-flex rounded-full border border-plum-200 bg-plum-50 px-2.5 py-0.5 text-[11px] font-semibold text-plum-800 dark:border-plum-400/30 dark:bg-plum-500/15 dark:text-plum-100">
-              {(labels.batchNumber || 'Batch {n}').replace('{n}', String(occurrence.batchNumber))}
-            </span>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            {isSoldOut ? (
+              <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-800 dark:border-red-400/30 dark:bg-red-500/15 dark:text-red-100">
+                {labels.soldOut || 'Sold out'}
+              </span>
+            ) : null}
+            {occurrence.batchNumber != null ? (
+              <span className="inline-flex rounded-full border border-plum-200 bg-plum-50 px-2.5 py-0.5 text-[11px] font-semibold text-plum-800 dark:border-plum-400/30 dark:bg-plum-500/15 dark:text-plum-100">
+                {(labels.batchNumber || 'Batch {n}').replace('{n}', String(occurrence.batchNumber))}
+              </span>
+            ) : null}
+          </div>
           <OccurrenceWhen
             occurrence={occurrence}
             lang={lang}
@@ -178,9 +189,25 @@ export default function ScheduleCard({
               {ctaLabel}
             </span>
           ) : ctaDisabled ? (
-            <span className="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm font-semibold text-gray-500 dark:border-white/10 dark:bg-white/5">
-              {ctaLabel}
-            </span>
+            <div className="flex w-full flex-col items-stretch gap-2 md:items-end">
+              <span
+                className={
+                  isSoldOut
+                    ? 'inline-flex min-h-11 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-800 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-100'
+                    : 'inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm font-semibold text-gray-500 dark:border-white/10 dark:bg-white/5'
+                }
+              >
+                {ctaLabel}
+              </span>
+              {isSoldOut ? (
+                <Link
+                  href={contactHref}
+                  className="text-center text-xs font-semibold text-plum-700 underline-offset-2 hover:underline dark:text-gold-300 md:text-end"
+                >
+                  {labels.contactNextBatch || 'Contact us for the next batch'}
+                </Link>
+              ) : null}
+            </div>
           ) : (
             <Link
               href={occurrence.ctaType === 'inquiry' ? inquiryHref : enrollHref}

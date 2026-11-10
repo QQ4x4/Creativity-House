@@ -273,9 +273,12 @@ function CheckoutBody({ dictionary, lang }) {
         if (cancelled) return;
         if (!occurrence || !occurrence.isBookable) {
           setBatch(null);
+          const soldOut = occurrence?.status === 'sold_out';
           setBatchError(
-            labels.schedules?.batchUnavailable ||
-              'That start date is no longer available. Please choose another schedule.'
+            soldOut
+              ? labels.schedules?.soldOut || 'Sold out'
+              : labels.schedules?.batchUnavailable ||
+                  'That start date is no longer available. Please choose another schedule.'
           );
           return;
         }

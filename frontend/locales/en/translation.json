@@ -5,6 +5,7 @@
     "courses": "Courses",
     "forOrganizations": "For Organizations",
     "about": "About",
+    "successStories": "Success Stories",
     "contact": "Contact",
     "getStarted": "Get Started",
     "login": "Login",
@@ -94,6 +95,24 @@
   },
   "languageSwitcher": {
     "label": "العربية"
+  },
+  "success_stories": {
+    "badge": "Real students · Real results",
+    "fallbackTitle": "Success Stories",
+    "fallbackSubtitle": "Hear from professionals who advanced their careers through our accredited training.",
+    "metaTitle": "Success Stories | Creativity House",
+    "metaDescription": "Watch real student success stories from Creativity House accredited project management programs.",
+    "playStory": "Play success story",
+    "allCourses": "All courses",
+    "loadMore": "Load more",
+    "empty": "Stories coming soon.",
+    "loading": "Loading stories…",
+    "ctaFallbackTitle": "Ready to write your own success story?",
+    "exploreCourses": "Explore courses",
+    "contactUs": "Contact us",
+    "close": "Close",
+    "previous": "Previous story",
+    "next": "Next story"
   },
   "about_page": {
     "pmiBadgeAlt": "PMI Authorized Training Partner 2026 badge",
@@ -461,6 +480,7 @@
       "started": "Started",
       "ended": "Ended",
       "soldOut": "Sold out",
+      "contactNextBatch": "Contact us for the next batch",
       "enrollmentClosed": "Enrollment closed",
       "onlySeatsLeft": "Only {n} seats left",
       "seatsLeft": "{n} seats left",

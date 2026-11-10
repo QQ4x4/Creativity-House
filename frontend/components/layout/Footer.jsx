@@ -73,6 +73,16 @@ export default function Footer({ dictionary, lang }) {
                                     {dictionary.nav.forOrganizations}
                                 </Link>
                             </motion.li>
+                            <motion.li whileHover={{ x: hoverX }} transition={{ duration: 0.2 }}>
+                                <Link href={`/${lang}/about`} className="hover:text-gold-400 transition-colors">
+                                    {dictionary.nav.about}
+                                </Link>
+                            </motion.li>
+                            <motion.li whileHover={{ x: hoverX }} transition={{ duration: 0.2 }}>
+                                <Link href={`/${lang}/success-stories`} className="hover:text-gold-400 transition-colors">
+                                    {dictionary.nav.successStories}
+                                </Link>
+                            </motion.li>
                         </ul>
                     </motion.div>
 

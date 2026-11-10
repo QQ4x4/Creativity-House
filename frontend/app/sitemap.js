@@ -10,6 +10,7 @@ const STATIC_PATHS = [
   '',
   'courses',
   'about',
+  'success-stories',
   'for-organization',
   'course-inquiry',
   'privacy',

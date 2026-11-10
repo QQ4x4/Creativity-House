@@ -11,6 +11,14 @@ function backendImageRemotePatterns() {
       hostname: '**.up.railway.app',
     },
     {
+      protocol: 'https',
+      hostname: '**.b-cdn.net',
+    },
+    {
+      protocol: 'https',
+      hostname: 'iframe.mediadelivery.net',
+    },
+    {
       protocol: 'http',
       hostname: 'localhost',
       port: '8000',

@@ -214,15 +214,26 @@ export function formatResultsCount(count, lang = 'en', labels = {}) {
 }
 
 /**
- * Pick featured or soonest bookable for the selected mode.
+ * Pick the batch shown in sticky/sidebar: prefer next OPEN (bookable) for the mode.
+ * If none are bookable, return the soonest visible sold-out/closed batch so the UI
+ * can show "Sold out" + contact — never hide schedules that are only sold out.
  */
 export function pickFeaturedOccurrence(occurrences, mode) {
-  const list = (occurrences || []).filter(
+  const forMode = (occurrences || []).filter(
     (o) =>
-      o.isBookable &&
+      o &&
+      o.status !== 'cancelled' &&
+      o.status !== 'ended' &&
       (o.deliveryMode == null || o.deliveryMode === '' || o.deliveryMode === mode)
   );
-  if (list.length === 0) return null;
-  const featured = list.find((o) => o.isFeatured);
-  return featured || list[0];
+  if (forMode.length === 0) return null;
+
+  const bookable = forMode.filter((o) => o.isBookable);
+  if (bookable.length > 0) {
+    const featured = bookable.find((o) => o.isFeatured);
+    return featured || bookable[0];
+  }
+
+  const featured = forMode.find((o) => o.isFeatured);
+  return featured || forMode[0];
 }

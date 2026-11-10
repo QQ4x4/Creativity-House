@@ -9,7 +9,16 @@
  * Errors are never swallowed: callers get an ApiError to surface in the UI.
  */
 
-import { apiClient, apiDelete, apiGet, apiPost, apiPut, ApiError, getCsrfCookie } from '@/lib/api';
+import {
+  apiClient,
+  apiDelete,
+  apiGet,
+  apiPatch,
+  apiPost,
+  apiPut,
+  ApiError,
+  getCsrfCookie,
+} from '@/lib/api';
 import { ADMIN_ENDPOINTS } from './endpoints';
 import type {
   AdminCourseDto,
@@ -19,12 +28,14 @@ import type {
   AdminModuleDto,
   AdminOccurrenceDto,
   AdminScheduleExceptionDto,
+  AdminTestimonialDto,
   BunnyCollection,
   BunnyVideo,
   BunnyVideoListResult,
   InquiryDto,
   InquiryStatus,
   InquiryType,
+  SuccessStoriesPageDto,
 } from './types';
 
 /** Laravel resources wrap payloads in `data`; collections may not. */
@@ -407,4 +418,70 @@ export async function deleteAdminOccurrence(
   date: string
 ): Promise<void> {
   await apiDelete(ADMIN_ENDPOINTS.scheduleOccurrence(courseId, scheduleId, date));
+}
+
+/* ─── Testimonials / Success Stories ─────────────────────────────────────── */
+
+export async function fetchAdminTestimonials(): Promise<AdminTestimonialDto[]> {
+  return unwrap<AdminTestimonialDto[]>(await apiGet(ADMIN_ENDPOINTS.testimonials)) ?? [];
+}
+
+export async function createAdminTestimonial(
+  payload: Record<string, unknown>
+): Promise<AdminTestimonialDto> {
+  return unwrap<AdminTestimonialDto>(await apiPost(ADMIN_ENDPOINTS.testimonials, payload));
+}
+
+export async function updateAdminTestimonial(
+  id: number | string,
+  payload: Record<string, unknown>
+): Promise<AdminTestimonialDto> {
+  return unwrap<AdminTestimonialDto>(
+    await apiPut(ADMIN_ENDPOINTS.testimonial(id), payload)
+  );
+}
+
+export async function deleteAdminTestimonial(id: number | string): Promise<void> {
+  await apiDelete(ADMIN_ENDPOINTS.testimonial(id));
+}
+
+export async function reorderAdminTestimonials(
+  ids: number[]
+): Promise<AdminTestimonialDto[]> {
+  return (
+    unwrap<AdminTestimonialDto[]>(
+      await apiPatch(ADMIN_ENDPOINTS.testimonialsReorder, { ids })
+    ) ?? []
+  );
+}
+
+export async function featureAdminTestimonial(
+  id: number | string
+): Promise<AdminTestimonialDto> {
+  return unwrap<AdminTestimonialDto>(
+    await apiPatch(ADMIN_ENDPOINTS.testimonialFeature(id), {})
+  );
+}
+
+export async function publishAdminTestimonial(
+  id: number | string,
+  isPublished: boolean
+): Promise<AdminTestimonialDto> {
+  return unwrap<AdminTestimonialDto>(
+    await apiPatch(ADMIN_ENDPOINTS.testimonialPublish(id), {
+      is_published: isPublished,
+    })
+  );
+}
+
+export async function fetchSuccessStoriesPageSettings(): Promise<SuccessStoriesPageDto> {
+  return unwrap<SuccessStoriesPageDto>(await apiGet(ADMIN_ENDPOINTS.successStoriesPage));
+}
+
+export async function updateSuccessStoriesPageSettings(
+  payload: Record<string, unknown>
+): Promise<SuccessStoriesPageDto> {
+  return unwrap<SuccessStoriesPageDto>(
+    await apiPut(ADMIN_ENDPOINTS.successStoriesPage, payload)
+  );
 }

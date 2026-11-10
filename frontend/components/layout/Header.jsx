@@ -26,7 +26,11 @@ export default function Header({ dictionary, lang, scrolled, lightHero = false }
         pathname?.startsWith(`/${lang}/for-organization`) ||
         pathname?.startsWith(`/${lang}/course-inquiry`) ||
         pathname?.startsWith(`/${lang}/terms`) ||
-        pathname?.startsWith(`/${lang}/privacy`);
+        pathname?.startsWith(`/${lang}/privacy`) ||
+        // Success Stories is a light content page (like Courses), not a dark hero.
+        // Without this, the transparent white-on-dark bar makes nav/logo invisible
+        // in light mode. Dark mode still gets white logo via dark:brightness-0 invert.
+        pathname?.startsWith(`/${lang}/success-stories`);
     const isPortalFlow =
         pathname?.startsWith(`/${lang}/profile`) || pathname?.startsWith(`/${lang}/my-courses`);
     const solid = Boolean(scrolled || isCatalogFlow || isPortalFlow);
@@ -56,6 +60,12 @@ export default function Header({ dictionary, lang, scrolled, lightHero = false }
         { name: dictionary.nav.courses, href: `/${lang}/courses`, isPage: true, match: `/${lang}/courses` },
         { name: dictionary.nav.forOrganizations, href: `/${lang}/for-organization`, isPage: true, match: `/${lang}/for-organization` },
         { name: dictionary.nav.about, href: `/${lang}/about`, isPage: true, match: `/${lang}/about` },
+        {
+            name: dictionary.nav.successStories,
+            href: `/${lang}/success-stories`,
+            isPage: true,
+            match: `/${lang}/success-stories`,
+        },
         {
             name: dictionary.nav.contact,
             href: `/${lang}/course-inquiry`,

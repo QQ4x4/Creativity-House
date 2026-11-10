@@ -56,17 +56,19 @@ export default function CohortScheduleCard({
   const enrollHref = `/${lang}/checkout?course=${encodeURIComponent(course.slug)}&mode=${encodeURIComponent(effectiveMode)}&schedule=${occurrence.scheduleId}&date=${occurrence.occurrenceDate}`;
   const inquiryHref = `/${lang}/course-inquiry?course=${encodeURIComponent(course.slug)}&schedule=${occurrence.scheduleId}&date=${occurrence.occurrenceDate}`;
 
+  const isSoldOut = occurrence.status === 'sold_out';
   const closed = occurrence.status === 'closed' || !occurrence.isBookable;
   const ctaDisabled = isEnrolled || closed;
   const ctaLabel = isEnrolled
     ? labels.alreadyEnrolled || 'You own this course'
-    : occurrence.status === 'closed'
-      ? labels.enrollmentClosed || 'Enrollment closed'
-      : occurrence.status === 'sold_out'
-        ? labels.soldOut || 'Sold out'
+    : isSoldOut
+      ? labels.soldOut || 'Sold out'
+      : occurrence.status === 'closed'
+        ? labels.enrollmentClosed || 'Enrollment closed'
         : occurrence.ctaType === 'inquiry'
           ? labels.requestSeat || 'Request a seat'
           : labels.enrollNow || 'Enroll Now';
+  const contactHref = `/${lang}/course-inquiry?course=${encodeURIComponent(course.slug)}`;
 
   const fillingFast =
     occurrence.showSeatsLeft &&
@@ -121,6 +123,11 @@ export default function CohortScheduleCard({
       <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)] lg:items-start">
         <div className="min-w-0 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
+            {isSoldOut ? (
+              <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-800 dark:border-red-400/30 dark:bg-red-500/15 dark:text-red-100">
+                {labels.soldOut || 'Sold out'}
+              </span>
+            ) : null}
             {occurrence.timeSlot ? (
               <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900 dark:border-amber-400/30 dark:bg-amber-500/15 dark:text-amber-100">
                 {timeSlotLabel(occurrence.timeSlot, labels)}
@@ -225,9 +232,26 @@ export default function CohortScheduleCard({
           ) : null}
 
           {ctaDisabled ? (
-            <span className="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm font-semibold text-gray-500 dark:border-white/10 dark:bg-white/5">
-              {ctaLabel}
-            </span>
+            <div className="flex w-full flex-col items-stretch gap-2 lg:items-end">
+              <span
+                className={cn(
+                  'inline-flex min-h-11 items-center justify-center rounded-xl border px-4 text-sm font-semibold',
+                  isSoldOut
+                    ? 'border-red-200 bg-red-50 text-red-800 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-100'
+                    : 'border-gray-200 bg-gray-50 text-gray-500 dark:border-white/10 dark:bg-white/5'
+                )}
+              >
+                {ctaLabel}
+              </span>
+              {isSoldOut && !isEnrolled ? (
+                <Link
+                  href={contactHref}
+                  className="text-center text-xs font-semibold text-plum-700 underline-offset-2 hover:underline dark:text-gold-300 lg:text-end"
+                >
+                  {labels.contactNextBatch || 'Contact us for the next batch'}
+                </Link>
+              ) : null}
+            </div>
           ) : (
             <Link
               href={occurrence.ctaType === 'inquiry' ? inquiryHref : enrollHref}

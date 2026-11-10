@@ -58,15 +58,24 @@ export default function FeaturedScheduleCard({
 }) {
   if (!occurrence) return null;
 
+  const isSoldOut = occurrence.status === 'sold_out';
+
   return (
     <div className="mt-4 rounded-2xl border border-plum-200/80 bg-plum-50/70 p-3 dark:border-plum-400/25 dark:bg-plum-500/10">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-plum-700 dark:text-gold-300">
-            {occurrence.batchNumber != null
-              ? (labels.batchNumber || 'Batch {n}').replace('{n}', String(occurrence.batchNumber))
-              : labels.nextBatch || 'Next batch'}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-plum-700 dark:text-gold-300">
+              {occurrence.batchNumber != null
+                ? (labels.batchNumber || 'Batch {n}').replace('{n}', String(occurrence.batchNumber))
+                : labels.nextBatch || 'Next batch'}
+            </p>
+            {isSoldOut ? (
+              <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-800 dark:border-red-400/30 dark:bg-red-500/15 dark:text-red-100">
+                {labels.soldOut || 'Sold out'}
+              </span>
+            ) : null}
+          </div>
           <div className="mt-1">
             <OccurrenceWhen
               occurrence={occurrence}
@@ -112,12 +121,19 @@ export default function FeaturedScheduleCard({
 export function MobileNextBatchLine({ occurrence, lang, labels }) {
   if (!occurrence) return null;
 
+  const isSoldOut = occurrence.status === 'sold_out';
+
   return (
     <div className="min-w-0 max-w-full overflow-hidden">
       <p className="truncate text-[11px] font-semibold text-gray-500 dark:text-gray-400">
         {occurrence.batchNumber != null
           ? (labels?.batchNumber || 'Batch {n}').replace('{n}', String(occurrence.batchNumber))
           : labels?.nextBatch || 'Next batch'}
+        {isSoldOut ? (
+          <span className="ms-1 font-semibold text-red-700 dark:text-red-300">
+            · {labels?.soldOut || 'Sold out'}
+          </span>
+        ) : null}
       </p>
       <OccurrenceWhen
         occurrence={occurrence}

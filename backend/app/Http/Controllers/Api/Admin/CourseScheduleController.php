@@ -223,7 +223,7 @@ class CourseScheduleController extends Controller
             Occurrence::STATUS_ENDED => 'completed',
             Occurrence::STATUS_STARTED => 'in_progress',
             Occurrence::STATUS_CLOSED => 'enrollment_closed',
-            Occurrence::STATUS_SOLD_OUT => 'enrollment_closed',
+            Occurrence::STATUS_SOLD_OUT => 'sold_out',
             Occurrence::STATUS_CANCELLED => 'inactive',
             default => 'open',
         };

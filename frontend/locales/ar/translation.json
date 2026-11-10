@@ -5,6 +5,7 @@
     "courses": "الدورات التدريبية",
     "forOrganizations": "للمؤسسات",
     "about": "من نحن",
+    "successStories": "قصص النجاح",
     "contact": "تواصل معنا",
     "getStarted": "ابدأ الآن",
     "login": "تسجيل الدخول",
@@ -122,6 +123,24 @@
   },
   "languageSwitcher": {
     "label": "English"
+  },
+  "success_stories": {
+    "badge": "طلاب حقيقيون · نتائج حقيقية",
+    "fallbackTitle": "قصص النجاح",
+    "fallbackSubtitle": "استمع إلى محترفين طوّروا مسيرتهم المهنية عبر برامجنا التدريبية المعتمدة.",
+    "metaTitle": "قصص النجاح | دار الإبداع",
+    "metaDescription": "شاهد قصص نجاح طلاب دار الإبداع بعد برامج إدارة المشاريع المعتمدة.",
+    "playStory": "تشغيل قصة النجاح",
+    "allCourses": "كل الدورات",
+    "loadMore": "عرض المزيد",
+    "empty": "القصص قادمة قريباً.",
+    "loading": "جاري تحميل القصص…",
+    "ctaFallbackTitle": "جاهز لكتابة قصة نجاحك؟",
+    "exploreCourses": "استكشف الدورات",
+    "contactUs": "تواصل معنا",
+    "close": "إغلاق",
+    "previous": "القصة السابقة",
+    "next": "القصة التالية"
   },
   "about_page": {
     "pmiBadgeAlt": "شارة شريك التدريب المعتمد من PMI لعام 2026",
@@ -492,7 +511,8 @@
       "startsIn": "يبدأ خلال",
       "started": "بدأت",
       "ended": "انتهت",
-      "soldOut": "اكتملت المقاعد",
+      "soldOut": "اكتمل العدد",
+      "contactNextBatch": "تواصل معنا للدفعة القادمة",
       "enrollmentClosed": "التسجيل مغلق",
       "onlySeatsLeft": "تبقّى {n} مقاعد فقط",
       "seatsLeft": "{n} مقاعد متبقية",

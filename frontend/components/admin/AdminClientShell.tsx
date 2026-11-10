@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, MessageSquare } from 'lucide-react';
+import { BookOpen, MessageSquare, Clapperboard } from 'lucide-react';
 
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { fetchAdminInquiryUnreadCounts } from '@/lib/admin/api';
@@ -59,6 +59,13 @@ function AdminNav({ lang }: { lang: string }) {
       label: 'Courses',
       icon: BookOpen,
       match: `/${lang}/admin/courses`,
+      badge: 0,
+    },
+    {
+      href: `/${lang}/admin/testimonials`,
+      label: 'Testimonials',
+      icon: Clapperboard,
+      match: `/${lang}/admin/testimonials`,
       badge: 0,
     },
     {

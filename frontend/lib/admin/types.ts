@@ -172,6 +172,57 @@ export interface BunnyVideo {
   thumbnail_url: string | null;
   /** Bunny collection GUID, or null when the video is uncategorized. */
   collection_id: string | null;
+  width?: number | null;
+  height?: number | null;
+  orientation?: 'landscape' | 'portrait';
+}
+
+/** Admin Success Stories / testimonial row. */
+export interface AdminTestimonialDto {
+  id: number;
+  bunny_video_id: string;
+  bunny_collection_id: string | null;
+  video_title: string | null;
+  duration_seconds: number;
+  orientation: 'landscape' | 'portrait';
+  person_name_en: string | null;
+  person_name_ar: string | null;
+  person_role_en: string | null;
+  person_role_ar: string | null;
+  country: string | null;
+  course_id: number | null;
+  course?: {
+    id: number;
+    title_en?: string | null;
+    title_ar?: string | null;
+    slug?: string | null;
+  } | null;
+  caption_en: string | null;
+  caption_ar: string | null;
+  quote_en: string | null;
+  quote_ar: string | null;
+  custom_thumbnail_path: string | null;
+  custom_thumbnail_url: string | null;
+  thumbnail_url?: string | null;
+  embed_url?: string | null;
+  is_featured: boolean;
+  is_published: boolean;
+  position: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface SuccessStoriesPageDto {
+  id: number;
+  hero_title_en: string | null;
+  hero_title_ar: string | null;
+  hero_subtitle_en: string | null;
+  hero_subtitle_ar: string | null;
+  cta_title_en: string | null;
+  cta_title_ar: string | null;
+  cta_button_en: string | null;
+  cta_button_ar: string | null;
+  cta_link: string;
 }
 
 /** One Bunny Stream collection (folder) for the media-library tabs. */
@@ -354,6 +405,7 @@ export interface AdminCourseScheduleDto {
   lifecycle_status?:
     | 'open'
     | 'enrollment_closed'
+    | 'sold_out'
     | 'in_progress'
     | 'completed'
     | 'inactive';
